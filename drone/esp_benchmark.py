@@ -3,7 +3,7 @@ import json
 import os
 import time
 import uuid
-from typing import Optional
+from typing import Optional, Tuple
 
 # rospy fallback
 try:
@@ -86,7 +86,7 @@ class ESPBenchmark:
             "blob_b64": blob_b64,
         }
 
-    def _send_once_unreliable(self, payload: dict, wait_ack_timeout: float) -> tuple[bool, float, str]:
+    def _send_once_unreliable(self, payload: dict, wait_ack_timeout: float) -> Tuple[bool, float, str]:
         if not self.mod.swarm:
             return False, 0.0, "no_swarm"
 
@@ -116,7 +116,7 @@ class ESPBenchmark:
             time.sleep(0.01)
         return False, time.time() - t0, "timeout"
 
-    def _send_once_reliable(self, payload: dict, retries: int, timeout: float) -> tuple[bool, float, str]:
+    def _send_once_reliable(self, payload: dict, retries: int, timeout: float) -> Tuple[bool, float, str]:
         if not self.mod.swarm:
             return False, 0.0, "no_swarm"
         t0 = time.time()

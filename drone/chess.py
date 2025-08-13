@@ -14,11 +14,11 @@ except ImportError:
 try:
     from .flight import FlightController
     from .helpers import setup_logging
-    from .alg import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+    from .alg_mock import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
 except ImportError:
     from flight import FlightController
     from helpers import setup_logging
-    from alg import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+    from alg_mock import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
 
 
 FILES = "abcdefgh"
