@@ -114,7 +114,6 @@ class ChessDroneSingle:
             x=x, y=y, z=self.flight_z,
             speed=self.speed,
             frame_id=frame_id,
-            tolerance=self.tolerance,
             auto_arm=False
         )
         time.sleep(0.5)
@@ -131,7 +130,6 @@ class ChessDroneSingle:
             x=x, y=y, z=0.0,
             speed=descent_speed,
             frame_id=frame_id,
-            tolerance=self.tolerance,
             auto_arm=False
         )
         self.fc.wait(5.0)
