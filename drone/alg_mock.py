@@ -69,7 +69,7 @@ def _normalize_cell(cell: str) -> str:
 def _camera_mock_read_cell() -> str:
     # В реальном коде здесь будет чтение с камеры + распознавание.
     # Пока используем стабильный источник из переменной окружения.
-    cell = os.getenv("START_CELL", "e2")
+    cell = os.getenv("START_CELL_MOCK", "e2")
     return _normalize_cell(cell)
 
 
@@ -83,6 +83,9 @@ def _next_cell_simple(current: str) -> str:
     if f_idx < 7:
         return f"{FILES[f_idx+1]}1"
     return "a1"
+
+def _next_cell_random(current: str) -> str:
+    return random.choice(FILES + RANKS)
 
 
 # -----------------------------

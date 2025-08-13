@@ -80,7 +80,7 @@ class ChessDroneSingle:
         self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.5"))
         self.flight_z = float(os.getenv("FLIGHT_Z", "1.2"))
         self.speed = float(os.getenv("SPEED", "0.3"))
-        self.tolerance = float(os.getenv("TOLERANCE", "0.1"))
+        self.tolerance = float(os.getenv("TOLERANCE", "0.15"))
         self.hover_time = float(os.getenv("HOVER_TIME", "1.0"))
 
         self.cam = CameraAdapter(self.logger)
@@ -160,9 +160,15 @@ class ChessDroneSingle:
             pass
 
         self.logger.info("Starting autonomous chess drone (single piece)…")
+
+        TURN_LIMIT = 1
+        turn_count = 0
         while not rospy.is_shutdown():
             try:
-                self.run_once()
+                if(TURN_LIMIT > turn_count):
+                    self.run_once()
+                    turn_count += 1
+                    
                 self.fc.wait(2.0)
             except KeyboardInterrupt:
                 break

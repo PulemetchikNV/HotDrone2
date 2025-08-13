@@ -1,3 +1,5 @@
 DRONE_LIST = 'drone15,drone16,drone17'
 LEADER_DRONE = 'drone15'
 DRONES_TOTAL=3
+
+START_CELL_MOCK = 'e2'
