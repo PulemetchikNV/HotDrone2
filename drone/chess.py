@@ -80,7 +80,7 @@ class ChessDroneSingle:
         self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.0"))
         self.flight_z = float(os.getenv("FLIGHT_Z", "1.0"))
         self.speed = float(os.getenv("SPEED", "0.3"))
-        self.tolerance = float(os.getenv("TOLERANCE", "0.15"))
+        self.tolerance = float(os.getenv("TOLERANCE", "0.25"))
         self.hover_time = float(os.getenv("HOVER_TIME", "1.0"))
 
         self.cam = CameraAdapter(self.logger)
@@ -119,9 +119,10 @@ class ChessDroneSingle:
         
         # 3. Зависание над целевой позицией
         # self.fc.wait(self.hover_time)
+        self.logger.info(f"Telemetry: {self.fc.get_telemetry()}")
         
         # 4. Медленное снижение до z=0
-        descent_speed = 0.1  # Медленная скорость снижения
+        descent_speed = 0.3  # Медленная скорость снижения
         self.logger.info(f"Медленное снижение до z=0 со скоростью {descent_speed} м/с")
         self.fc.navigate_wait(
             x=x, y=y, z=0.0,
@@ -129,6 +130,8 @@ class ChessDroneSingle:
             frame_id=frame_id,
             tolerance=0.05  # Более точная посадка
         )
+
+        self.fc.land()
         
         # 5. Финальное зависание перед завершением
         # self.fc.wait(0.5)
@@ -138,6 +141,7 @@ class ChessDroneSingle:
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
+        move.to_cell = 'f6'
         self.logger.info(f"Move: {move.from_cell} -> {move.to_cell} (uci={move.uci})")
 
         # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
