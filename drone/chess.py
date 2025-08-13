@@ -108,8 +108,9 @@ class ChessDroneSingle:
         frame_id = f"aruco_{self.aruco_id}"
         
         # 1. Взлёт на рабочую высоту
-        # self.fc.takeoff(z=self.takeoff_z, delay=1.0, speed=self.speed)
-        
+        self.fc.takeoff(z=self.takeoff_z, delay=2, speed=0.5)
+        time.sleep(3)
+
         # 2. Навигация до целевой позиции на рабочей высоте
         self.fc.navigate(
             x=x, y=y, z=self.flight_z,
