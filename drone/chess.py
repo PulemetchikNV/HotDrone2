@@ -77,7 +77,7 @@ class ChessDroneSingle:
         self.origin_y = float(os.getenv("BOARD_ORIGIN_Y", "0.0"))
 
         # Параметры полёта
-        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.5"))
+        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.2"))
         self.flight_z = float(os.getenv("FLIGHT_Z", "1.2"))
         self.speed = float(os.getenv("SPEED", "0.3"))
         self.tolerance = float(os.getenv("TOLERANCE", "0.15"))
@@ -168,7 +168,7 @@ class ChessDroneSingle:
                 if(TURN_LIMIT > turn_count):
                     self.run_once()
                     turn_count += 1
-                    
+
                 self.fc.wait(2.0)
             except KeyboardInterrupt:
                 break
