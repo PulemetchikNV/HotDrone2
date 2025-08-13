@@ -203,12 +203,12 @@ class Stage1Mod:
         # Waypoints form a rectangle slightly smaller than the one defined by markers 130-133
         # in aruco_map_dronecraft_v2.txt, to be "near the corners".
         waypoints = [
-            {'x':  1.2, 'y': -1.5, 'z': target_z, 'speed': 0.4},
-            {'x':  1.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
-            {'x': -1.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
-            {'x': -1.2, 'y':  -1.5, 'z': target_z, 'speed': 0.4},
+            {'x':  1.5, 'y': 0.6, 'z': target_z, 'speed': 0.4},
+            #{'x':  0.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
+            #{'x': -1.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
+            #{'x': -1.2, 'y':  -1.5, 'z': target_z, 'speed': 0.4},
             # Return to center for stability before the next phase
-            {'x':  0.0, 'y':  0.0, 'z': target_z, 'speed': 0.5},
+            #{'x':  0.0, 'y':  0.0, 'z': target_z, 'speed': 0.5},
         ]
 
         qr_data = "NO_QR_DETECTED"
