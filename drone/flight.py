@@ -95,7 +95,6 @@ def scan_qr(logger, timeout=5.0):
         logger.warning("QR: таймаут ожидания результата")
         return []
 
-
 class FlightControllerCustom:
     def __init__(self, drone_name=None, logger=None):
         self.autoland = rospy.ServiceProxy("land", Trigger)
@@ -333,7 +332,6 @@ class FlightControllerCustom:
         self.stop_fake_pos_async()
         self.land()
 
-
 class FlightControllerMain:
     """Реализация на стандартных сервисах Clover без фейковой publish-поддержки."""
     def __init__(self, drone_name=None, logger=None):
@@ -389,7 +387,7 @@ class FlightControllerMain:
         self.set_led(r=0, g=255, b=0)
 
         
-    def land_vertical(self, fall_speed=0.5, fall_time=3.0, final_z=-0.5):
+    def land_vertical(self, fall_speed=0.5, fall_time=5.0, final_z=-0.5):
         """
         Вертикальная посадка без горизонтального перемещения.
         Просто уменьшает z координату до посадки.
