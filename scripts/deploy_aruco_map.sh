@@ -8,7 +8,7 @@ SSH_USER="pi"
 SSH_PASS="raspberry"  # Или ваш пароль
 DRONES_FILE="./drones.txt"
 ARUCO_MAPS_DIR="./aruco_maps"
-TARGET_MAP_PATH="~/catkin_ws/src/clover/aruco_pose/map/small_map.txt"
+TARGET_MAP_PATH="~/catkin_ws/src/clover/aruco_pose/map/aruco_map_chess_v2.txt"
 
 # Цвета для вывода
 RED='\033[0;31m'
@@ -35,19 +35,19 @@ fi
 
 # Показываем доступные карты
 echo -e "\n${CYAN}Available ArUco maps:${NC}"
-echo "1) aruco_map_dronecraft_v1.txt"
-echo "2) aruco_map_dronecraft_v2.txt"
+echo "1) aruco_map_chess_v1.txt"
+echo "2) aruco_map_chess_v2.txt"
 
 # Запрашиваем выбор карты
 read -p "Choose map to deploy (1 or 2): " choice
 
 case $choice in
     1)
-        MAP_FILE="$ARUCO_MAPS_DIR/aruco_map_dronecraft_v1.txt"
+        MAP_FILE="$ARUCO_MAPS_DIR/aruco_map_chess_v1.txt"
         MAP_NAME="DroneCraft v1"
         ;;
     2)
-        MAP_FILE="$ARUCO_MAPS_DIR/aruco_map_dronecraft_v2.txt"
+        MAP_FILE="$ARUCO_MAPS_DIR/aruco_map_chess_v2.txt"
         MAP_NAME="DroneCraft v2"
         ;;
     *)

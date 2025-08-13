@@ -1,5 +1,6 @@
 import os
 import time
+import json
 
 # rospy fallback
 try:
@@ -14,11 +15,11 @@ except ImportError:
 try:
     from .flight import FlightController
     from .helpers import setup_logging
-    from .alg import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+    from .alg_mock import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
 except ImportError:
     from flight import FlightController
     from helpers import setup_logging
-    from alg import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+    from alg_mock import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
 
 
 FILES = "abcdefgh"
@@ -76,13 +77,31 @@ class ChessDroneSingle:
         self.origin_y = float(os.getenv("BOARD_ORIGIN_Y", "0.0"))
 
         # Параметры полёта
-        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.5"))
+        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.2"))
         self.flight_z = float(os.getenv("FLIGHT_Z", "1.2"))
         self.speed = float(os.getenv("SPEED", "0.3"))
-        self.tolerance = float(os.getenv("TOLERANCE", "0.1"))
+        self.tolerance = float(os.getenv("TOLERANCE", "0.15"))
         self.hover_time = float(os.getenv("HOVER_TIME", "1.0"))
 
         self.cam = CameraAdapter(self.logger)
+
+        # Загрузка карты ArUco для клеток (по умолчанию aruco_maps/aruco_map2.json)
+        default_map_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "aruco_maps",
+            "aruco_map2.json",
+        )
+        self.map_path = os.getenv("ARUCO_MAP_JSON", default_map_path)
+        self.cell_markers = {}
+        try:
+            with open(self.map_path, "r") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    self.cell_markers = data
+                else:
+                    self.logger.warning(f"Unexpected JSON structure in {self.map_path}")
+        except Exception as e:
+            self.logger.warning(f"Failed to load ArUco map from {self.map_path}: {e}")
 
     def move_to_xy(self, x: float, y: float, z: float):
         frame_id = f"aruco_{self.aruco_id}"
@@ -118,8 +137,16 @@ class ChessDroneSingle:
         move = get_turn(board, time_budget_ms=5000)
         self.logger.info(f"Move: {move.from_cell} -> {move.to_cell} (uci={move.uci})")
 
-        # 3) Переводим to_cell в координаты и летим
-        x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
+        # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
+        marker = self.cell_markers.get(move.to_cell)
+        if isinstance(marker, dict) and "x" in marker and "y" in marker:
+            x, y = float(marker["x"]), float(marker["y"])
+            self.logger.info(f"Using map coords for {move.to_cell}: x={x:.3f}, y={y:.3f}")
+        else:
+            x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
+            self.logger.warning(
+                f"No map coords for {move.to_cell}. Using computed coords: x={x:.3f}, y={y:.3f}"
+            )
         self.move_to_xy(x, y, self.flight_z)
 
         # 4) Сообщаем alg об исполнении
@@ -133,9 +160,15 @@ class ChessDroneSingle:
             pass
 
         self.logger.info("Starting autonomous chess drone (single piece)…")
+
+        TURN_LIMIT = 1
+        turn_count = 0
         while not rospy.is_shutdown():
             try:
-                self.run_once()
+                if(TURN_LIMIT > turn_count):
+                    self.run_once()
+                    turn_count += 1
+
                 self.fc.wait(2.0)
             except KeyboardInterrupt:
                 break

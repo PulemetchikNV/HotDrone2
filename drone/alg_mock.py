@@ -1,10 +1,20 @@
-from __future__ import annotations
-
 import os
 import subprocess
 import time
 from dataclasses import dataclass
-from typing import Optional, Literal, Dict, Any
+from typing import Optional, Dict, Any, Union
+
+# Для Python 3.7 совместимости
+try:
+    from typing import Literal
+except ImportError:
+    # Fallback для Python < 3.8
+    try:
+        from typing_extensions import Literal
+    except ImportError:
+        # Если typing_extensions тоже нет, создаем заглушку
+        def Literal(*args):
+            return str
 
 
 # -----------------------------
@@ -27,7 +37,7 @@ class BoardState:
     turn: Literal["w", "b"]
     move_number: int
     timestamp: float
-    meta: Dict[str, Any] | None = None
+    meta: Union[Dict[str, Any], None] = None
 
 
 @dataclass(frozen=True)
@@ -38,7 +48,7 @@ class MoveDecision:
     score_cp: Optional[int] = None
     is_mate: bool = False
     reason: Optional[str] = None
-    meta: Dict[str, Any] | None = None
+    meta: Union[Dict[str, Any], None] = None
 
 
 # -----------------------------
@@ -60,7 +70,7 @@ def _normalize_cell(cell: str) -> str:
 def _camera_mock_read_cell() -> str:
     # В реальном коде здесь будет чтение с камеры + распознавание.
     # Пока используем стабильный источник из переменной окружения.
-    cell = os.getenv("START_CELL", "e2")
+    cell = os.getenv("START_CELL_MOCK", "e2")
     return _normalize_cell(cell)
 
 
@@ -74,6 +84,9 @@ def _next_cell_simple(current: str) -> str:
     if f_idx < 7:
         return f"{FILES[f_idx+1]}1"
     return "a1"
+
+def _next_cell_random(current: str) -> str:
+    return random.choice(FILES + RANKS)
 
 
 # -----------------------------

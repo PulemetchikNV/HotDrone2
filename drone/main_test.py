@@ -17,9 +17,9 @@ env_loader.load_env_file()
 
 
 try:
-    from .chess import ChessDroneSingle as Drone
+    from .stage1_mod import Stage1Mod as Drone
 except ImportError:
-    from chess import ChessDroneSingle as Drone
+    from stage1_mod import Stage1Mod as Drone
 
 try:
     import rospy

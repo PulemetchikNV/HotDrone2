@@ -81,6 +81,3 @@ def get_env_with_default(key, default_value, env_type=str):
         print(f"WARNING: Invalid value for {key}='{value}', using default: {default_value}")
         return default_value
 
-
-# Автоматически загружаем .env при импорте модуля
-load_env_file()
