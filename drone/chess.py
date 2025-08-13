@@ -105,30 +105,33 @@ class ChessDroneSingle:
 
     def move_to_xy(self, x: float, y: float, z: float):
         frame_id = f"aruco_{self.aruco_id}"
-        # Если есть удобный метод — используем, иначе фолбэк на takeoff+navigate+land
-        if hasattr(self.fc, "navigate_and_land"):
-            self.fc.navigate_and_land(
-                x=x, y=y, z=z,
-                takeoff_z=self.takeoff_z,
-                speed=self.speed,
-                frame_id=frame_id,
-                tolerance=self.tolerance,
-                hover_time=self.hover_time
-            )
-        else:
-            # Фолбэк для контроллеров без navigate_and_land
-            self.fc.takeoff(z=self.takeoff_z, delay=1.0, speed=self.speed)
-            self.fc.navigate_wait(
-                x=x, y=y, z=z,
-                speed=self.speed,
-                frame_id=frame_id,
-                tolerance=self.tolerance
-            )
-            self.fc.wait(self.hover_time)
-            if hasattr(self.fc, "land_vertical"):
-                self.fc.land_vertical()
-            else:
-                self.fc.land()
+        
+        # 1. Взлёт на рабочую высоту
+        self.fc.takeoff(z=self.takeoff_z, delay=1.0, speed=self.speed)
+        
+        # 2. Навигация до целевой позиции на рабочей высоте
+        self.fc.navigate_wait(
+            x=x, y=y, z=self.flight_z,
+            speed=self.speed,
+            frame_id=frame_id,
+            tolerance=self.tolerance
+        )
+        
+        # 3. Зависание над целевой позицией
+        self.fc.wait(self.hover_time)
+        
+        # 4. Медленное снижение до z=0
+        descent_speed = 0.1  # Медленная скорость снижения
+        self.logger.info(f"Медленное снижение до z=0 со скоростью {descent_speed} м/с")
+        self.fc.navigate_wait(
+            x=x, y=y, z=0.0,
+            speed=descent_speed,
+            frame_id=frame_id,
+            tolerance=0.05  # Более точная посадка
+        )
+        
+        # 5. Финальное зависание перед завершением
+        self.fc.wait(0.5)
 
     def run_once(self):
         # 1) Получаем состояние доски через alg

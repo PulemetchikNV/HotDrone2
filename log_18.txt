@@ -1,0 +1,56 @@
+Loaded DRONE_NAME=drone18
+Loaded GRID_CELL_SIZE=0.5
+Loaded TARGET_Z=1.2
+Loaded NAV_SPEED=0.3
+Loaded ARUCO_GRID_TYPE=main
+Loaded LOG_LEVEL=INFO
+Loaded SKYROS_DEBUG=false
+Loaded FLIGHT_IMPL=custom
+Loaded CHESS_ARUCO_ID=89
+Loaded CHESS_SQUARE_SIZE=0.30
+Loaded START_SQUARE=e2
+Loaded DRONE_PIECE=rook
+[drone18] 15:33:46 - INFO - Starting autonomous chess drone (single piece)…
+[drone18] 15:33:46 - INFO - Move: e2 -> e3 (uci=e2e3)
+[drone18] 15:33:46 - INFO - Using map coords for e3: x=-0.218, y=-0.628
+[drone18] 15:33:46 - INFO - Starting navigate_and_land sequence to x=-0.218, y=-0.628, z=1.2
+[drone18] 15:33:46 - INFO - Taking off to 1.5m
+[drone18] 15:33:46 - INFO - Taking off to z=1.50
+[drone18] 15:33:48 - ERROR - loop error: 'FlightControllerCustom' object has no attribute 'publisher_thread'
+[drone18] 15:33:51 - INFO - Move: e2 -> e3 (uci=e2e3)
+[drone18] 15:33:51 - INFO - Using map coords for e3: x=-0.218, y=-0.628
+[drone18] 15:33:51 - INFO - Starting navigate_and_land sequence to x=-0.218, y=-0.628, z=1.2
+[drone18] 15:33:51 - INFO - Taking off to 1.5m
+[drone18] 15:33:51 - INFO - Taking off to z=1.50
+[drone18] 15:33:51 - ERROR - loop error: 'FlightControllerCustom' object has no attribute 'publisher_thread'
+[drone18] 15:33:54 - INFO - Move: e2 -> e3 (uci=e2e3)
+[drone18] 15:33:54 - INFO - Using map coords for e3: x=-0.218, y=-0.628
+[drone18] 15:33:54 - INFO - Starting navigate_and_land sequence to x=-0.218, y=-0.628, z=1.2
+[drone18] 15:33:54 - INFO - Taking off to 1.5m
+[drone18] 15:33:54 - INFO - Taking off to z=1.50
+[drone18] 15:33:54 - ERROR - loop error: 'FlightControllerCustom' object has no attribute 'publisher_thread'
+^C^C^C^C^CTraceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 169, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 150, in run_once
+    self.move_to_xy(x, y, self.flight_z)
+  File "/home/pi/HotDrone2/drone/chess.py", line 116, in move_to_xy
+    hover_time=self.hover_time
+  File "/home/pi/HotDrone2/drone/flight.py", line 206, in navigate_and_land
+    self.takeoff(z=takeoff_z, delay=2, time_spam=3.0, time_warm=2, time_up=1.0)
+  File "/home/pi/HotDrone2/drone/flight.py", line 255, in takeoff
+    self.send_fake_pos_async(duration=time_spam)
+  File "/home/pi/HotDrone2/drone/flight.py", line 313, in send_fake_pos_async
+    if self.publisher_thread is not None and self.publisher_thread.is_alive():
+AttributeError: 'FlightControllerCustom' object has no attribute 'publisher_thread'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "./drone/main.py", line 37, in <module>
+    drone.run() 
+  File "/home/pi/HotDrone2/drone/chess.py", line 183, in run
+    self.fc.wait(3.0)
+  File "/home/pi/HotDrone2/drone/flight.py", line 276, in wait
+    raise RuntimeError("rospy shutdown")
+RuntimeError: rospy shutdown
