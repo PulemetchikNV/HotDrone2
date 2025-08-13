@@ -227,7 +227,6 @@ class Stage1Mod:
                 speed=waypoint['speed'], 
                 frame_id="aruco_map", 
                 auto_arm=False,
-                tolerance=0.2
             )
             time.sleep(0.5)
 
