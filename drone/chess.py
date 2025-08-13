@@ -141,14 +141,14 @@ class ChessDroneSingle:
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
-        move.to_cell = 'f6'
-        self.logger.info(f"Move: {move.from_cell} -> {move.to_cell} (uci={move.uci})")
+        to_cell = 'f6' # move.to_cell
+        self.logger.info(f"Move: {move.from_cell} -> {to_cell} (uci={move.uci})")
 
         # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
-        marker = self.cell_markers.get(move.to_cell)
+        marker = self.cell_markers.get(to_cell)
         if isinstance(marker, dict) and "x" in marker and "y" in marker:
             x, y = float(marker["x"]), float(marker["y"])
-            self.logger.info(f"Using map coords for {move.to_cell}: x={x:.3f}, y={y:.3f}")
+            self.logger.info(f"Using map coords for {to_cell}: x={x:.3f}, y={y:.3f}")
         else:
             x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
             self.logger.warning(
@@ -158,7 +158,7 @@ class ChessDroneSingle:
 
         # 4) Сообщаем alg об исполнении
         self.cam.commit_move(move, success=True)
-        self.logger.info(f"Done: now at {move.to_cell}")
+        self.logger.info(f"Done: now at {to_cell}")
 
     def run(self):
         try:
