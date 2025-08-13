@@ -203,7 +203,7 @@ class Stage1Mod:
         # Waypoints form a rectangle slightly smaller than the one defined by markers 130-133
         # in aruco_map_dronecraft_v2.txt, to be "near the corners".
         waypoints = [
-            {'x':  -1.09, 'y': 0.68, 'z': target_z, 'speed': 0.3},
+            {'x':  -0.218, 'y': 0.654, 'z': target_z, 'speed': 0.3},
             #{'x':  0.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
             #{'x': -1.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
             #{'x': -1.2, 'y':  -1.5, 'z': target_z, 'speed': 0.4},
@@ -261,6 +261,30 @@ class Stage1Mod:
                 time.sleep(0.2)
         
         try:
+            self.fc.navigate(
+                x=waypoint['x'], 
+                y=waypoint['y'], 
+                z=0.5, 
+                speed=0.4, 
+                frame_id="aruco_map", 
+                auto_arm=False,
+            )
+            self.fc.navigate(
+                x=waypoint['x'], 
+                y=waypoint['y'], 
+                z=0.25, 
+                speed=0.4, 
+                frame_id="aruco_map", 
+                auto_arm=False,
+            )
+            self.fc.navigate(
+                x=waypoint['x'], 
+                y=waypoint['y'], 
+                z=0.00, 
+                speed=0.4, 
+                frame_id="aruco_map", 
+                auto_arm=False,
+            )
             self.fc.land()
         except TypeError:
             self.fc.land(prl_aruco="aruco_map")

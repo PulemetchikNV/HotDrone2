@@ -315,7 +315,8 @@ class FlightControllerMain:
     def land(self):
         self.logger.info("Landing (standard)")
         try:
-            self.autoland()
+            self.land_new()
+            # self.autoland()
         except Exception as e:
             self.logger.warning(f"autoland failed: {e}, trying mode switch")
             try:
