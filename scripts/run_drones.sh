@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Скрипт для запуска основного скрипта на всех дронах
 # Использование: ./scripts/run_drones.sh [script_name]
@@ -253,4 +253,4 @@ if ! command -v sshpass &> /dev/null; then
     echo -e "${YELLOW}Tip: Install sshpass for automatic password handling:${NC}"
     echo "  macOS: brew install hudochenkov/sshpass/sshpass"
     echo "  Ubuntu: sudo apt-get install sshpass"
-fi 
+fi

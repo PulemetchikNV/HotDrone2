@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
@@ -89,6 +90,80 @@ def _next_cell_random(current: str) -> str:
 
 
 # -----------------------------
+# Интеграция со Stockfish
+# -----------------------------
+# Используем Stockfish из окружения Nix, а не жестко заданный путь
+STOCKFISH_PATH = "stockfish"
+
+
+def _get_stockfish_move(fen: str, time_budget_ms: int) -> str:
+    """
+    Запускает Stockfish, чтобы получить лучший ход для данной FEN-позиции.
+    """
+    try:
+        process = subprocess.Popen(
+            [STOCKFISH_PATH],
+            universal_newlines=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,  # Line-buffered
+        )
+    except FileNotFoundError:
+        raise AlgPermanentError(
+            f"Stockfish not found. Make sure the '{STOCKFISH_PATH}' executable is in your PATH."
+        )
+
+    def read_line():
+        line = process.stdout.readline().strip()
+        return line
+
+    def write_line(command):
+        process.stdin.write(command + "\n")
+        process.stdin.flush()
+
+    try:
+        # UCI Handshake
+        write_line("uci")
+        while read_line() != "uciok":
+            pass
+        
+        # Set skill level to maximum
+        write_line("setoption name Skill Level value 20")
+
+        write_line("isready")
+        while read_line() != "readyok":
+            pass
+
+        # Send position and command
+        write_line(f"position fen {fen}")
+        write_line(f"go movetime {time_budget_ms}")
+
+        # Wait for bestmove
+        best_move = ""
+        while True:
+            line = read_line()
+            if line.startswith("bestmove"):
+                best_move = line.split(" ")[1]
+                break
+            if not line and process.poll() is not None:
+                raise AlgTemporaryError("Stockfish process exited unexpectedly.")
+
+        write_line("quit")
+        return best_move
+
+    except Exception as e:
+        process.kill()
+        stderr_output = process.stderr.read()
+        raise AlgTemporaryError(f"Stockfish error: {e}. Stderr: {stderr_output}")
+
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+
+
+# -----------------------------
 # Публичный контракт API
 # -----------------------------
 def get_board_state() -> BoardState:
@@ -118,31 +193,30 @@ def get_board_state() -> BoardState:
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
-    """Вычисляет следующий ход для данной позиции.
-
-    В мок-реализации: двигаемся в "следующую" клетку по детерминированному правилу.
-    """
+    """Вычисляет следующий ход для данной позиции, используя Stockfish."""
     if board is None or not isinstance(board, BoardState):
         raise AlgPermanentError("board must be BoardState")
 
-    meta = board.meta or {}
-    cur = meta.get("current_cell")
-    if not cur:
-        raise AlgPermanentError("board.meta.current_cell is required")
+    # Получаем лучший ход от Stockfish
+    uci_move = _get_stockfish_move(board.fen, time_budget_ms)
 
-    cur = _normalize_cell(cur)
-    to_cell = _next_cell_simple(cur)
-    uci = f"{cur}{to_cell}"
+    # Парсим uci-строку
+    if len(uci_move) < 4:
+        raise AlgPermanentError(f"Invalid uci move from stockfish: {uci_move}")
 
+    from_cell = uci_move[:2]
+    to_cell = uci_move[2:4]
+
+    # Возвращаем решение
     return MoveDecision(
-        uci=uci,
-        from_cell=cur,
+        uci=uci_move,
+        from_cell=from_cell,
         to_cell=to_cell,
-        score_cp=0,
-        is_mate=False,
-        reason="mock-next-cell",
-        meta={"policy": "simple_sequence"},
+        reason="stockfish",
+        meta={"engine": "stockfish", "time_budget_ms": time_budget_ms},
     )
+
+
 
 
 def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) -> BoardState:
@@ -174,5 +248,3 @@ def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) 
         timestamp=time.time(),
         meta=meta,
     )
-
-
