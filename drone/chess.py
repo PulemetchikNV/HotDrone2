@@ -118,7 +118,7 @@ class ChessDroneSingle:
         )
         
         # 3. Зависание над целевой позицией
-        self.fc.wait(self.hover_time)
+        # self.fc.wait(self.hover_time)
         
         # 4. Медленное снижение до z=0
         descent_speed = 0.1  # Медленная скорость снижения
