@@ -213,7 +213,7 @@ class Stage1Mod:
 
         qr_data = "NO_QR_DETECTED"
         qr_found = False
-        arrival_tolerance = 0.3  # 30cm
+        arrival_tolerance = 0.2  # 30cm
 
         for i, waypoint in enumerate(waypoints):
             if qr_found:
