@@ -118,8 +118,10 @@ class ChessDroneSingle:
         )
         
         # 3. Зависание над целевой позицией
-        # self.fc.wait(self.hover_time)
+        self.fc.wait(10.0)
+        # if telemetry в диапазоне клетки to то мы в нужной клетки, иначе - продолжаем
         self.logger.info(f"Telemetry: {self.fc.get_telemetry()}")
+        
         
         # 4. Медленное снижение до z=0
         descent_speed = 0.3  # Медленная скорость снижения
