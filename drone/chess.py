@@ -77,8 +77,8 @@ class ChessDroneSingle:
         self.origin_y = float(os.getenv("BOARD_ORIGIN_Y", "0.0"))
 
         # Параметры полёта
-        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.2"))
-        self.flight_z = float(os.getenv("FLIGHT_Z", "1.2"))
+        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.0"))
+        self.flight_z = float(os.getenv("FLIGHT_Z", "1.0"))
         self.speed = float(os.getenv("SPEED", "0.3"))
         self.tolerance = float(os.getenv("TOLERANCE", "0.15"))
         self.hover_time = float(os.getenv("HOVER_TIME", "1.0"))
