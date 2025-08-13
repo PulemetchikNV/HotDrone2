@@ -110,15 +110,16 @@ class ChessDroneSingle:
         self.fc.takeoff(z=self.takeoff_z, delay=1.0, speed=self.speed)
         
         # 2. Навигация до целевой позиции на рабочей высоте
-        self.fc.navigate_wait(
+        self.fc.navigate(
             x=x, y=y, z=self.flight_z,
             speed=self.speed,
             frame_id=frame_id,
             tolerance=self.tolerance
+            auto_arm=False
         )
+        time.sleep(0.5)
+        self.fc.wait(5.0)
         
-        # 3. Зависание над целевой позицией
-        self.fc.wait(10.0)
         # if telemetry в диапазоне клетки to то мы в нужной клетки, иначе - продолжаем
         self.logger.info(f"Telemetry: {self.fc.get_telemetry()}")
         
@@ -126,12 +127,14 @@ class ChessDroneSingle:
         # 4. Медленное снижение до z=0
         descent_speed = 0.3  # Медленная скорость снижения
         self.logger.info(f"Медленное снижение до z=0 со скоростью {descent_speed} м/с")
-        self.fc.navigate_wait(
+        self.fc.navigate(
             x=x, y=y, z=0.0,
             speed=descent_speed,
             frame_id=frame_id,
-            tolerance=0.05  # Более точная посадка
+            tolerance=self.tolerance,
+            auto_arm=False
         )
+        self.fc.wait(5.0)
 
         self.fc.land()
         
