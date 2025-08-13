@@ -1,250 +1,155 @@
-import math
-import logging
 import os
-import sys
 import time
-import requests
 
-# rospy fallback for local testing
+# rospy fallback
 try:
     import rospy
 except ImportError:
-    # Mock rospy for local testing
     class MockRospy:
-        def is_shutdown(self):
-            return False
-        def init_node(self, name):
-            pass
-        def sleep(self, duration):
-            import time
-            time.sleep(duration)
+        def is_shutdown(self): return False
+        def init_node(self, name): pass
+        def sleep(self, t): time.sleep(t)
     rospy = MockRospy()
 
 try:
     from .flight import FlightController
     from .helpers import setup_logging
+    from .alg import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
 except ImportError:
     from flight import FlightController
     from helpers import setup_logging
+    from alg import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
 
 
-class ChessCoords:
-    """Object to hold chess move coordinates with from/to positions"""
-    def __init__(self, from_x=0.0, from_y=0.0, to_x=0.0, to_y=0.0, z=1.2, aruco_id=89):
-        self.from_x = from_x
-        self.from_y = from_y
-        self.to_x = to_x
-        self.to_y = to_y
-        self.z = z
-        self.aruco_id = aruco_id
-    
-    def __str__(self):
-        return f"ChessCoords(from=({self.from_x}, {self.from_y}) to=({self.to_x}, {self.to_y}), z={self.z}, aruco_id={self.aruco_id})"
+FILES = "abcdefgh"
+RANKS = "12345678"
+
+def cell_to_xy(cell: str, cell_size: float, origin_x: float, origin_y: float):
+    f, r = cell[0], cell[1]
+    fi = FILES.index(f)
+    ri = RANKS.index(r)
+    # a1 в нижнем левом углу; X вправо по файлам, Y вверх по рангам
+    x = origin_x + (fi - 3.5) * cell_size
+    y = origin_y + (ri - 3.5) * cell_size
+    return x, y
+
+def next_cell_simple(current: str) -> str:
+    # Простой детерминированный генератор: идём по рангам вверх, затем вправо и снова снизу
+    f_idx = FILES.index(current[0])
+    r_idx = RANKS.index(current[1])
+    if r_idx < 7:
+        return f"{current[0]}{RANKS[r_idx+1]}"
+    if f_idx < 7:
+        return f"{FILES[f_idx+1]}1"
+    return "a1"
 
 
-class ChessAPI:
-    """API для взаимодействия с шахматным сервером"""
-    def __init__(self, drone_name="not_known", api_url='http://192.168.2.95:8000'):
-        self.api_url = api_url
-        self.logger = setup_logging(drone_name)
-    
-    def get_game_state(self):
-        """Получить текущее состояние шахматной игры"""
-        try:
-            response = requests.get(f"{self.api_url}/chess/game-state")
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error getting chess game state: {e}")
-            return None
-    
-    def complete_move(self, drone_name):
-        """Сообщить серверу о завершении хода"""
-        try:
-            response = requests.post(f"{self.api_url}/chess/complete-move", 
-                                   json={"drone_name": drone_name})
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error completing chess move: {e}")
-            return None
-    
-    def get_board_status(self):
-        """Получить статус доски"""
-        try:
-            response = requests.get(f"{self.api_url}/chess/board")
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error getting board status: {e}")
-            return None
+class CameraAdapter:
+    """Адаптер к alg.get_board_state()/update_after_execution для совместимости с текущим кодом."""
+    def __init__(self, logger):
+        self.logger = logger
+        self._board = None
+
+    def read_board(self):
+        # Получаем снимок через alg API
+        self._board = get_board_state()
+        return self._board
+
+    def commit_move(self, move, success: bool):
+        # Обновляем локальное состояние после исполнения
+        if self._board is not None:
+            self._board = update_after_execution(self._board, move, success)
 
 
-def wait_for_chess_move(drone_name, chess_api=None, check_interval=1.0):
-    """Ожидает ход для конкретного дрона в шахматной игре"""
-    logger = setup_logging(drone_name)
-    if chess_api is None:
-        chess_api = ChessAPI(drone_name)
-    
-    logger.info("♟️  Waiting for chess move...")
-    
-    while not rospy.is_shutdown():
-        game_state = chess_api.get_game_state()
-        
-        if not game_state or game_state.get('status') != 'active':
-            logger.info("Game not active, waiting...")
-            time.sleep(check_interval)
-            continue
-        
-        # Проверяем, наш ли ход
-        current_turn = game_state.get('current_turn')
-        if current_turn != drone_name:
-            logger.debug(f"Waiting for turn... Current: {current_turn}")
-            time.sleep(check_interval)
-            continue
-        
-        # Получаем данные хода
-        move_data = game_state.get('move')
-        if not move_data:
-            logger.warning("No move data available")
-            time.sleep(check_interval)
-            continue
-        
-        # Парсим координаты хода
-        from_pos = move_data.get('from', [0, 0])
-        to_pos = move_data.get('to', [0, 0])
-        move_z = move_data.get('z', 1.2)
-        target_aruco = move_data.get('aruco_id', 89)
-        
-        logger.info(f"♟️  Chess move! From ({from_pos[0]:.3f}, {from_pos[1]:.3f}) to ({to_pos[0]:.3f}, {to_pos[1]:.3f}) z={move_z:.3f} (ArUco: {target_aruco})")
-        
-        return ChessCoords(
-            from_x=from_pos[0], from_y=from_pos[1],
-            to_x=to_pos[0], to_y=to_pos[1],
-            z=move_z, aruco_id=target_aruco
-        )
-    
-    return None
-
-
-def complete_chess_move(drone_name, chess_api=None):
-    """Сообщает серверу о завершении хода"""
-    logger = setup_logging(drone_name)
-    if chess_api is None:
-        chess_api = ChessAPI(drone_name)
-    
-    result = chess_api.complete_move(drone_name)
-    if result:
-        logger.info("✅ Chess move completed successfully")
-        return True
-    else:
-        logger.error("❌ Failed to complete chess move")
-        return False
-
-
-class ChessDrone:
-    """Шахматный дрон с использованием FlightControllerMain"""
-    
+class ChessDroneSingle:
     def __init__(self):
-        # Получаем имя дрона из переменной окружения
-        self.drone_name = os.environ.get('DRONE_NAME', 'unknown_drone')
-        print(f"Chess drone running on: {self.drone_name}")
-        
-        # Инициализируем логгер
+        self.drone_name = os.environ.get("DRONE_NAME", "drone")
         self.logger = setup_logging(self.drone_name)
-        
-        # Инициализируем FlightController (Main implementation)
-        os.environ['FLIGHT_IMPL'] = 'main'  # Используем FlightControllerMain
+
+        # Не переопределяем FLIGHT_IMPL — используйте main/custom/mock через env
         self.fc = FlightController(drone_name=self.drone_name, logger=self.logger)
-        
-        # API для взаимодействия с сервером
-        self.chess_api = ChessAPI(self.drone_name)
-        
-        # Параметры полета
-        self.flight_params = {
-            'takeoff_z': 1.5,
-            'speed': 0.3,
-            'tolerance': 0.1,
-            'hover_time': 1.0,
-            'bias_x': 0.0,
-            'bias_y': 0.0
-        }
-    
-    def execute_chess_move(self, chess_coords):
-        """Выполнить шахматный ход: дрон перемещается в новую позицию"""
-        
-        self.logger.info(f"♟️  Chess move: ({chess_coords.from_x:.2f},{chess_coords.from_y:.2f}) → ({chess_coords.to_x:.2f},{chess_coords.to_y:.2f})")
-        
-        try:
-            # Простое перемещение дрона-фигуры в новую позицию
+
+        # Параметры поля
+        self.aruco_id = int(os.getenv("BOARD_ARUCO_ID", "89"))
+        self.cell_size = float(os.getenv("CELL_SIZE_M", "0.35"))
+        self.origin_x = float(os.getenv("BOARD_ORIGIN_X", "0.0"))  # центр доски = (0,0)
+        self.origin_y = float(os.getenv("BOARD_ORIGIN_Y", "0.0"))
+
+        # Параметры полёта
+        self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.5"))
+        self.flight_z = float(os.getenv("FLIGHT_Z", "1.2"))
+        self.speed = float(os.getenv("SPEED", "0.3"))
+        self.tolerance = float(os.getenv("TOLERANCE", "0.1"))
+        self.hover_time = float(os.getenv("HOVER_TIME", "1.0"))
+
+        self.cam = CameraAdapter(self.logger)
+
+    def move_to_xy(self, x: float, y: float, z: float):
+        frame_id = f"aruco_{self.aruco_id}"
+        # Если есть удобный метод — используем, иначе фолбэк на takeoff+navigate+land
+        if hasattr(self.fc, "navigate_and_land"):
             self.fc.navigate_and_land(
-                x=chess_coords.to_x + self.flight_params.get('bias_x', 0),
-                y=chess_coords.to_y + self.flight_params.get('bias_y', 0),
-                z=chess_coords.z,
-                takeoff_z=self.flight_params['takeoff_z'],
-                speed=self.flight_params['speed'],
-                frame_id=f"aruco_{chess_coords.aruco_id}",
-                tolerance=self.flight_params['tolerance'],
-                hover_time=self.flight_params['hover_time']
+                x=x, y=y, z=z,
+                takeoff_z=self.takeoff_z,
+                speed=self.speed,
+                frame_id=frame_id,
+                tolerance=self.tolerance,
+                hover_time=self.hover_time
             )
-            
-            self.logger.info("✅ Chess move completed!")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"❌ Chess move failed: {e}")
-            return False
-    
+        else:
+            # Фолбэк для контроллеров без navigate_and_land
+            self.fc.takeoff(z=self.takeoff_z, delay=1.0, speed=self.speed)
+            self.fc.navigate_wait(
+                x=x, y=y, z=z,
+                speed=self.speed,
+                frame_id=frame_id,
+                tolerance=self.tolerance
+            )
+            self.fc.wait(self.hover_time)
+            if hasattr(self.fc, "land_vertical"):
+                self.fc.land_vertical()
+            else:
+                self.fc.land()
+
+    def run_once(self):
+        # 1) Получаем состояние доски через alg
+        board = self.cam.read_board()
+        # 2) Запрашиваем ход (внутри alg решается логика)
+        move = get_turn(board, time_budget_ms=5000)
+        self.logger.info(f"Move: {move.from_cell} -> {move.to_cell} (uci={move.uci})")
+
+        # 3) Переводим to_cell в координаты и летим
+        x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
+        self.move_to_xy(x, y, self.flight_z)
+
+        # 4) Сообщаем alg об исполнении
+        self.cam.commit_move(move, success=True)
+        self.logger.info(f"Done: now at {move.to_cell}")
+
     def run(self):
-        """Основной цикл работы шахматного дрона"""
-        self.logger.info("♟️  Starting chess drone...")
-        
-        # Проверяем телеметрию
         try:
-            telem = self.fc.get_telemetry(frame_id="aruco_map")
-            self.logger.info(f"Initial telemetry - Mode: {telem.mode}, Armed: {telem.armed}")
-        except Exception as e:
-            self.logger.warning(f"Could not get initial telemetry: {e}")
-        
-        # Основной игровой цикл
+            rospy.init_node("chess_drone_single")
+        except Exception:
+            pass
+
+        self.logger.info("Starting autonomous chess drone (single piece)…")
         while not rospy.is_shutdown():
             try:
-                # Ожидаем наш ход
-                chess_move = wait_for_chess_move(self.drone_name, self.chess_api)
-                
-                if chess_move is None:
-                    self.logger.warning("No chess move received, continuing...")
-                    continue
-                
-                # Выполняем ход
-                success = self.execute_chess_move(chess_move)
-                
-                if success:
-                    # Сообщаем серверу о завершении хода
-                    complete_chess_move(self.drone_name, self.chess_api)
-                else:
-                    self.logger.error("Failed to execute chess move")
-                
-                # Пауза перед следующим ходом
+                self.run_once()
                 self.fc.wait(2.0)
-                
             except KeyboardInterrupt:
-                self.logger.info("Chess drone interrupted by user")
                 break
+            except AlgTemporaryError as e:
+                self.logger.warning(f"temporary error in alg: {e}")
+                self.fc.wait(1.0)
+            except AlgPermanentError as e:
+                self.logger.error(f"permanent error in alg: {e}")
+                self.fc.wait(3.0)
             except Exception as e:
-                self.logger.error(f"Error in chess drone main loop: {e}")
-                self.fc.wait(5.0)  # Пауза при ошибке
-        
-        self.logger.info("♟️  Chess drone stopped")
+                self.logger.error(f"loop error: {e}")
+                self.fc.wait(3.0)
+        self.logger.info("Stopped.")
 
 
 if __name__ == "__main__":
-    # Инициализируем ROS node если доступен
-    try:
-        rospy.init_node('chess_drone')
-    except:
-        pass
-    
-    # Создаем и запускаем шахматного дрона
-    chess_drone = ChessDrone()
-    chess_drone.run()
+    ChessDroneSingle().run()

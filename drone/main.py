@@ -23,9 +23,9 @@ else:
     print("No drone name specified, using default")
 
 try:
-    from .stage1_mod import Stage1Mod as Drone
+    from .chess import ChessDrone as Drone
 except ImportError:
-    from stage1_mod import Stage1Mod as Drone
+    from chess import ChessDrone as Drone
 
 try:
     import rospy
@@ -36,7 +36,7 @@ except ImportError:
             logging.warning(f"[MOCK] rospy.init_node('{name}')")
     rospy = MockRospy()
 
-rospy.init_node('stage1_mod_flight')
+rospy.init_node('chess')
 
 drone = Drone()
 
