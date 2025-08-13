@@ -2,7 +2,8 @@ import sys
 import os
 import logging
 
-# Парсинг аргументов командной строки
+import env_loader
+
 def parse_args():
     drone_name = None
     for i, arg in enumerate(sys.argv):
@@ -12,20 +13,13 @@ def parse_args():
             drone_name = sys.argv[i + 1]
     return drone_name
 
-# Устанавливаем DRONE_NAME из аргументов или env
-drone_name_arg = parse_args()
-if drone_name_arg:
-    os.environ['DRONE_NAME'] = drone_name_arg
-    print(f"Drone name set from args: {drone_name_arg}")
-elif 'DRONE_NAME' in os.environ:
-    print(f"Drone name from env: {os.environ['DRONE_NAME']}")
-else:
-    print("No drone name specified, using default")
+env_loader.load_env_file()
+
 
 try:
-    from .chess import ChessDrone as Drone
+    from .chess import ChessDroneSingle as Drone
 except ImportError:
-    from chess import ChessDrone as Drone
+    from chess import ChessDroneSingle as Drone
 
 try:
     import rospy
