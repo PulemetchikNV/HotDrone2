@@ -203,7 +203,7 @@ class Stage1Mod:
         # Waypoints form a rectangle slightly smaller than the one defined by markers 130-133
         # in aruco_map_dronecraft_v2.txt, to be "near the corners".
         waypoints = [
-            {'x':  -0.218, 'y': 0.654, 'z': target_z, 'speed': 0.3},
+            {'x':  -1.09, 'y': 0.654, 'z': target_z, 'speed': 0.3},
             #{'x':  0.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
             #{'x': -1.2, 'y':  1.5, 'z': target_z, 'speed': 0.4},
             #{'x': -1.2, 'y':  -1.5, 'z': target_z, 'speed': 0.4},
@@ -288,6 +288,8 @@ class Stage1Mod:
             self.fc.land()
         except TypeError:
             self.fc.land(prl_aruco="aruco_map")
+
+        return
 
         # After the search, ensure the drone is stationary
         if qr_found:
