@@ -183,24 +183,41 @@ class ESPBenchmark:
     def _fragment_message(self, payload: dict, msg_id: str) -> list:
         """Разбивает большое сообщение на фрагменты"""
         payload_json = json.dumps(payload)
-        max_fragment_size = 70  # Оставляем место для метаданных фрагментации
         
         if len(payload_json) <= 124:
             # Сообщение помещается в один пакет
             return [payload]
         
         # Нужно фрагментировать
-        msg_uuid = uuid.uuid4().hex
+        msg_uuid = uuid.uuid4().hex[:8]  # Короче UUID для экономии места
         data_to_split = payload_json
-        fragments = []
         
-        # Вычисляем размер данных на фрагмент
-        chunk_size = max_fragment_size
-        total_chunks = (len(data_to_split) + chunk_size - 1) // chunk_size
+        # Сначала создаем тестовый фрагмент чтобы понять сколько места занимают метаданные
+        test_fragment = {
+            "fragmented": True,
+            "msg_uuid": msg_uuid,
+            "frag_id": 999,  # Максимальное число для точной оценки
+            "total_frags": 999,
+            "data": "",
+            "original_msg_id": msg_id,
+            "to": self.target
+        }
+        
+        # Вычисляем накладные расходы на метаданные
+        metadata_size = len(json.dumps(test_fragment))
+        max_data_size = 124 - metadata_size - 5  # -5 для безопасности
+        
+        if max_data_size <= 0:
+            self.logger.error(f"Cannot fragment: metadata too large ({metadata_size} bytes)")
+            return [payload]  # Возвращаем исходное сообщение
+        
+        # Разбиваем данные на куски подходящего размера
+        fragments = []
+        total_chunks = (len(data_to_split) + max_data_size - 1) // max_data_size
         
         for i in range(total_chunks):
-            start = i * chunk_size
-            end = min(start + chunk_size, len(data_to_split))
+            start = i * max_data_size
+            end = min(start + max_data_size, len(data_to_split))
             chunk_data = data_to_split[start:end]
             
             fragment = {
@@ -213,21 +230,21 @@ class ESPBenchmark:
                 "to": self.target
             }
             
-            # Проверяем, что фрагмент не превышает лимит
+            # Финальная проверка размера
             frag_json = json.dumps(fragment)
-            while len(frag_json) > 124 and len(chunk_data) > 0:
-                # Уменьшаем размер данных в фрагменте пока не поместится
-                chunk_data = chunk_data[:-10]  # Убираем по 10 символов за раз
-                fragment["data"] = chunk_data
-                frag_json = json.dumps(fragment)
-            
-            # Если данные стали пустыми, пропускаем этот фрагмент
-            if not chunk_data:
-                continue
+            if len(frag_json) > 124:
+                # Если все еще не помещается, урезаем данные
+                excess = len(frag_json) - 124
+                if len(chunk_data) > excess:
+                    chunk_data = chunk_data[:-excess]
+                    fragment["data"] = chunk_data
+                else:
+                    self.logger.warning(f"Skipping fragment {i} - cannot fit in 124 chars")
+                    continue
             
             fragments.append(fragment)
         
-        self.logger.info(f"Message fragmented into {len(fragments)} parts (original: {len(payload_json)} chars)")
+        self.logger.info(f"Message fragmented into {len(fragments)} parts (original: {len(payload_json)} chars, max_data_size: {max_data_size})")
         return fragments
 
     def _broadcast_reliable(self, payload: dict, retries: int = 3, timeout: float = 0.5) -> bool:
@@ -408,7 +425,7 @@ class ESPBenchmark:
                 last_cleanup = time.time()
                 
             # Показываем статистику
-            if self._rx_total > 0 and self._rx_total % 10 == 0:
+            if self._rx_total > 0 and self._rx_total % 50 == 0:
                 pending_fragments = len(self._fragments)
                 self.logger.info(f"Received {self._rx_total} messages, {pending_fragments} pending fragments")
 
