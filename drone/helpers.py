@@ -16,8 +16,8 @@ def setup_logging(drone_name, log_level=logging.INFO):
         console_formatter = logging.Formatter(
             f'[{drone_name}] %(asctime)s - %(levelname)s - %(message)s', '%H:%M:%S'
         )
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
+        console_handler.setFormatter(console_formatter)
+        logger.addHandler(console_handler)
     
     # UDP handler (idempotent)
     if not any(isinstance(h, UDPLogHandler) for h in logger.handlers):
