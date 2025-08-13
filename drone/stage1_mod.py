@@ -233,18 +233,18 @@ class Stage1Mod:
             # While navigating to the waypoint, scan for QR code
             while not rospy.is_shutdown():
                 # 1. Check for QR code
-                try:
-                    scan_codes = self.fc.scan_qr_code(timeout=0.1)
-                    if scan_codes:
-                        qr_data = scan_codes[0]
-                        self.logger.info(f"QR CODE DETECTED: {qr_data}")
-                        qr_found = True
-                        break 
-                except Exception as e:
-                    self.logger.error(f"QR scan failed during polling: {e}")
-                    qr_data = "QR_SCAN_ERROR"
-                    qr_found = True
-                    break
+                # try:
+                #     scan_codes = self.fc.scan_qr_code(timeout=0.1)
+                #     if scan_codes:
+                #         qr_data = scan_codes[0]
+                #         self.logger.info(f"QR CODE DETECTED: {qr_data}")
+                #         qr_found = True
+                #         break 
+                # except Exception as e:
+                #     self.logger.error(f"QR scan failed during polling: {e}")
+                #     qr_data = "QR_SCAN_ERROR"
+                #     qr_found = True
+                #     break
 
                 # 2. Check for arrival at the waypoint
                 try:
@@ -259,6 +259,11 @@ class Stage1Mod:
                     break
                 
                 time.sleep(0.2)
+        
+        try:
+            self.fc.land()
+        except TypeError:
+            self.fc.land(prl_aruco="aruco_map")
 
         # After the search, ensure the drone is stationary
         if qr_found:
