@@ -3,6 +3,7 @@ import json
 import os
 import time
 import uuid
+import threading
 from typing import Optional, Tuple
 
 # rospy fallback
@@ -19,11 +20,15 @@ except ImportError:
     rospy = MockRospy()
 
 try:
-    from .stage1_mod import Stage1Mod
     from .helpers import setup_logging
 except ImportError:
-    from stage1_mod import Stage1Mod
     from helpers import setup_logging
+
+# skyros optional import
+try:
+    from skyros.drone import Drone as SkyrosDrone
+except Exception:
+    SkyrosDrone = None
 
 
 class ESPBenchmark:
@@ -42,46 +47,66 @@ class ESPBenchmark:
         self.drone_name = os.environ.get("DRONE_NAME", "drone")
         self.logger = setup_logging(self.drone_name)
 
-        self.mod = Stage1Mod()
+        # Собственная реализация skyros без stage1_mod
+        self.swarm = None
+        if SkyrosDrone is not None:
+            try:
+                self.swarm = SkyrosDrone(name=self.drone_name)
+            except Exception as e:
+                self.logger.warning(f"Skyros init failed: {e}")
+                self.swarm = None
 
+        # Для надежной отправки
+        self._received_acks = set()
+        self._ack_lock = threading.Lock()
+        
         # Переопределим callback, чтобы считать входящие пакеты, и затем делегировать штатной логике ack
         self._rx_total = 0
         self._rx_last_ts = None
-        self._orig_cb = None
         
         # Для сборки фрагментированных сообщений
         self._fragments = {}  # {msg_uuid: {total: int, received: {frag_id: data}}}
         self._fragment_timeout = 10.0  # секунд на сборку всех фрагментов
 
-        if self.mod.swarm:
-            # Сохраним базовый обработчик (если был) и обернём
-            self._orig_cb = self.mod.swarm._custom_message_callback if hasattr(self.mod.swarm, "_custom_message_callback") else None
-            def wrapped_cb(message: str):
+        if self.swarm:
+            def message_callback(message: str):
                 self._rx_total += 1
                 self._rx_last_ts = time.time()
                 
-                # Обрабатываем фрагментированные сообщения
                 try:
                     msg_obj = json.loads(message)
+                    
+                    # Обрабатываем ACK сообщения
+                    if msg_obj.get('type') == 'ack':
+                        ack_id = msg_obj.get('ack_id')
+                        if ack_id:
+                            with self._ack_lock:
+                                self._received_acks.add(ack_id)
+                        return
+                    
+                    # Обрабатываем фрагментированные сообщения
                     if msg_obj.get('fragmented'):
                         self._handle_fragment(msg_obj)
                         return  # Не передаем фрагменты дальше
-                except Exception:
-                    pass
-                
-                try:
-                    # Делегируем стандартной обработке для ack
-                    self.mod._on_custom_message(message)
-                except Exception:
-                    pass
-                # Дополнительно вызовем исходный cb, если он был
-                if self._orig_cb:
-                    try:
-                        self._orig_cb(message)
-                    except Exception:
-                        pass
-            self.mod.swarm.set_custom_message_callback(wrapped_cb)
-            started = self.mod.swarm.start()
+                    
+                    # Отправляем ACK если есть msg_id и сообщение для нас
+                    target = msg_obj.get('to', '*')
+                    if 'msg_id' in msg_obj and (target == '*' or target == self.drone_name):
+                        ack_payload = {
+                            'type': 'ack',
+                            'ack_id': msg_obj['msg_id'],
+                            'from': self.drone_name
+                        }
+                        try:
+                            self.swarm.broadcast_custom_message(json.dumps(ack_payload))
+                        except Exception as e:
+                            self.logger.warning(f"Failed to send ack: {e}")
+                            
+                except Exception as e:
+                    self.logger.debug(f"Message parsing error: {e}")
+            
+            self.swarm.set_custom_message_callback(message_callback)
+            started = self.swarm.start()
             if not started:
                 self.logger.warning("Skyros link not started; benchmark will not work")
         else:
@@ -120,8 +145,8 @@ class ESPBenchmark:
                 
                 # Отправляем ACK для собранного сообщения
                 if 'original_msg_id' in fragment_obj:
-                    with self.mod._ack_lock:
-                        self.mod._received_acks.add(fragment_obj['original_msg_id'])
+                    with self._ack_lock:
+                        self._received_acks.add(fragment_obj['original_msg_id'])
                 
                 # Удаляем из буфера
                 del self._fragments[msg_uuid]
@@ -190,19 +215,69 @@ class ESPBenchmark:
             
             # Проверяем, что фрагмент не превышает лимит
             frag_json = json.dumps(fragment)
-            if len(frag_json) > 124:
-                # Уменьшаем размер данных в фрагменте
-                excess = len(frag_json) - 124
-                chunk_data = chunk_data[:-excess-5]  # -5 для безопасности
+            while len(frag_json) > 124 and len(chunk_data) > 0:
+                # Уменьшаем размер данных в фрагменте пока не поместится
+                chunk_data = chunk_data[:-10]  # Убираем по 10 символов за раз
                 fragment["data"] = chunk_data
+                frag_json = json.dumps(fragment)
+            
+            # Если данные стали пустыми, пропускаем этот фрагмент
+            if not chunk_data:
+                continue
             
             fragments.append(fragment)
         
         self.logger.info(f"Message fragmented into {len(fragments)} parts (original: {len(payload_json)} chars)")
         return fragments
 
+    def _broadcast_reliable(self, payload: dict, retries: int = 3, timeout: float = 0.5) -> bool:
+        """Собственная реализация надежной отправки с ACK"""
+        if not self.swarm:
+            return False
+
+        msg_id = uuid.uuid4().hex[:6]
+        payload = dict(payload)
+        payload['msg_id'] = msg_id
+
+        attempt = 0
+        while attempt < retries:
+            attempt += 1
+            
+            # Очищаем старое подтверждение перед отправкой
+            with self._ack_lock:
+                if msg_id in self._received_acks:
+                    self._received_acks.remove(msg_id)
+
+            self.logger.debug(f"Broadcasting (attempt {attempt}/{retries}): msg_id={msg_id}")
+            
+            try:
+                msg = json.dumps(payload)
+                if len(msg) > 124:
+                    self.logger.warning(f"Message too long ({len(msg)} chars), truncating to 124")
+                    msg = msg[:124]
+                    
+                self.swarm.broadcast_custom_message(msg)
+            except Exception as e:
+                self.logger.warning(f"Broadcast failed: {e}")
+                time.sleep(timeout)
+                continue
+
+            # Ждем подтверждения
+            deadline = time.time() + timeout
+            while time.time() < deadline and not rospy.is_shutdown():
+                with self._ack_lock:
+                    if msg_id in self._received_acks:
+                        self.logger.debug(f"ACK received for msg_id: {msg_id}")
+                        return True
+                time.sleep(0.01)
+            
+            self.logger.warning(f"No ACK for {msg_id} (attempt {attempt}/{retries})")
+
+        self.logger.error(f"Broadcast failed after {retries} retries for msg_id: {msg_id}")
+        return False
+
     def _send_once_unreliable(self, payload: dict, wait_ack_timeout: float) -> Tuple[bool, float, str]:
-        if not self.mod.swarm:
+        if not self.swarm:
             return False, 0.0, "no_swarm"
 
         msg_id = uuid.uuid4().hex[:6]
@@ -210,9 +285,9 @@ class ESPBenchmark:
         payload["msg_id"] = msg_id
 
         # Очистим возможный старый ack
-        with self.mod._ack_lock:
-            if msg_id in self.mod._received_acks:
-                self.mod._received_acks.remove(msg_id)
+        with self._ack_lock:
+            if msg_id in self._received_acks:
+                self._received_acks.remove(msg_id)
 
         # Фрагментируем сообщение если нужно
         fragments = self._fragment_message(payload, msg_id)
@@ -227,7 +302,7 @@ class ESPBenchmark:
                     self.logger.warning(f"Fragment {i} too long ({len(frag_json)} chars), truncating")
                     frag_json = frag_json[:124]
                 
-                self.mod.swarm.broadcast_custom_message(frag_json)
+                self.swarm.broadcast_custom_message(frag_json)
                 self.logger.debug(f"Sent fragment {i+1}/{len(fragments)}")
                 
                 # Небольшая задержка между фрагментами
@@ -240,19 +315,18 @@ class ESPBenchmark:
         # Ждём ack для основного сообщения
         deadline = t0 + wait_ack_timeout
         while time.time() < deadline and not rospy.is_shutdown():
-            with self.mod._ack_lock:
-                if msg_id in self.mod._received_acks:
+            with self._ack_lock:
+                if msg_id in self._received_acks:
                     dt = time.time() - t0
                     return True, dt, "ok"
             time.sleep(0.01)
         return False, time.time() - t0, "timeout"
 
     def _send_once_reliable(self, payload: dict, retries: int, timeout: float) -> Tuple[bool, float, str]:
-        if not self.mod.swarm:
+        if not self.swarm:
             return False, 0.0, "no_swarm"
         
-        # Для reliable используем встроенную логику _broadcast_reliable
-        # но сначала проверим нужна ли фрагментация
+        # Проверим нужна ли фрагментация
         msg_id = uuid.uuid4().hex[:6]
         payload = dict(payload)
         payload["msg_id"] = msg_id
@@ -262,14 +336,14 @@ class ESPBenchmark:
         t0 = time.time()
         
         if len(fragments) == 1:
-            # Одно сообщение, используем стандартный reliable
-            ok = self.mod._broadcast_reliable(fragments[0], retries=retries, timeout=timeout)
+            # Одно сообщение, используем собственную reliable логику
+            ok = self._broadcast_reliable(fragments[0], retries=retries, timeout=timeout)
             return ok, time.time() - t0, ("ok" if ok else "failed")
         else:
             # Множественные фрагменты - отправляем каждый reliable
             success_count = 0
             for i, fragment in enumerate(fragments):
-                ok = self.mod._broadcast_reliable(fragment, retries=retries, timeout=timeout/len(fragments))
+                ok = self._broadcast_reliable(fragment, retries=retries, timeout=timeout/len(fragments))
                 if ok:
                     success_count += 1
                     self.logger.debug(f"Reliable fragment {i+1}/{len(fragments)} sent successfully")
