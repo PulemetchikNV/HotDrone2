@@ -48,6 +48,10 @@ class ESPBenchmark:
         self._rx_total = 0
         self._rx_last_ts = None
         self._orig_cb = None
+        
+        # Для сборки фрагментированных сообщений
+        self._fragments = {}  # {msg_uuid: {total: int, received: {frag_id: data}}}
+        self._fragment_timeout = 10.0  # секунд на сборку всех фрагментов
 
         if self.mod.swarm:
             # Сохраним базовый обработчик (если был) и обернём
@@ -55,6 +59,16 @@ class ESPBenchmark:
             def wrapped_cb(message: str):
                 self._rx_total += 1
                 self._rx_last_ts = time.time()
+                
+                # Обрабатываем фрагментированные сообщения
+                try:
+                    msg_obj = json.loads(message)
+                    if msg_obj.get('fragmented'):
+                        self._handle_fragment(msg_obj)
+                        return  # Не передаем фрагменты дальше
+                except Exception:
+                    pass
+                
                 try:
                     # Делегируем стандартной обработке для ack
                     self.mod._on_custom_message(message)
@@ -73,18 +87,119 @@ class ESPBenchmark:
         else:
             self.logger.warning("Skyros not available; benchmark will not work")
 
+    def _handle_fragment(self, fragment_obj: dict):
+        """Обработка фрагментированного сообщения"""
+        try:
+            msg_uuid = fragment_obj['msg_uuid']
+            frag_id = fragment_obj['frag_id']
+            total_frags = fragment_obj['total_frags']
+            data = fragment_obj['data']
+            
+            # Инициализируем структуру для сборки если нужно
+            if msg_uuid not in self._fragments:
+                self._fragments[msg_uuid] = {
+                    'total': total_frags,
+                    'received': {},
+                    'timestamp': time.time()
+                }
+            
+            # Добавляем фрагмент
+            self._fragments[msg_uuid]['received'][frag_id] = data
+            
+            self.logger.debug(f"Fragment {frag_id+1}/{total_frags} received for {msg_uuid[:8]}")
+            
+            # Проверяем, все ли фрагменты получены
+            if len(self._fragments[msg_uuid]['received']) == total_frags:
+                # Собираем сообщение
+                assembled_data = ""
+                for i in range(total_frags):
+                    if i in self._fragments[msg_uuid]['received']:
+                        assembled_data += self._fragments[msg_uuid]['received'][i]
+                
+                self.logger.info(f"Message {msg_uuid[:8]} assembled from {total_frags} fragments ({len(assembled_data)} chars)")
+                
+                # Отправляем ACK для собранного сообщения
+                if 'original_msg_id' in fragment_obj:
+                    with self.mod._ack_lock:
+                        self.mod._received_acks.add(fragment_obj['original_msg_id'])
+                
+                # Удаляем из буфера
+                del self._fragments[msg_uuid]
+            
+        except Exception as e:
+            self.logger.warning(f"Fragment handling error: {e}")
+    
+    def _cleanup_old_fragments(self):
+        """Очистка старых неполных фрагментов"""
+        current_time = time.time()
+        to_remove = []
+        for msg_uuid, frag_data in self._fragments.items():
+            if current_time - frag_data['timestamp'] > self._fragment_timeout:
+                to_remove.append(msg_uuid)
+        
+        for msg_uuid in to_remove:
+            self.logger.warning(f"Fragment timeout for {msg_uuid[:8]}, removing incomplete message")
+            del self._fragments[msg_uuid]
+
     def _generate_payload(self) -> dict:
         # Генерируем случайные байты указанного размера и кодируем в base64 для JSON
         import base64, os as _os
         raw = _os.urandom(max(0, self.size_bytes))
         blob_b64 = base64.b64encode(raw).decode("ascii")
-        return {
+        payload = {
             "type": "bench",
             "to": self.target,
             "ts": time.time(),
             "size": self.size_bytes,
             "blob_b64": blob_b64,
         }
+        return payload
+
+    def _fragment_message(self, payload: dict, msg_id: str) -> list:
+        """Разбивает большое сообщение на фрагменты"""
+        payload_json = json.dumps(payload)
+        max_fragment_size = 100  # Оставляем место для метаданных фрагментации
+        
+        if len(payload_json) <= 124:
+            # Сообщение помещается в один пакет
+            return [payload]
+        
+        # Нужно фрагментировать
+        msg_uuid = uuid.uuid4().hex
+        data_to_split = payload_json
+        fragments = []
+        
+        # Вычисляем размер данных на фрагмент
+        chunk_size = max_fragment_size
+        total_chunks = (len(data_to_split) + chunk_size - 1) // chunk_size
+        
+        for i in range(total_chunks):
+            start = i * chunk_size
+            end = min(start + chunk_size, len(data_to_split))
+            chunk_data = data_to_split[start:end]
+            
+            fragment = {
+                "fragmented": True,
+                "msg_uuid": msg_uuid,
+                "frag_id": i,
+                "total_frags": total_chunks,
+                "data": chunk_data,
+                "original_msg_id": msg_id,
+                "to": self.target
+            }
+            
+            # Проверяем, что фрагмент не превышает лимит
+            frag_json = json.dumps(fragment)
+            if len(frag_json) > 124:
+                # Уменьшаем размер данных в фрагменте
+                excess = len(frag_json) - 124
+                chunk_data = chunk_data[:-excess-5]  # -5 для безопасности
+                fragment["data"] = chunk_data
+            
+            fragments.append(fragment)
+        
+        self.logger.info(f"Message fragmented into {len(fragments)} parts (original: {len(payload_json)} chars)")
+        return fragments
 
     def _send_once_unreliable(self, payload: dict, wait_ack_timeout: float) -> Tuple[bool, float, str]:
         if not self.mod.swarm:
@@ -99,14 +214,30 @@ class ESPBenchmark:
             if msg_id in self.mod._received_acks:
                 self.mod._received_acks.remove(msg_id)
 
-        s = json.dumps(payload)
+        # Фрагментируем сообщение если нужно
+        fragments = self._fragment_message(payload, msg_id)
+        
         t0 = time.time()
-        try:
-            self.mod.swarm.broadcast_custom_message(s)
-        except Exception as e:
-            return False, 0.0, f"tx_error:{e}"
+        
+        # Отправляем все фрагменты
+        for i, fragment in enumerate(fragments):
+            try:
+                frag_json = json.dumps(fragment)
+                if len(frag_json) > 124:
+                    self.logger.warning(f"Fragment {i} too long ({len(frag_json)} chars), truncating")
+                    frag_json = frag_json[:124]
+                
+                self.mod.swarm.broadcast_custom_message(frag_json)
+                self.logger.debug(f"Sent fragment {i+1}/{len(fragments)}")
+                
+                # Небольшая задержка между фрагментами
+                if i < len(fragments) - 1:
+                    time.sleep(0.01)
+                    
+            except Exception as e:
+                return False, 0.0, f"tx_error_frag_{i}:{e}"
 
-        # Ждём ack без повторов
+        # Ждём ack для основного сообщения
         deadline = t0 + wait_ack_timeout
         while time.time() < deadline and not rospy.is_shutdown():
             with self.mod._ack_lock:
@@ -119,9 +250,35 @@ class ESPBenchmark:
     def _send_once_reliable(self, payload: dict, retries: int, timeout: float) -> Tuple[bool, float, str]:
         if not self.mod.swarm:
             return False, 0.0, "no_swarm"
+        
+        # Для reliable используем встроенную логику _broadcast_reliable
+        # но сначала проверим нужна ли фрагментация
+        msg_id = uuid.uuid4().hex[:6]
+        payload = dict(payload)
+        payload["msg_id"] = msg_id
+        
+        fragments = self._fragment_message(payload, msg_id)
+        
         t0 = time.time()
-        ok = self.mod._broadcast_reliable(dict(payload), retries=retries, timeout=timeout)
-        return ok, time.time() - t0, ("ok" if ok else "failed")
+        
+        if len(fragments) == 1:
+            # Одно сообщение, используем стандартный reliable
+            ok = self.mod._broadcast_reliable(fragments[0], retries=retries, timeout=timeout)
+            return ok, time.time() - t0, ("ok" if ok else "failed")
+        else:
+            # Множественные фрагменты - отправляем каждый reliable
+            success_count = 0
+            for i, fragment in enumerate(fragments):
+                ok = self.mod._broadcast_reliable(fragment, retries=retries, timeout=timeout/len(fragments))
+                if ok:
+                    success_count += 1
+                    self.logger.debug(f"Reliable fragment {i+1}/{len(fragments)} sent successfully")
+                else:
+                    self.logger.warning(f"Reliable fragment {i+1}/{len(fragments)} failed")
+            
+            # Считаем успешным если все фрагменты отправлены
+            all_success = (success_count == len(fragments))
+            return all_success, time.time() - t0, (f"ok_{success_count}/{len(fragments)}" if all_success else f"partial_{success_count}/{len(fragments)}")
 
     def run_sender(self):
         success = 0
@@ -166,8 +323,20 @@ class ESPBenchmark:
 
     def run_receiver(self):
         self.logger.info("Receiver started. Waiting for broadcast messages… Press Ctrl+C to stop.")
+        last_cleanup = time.time()
+        
         while not rospy.is_shutdown():
             time.sleep(1.0)
+            
+            # Периодически очищаем старые фрагменты
+            if time.time() - last_cleanup > 5.0:
+                self._cleanup_old_fragments()
+                last_cleanup = time.time()
+                
+            # Показываем статистику
+            if self._rx_total > 0 and self._rx_total % 10 == 0:
+                pending_fragments = len(self._fragments)
+                self.logger.info(f"Received {self._rx_total} messages, {pending_fragments} pending fragments")
 
 
 def parse_args() -> argparse.Namespace:
