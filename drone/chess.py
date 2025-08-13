@@ -131,7 +131,7 @@ class ChessDroneSingle:
         )
         
         # 5. Финальное зависание перед завершением
-        self.fc.wait(0.5)
+        # self.fc.wait(0.5)
 
     def run_once(self):
         # 1) Получаем состояние доски через alg
