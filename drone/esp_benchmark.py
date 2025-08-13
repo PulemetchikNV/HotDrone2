@@ -158,7 +158,7 @@ class ESPBenchmark:
     def _fragment_message(self, payload: dict, msg_id: str) -> list:
         """Разбивает большое сообщение на фрагменты"""
         payload_json = json.dumps(payload)
-        max_fragment_size = 100  # Оставляем место для метаданных фрагментации
+        max_fragment_size = 70  # Оставляем место для метаданных фрагментации
         
         if len(payload_json) <= 124:
             # Сообщение помещается в один пакет
