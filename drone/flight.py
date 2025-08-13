@@ -108,10 +108,117 @@ class FlightControllerCustom:
         self.initial_z = 0.0
         self.drone_name = drone_name or os.environ.get('DRONE_NAME', 'unknown_drone')
         self.logger = logger or setup_logging(self.drone_name)
-
+    def land(self, prl_aruco="aruco_map", prl_speed=0.5, prl_bias_x=-0.08, prl_bias_y=0.1, prl_z=0.6, prl_tol=0.1, delay=4.0, fall_time=1, fall_z=-1, fall_speed=1):
+        telem = self.get_telemetry(frame_id="aruco_map")
+        self.logger.info("Pre-landing")
+        self.set_led(effect='blink', r=255, g=255, b=255)
+        if prl_aruco is None:
+            self.navigate_wait(x=telem.x, y=telem.y, z=prl_z, speed=prl_speed, frame_id="aruco_map", tolerance=prl_tol)
+        else:
+            self.navigate_wait(x=prl_bias_x, y=prl_bias_y, z=prl_z, speed=prl_speed, frame_id=prl_aruco, tolerance=prl_tol)
+        self.wait(2.0)
+        self.logger.info("Landing")
+        self.set_led(effect='blink', r=255, g=165, b=0)
+        telem = self.get_telemetry(frame_id="base_link")
+        self.navigate(x=telem.x, y=telem.y, z=fall_z, speed=fall_speed, frame_id="base_link")
+        self.wait(fall_time)
+        self.navigate(x=telem.x, y=telem.y, z=fall_z, speed=0, frame_id="base_link")
+        self.force_arm(False)
+        self.logger.info("Landed")
+        self.set_mode_service(custom_mode="AUTO.LAND")
+        self.wait(0.2)
+        while self.get_telemetry(frame_id="body").mode != "STABILIZED":
+            self.set_mode_service(custom_mode="STABILIZED")
+            self.wait(3)
+        self.wait(1)
+        self.force_arm(True)
+        self.wait(1)
+        while self.get_telemetry(frame_id="body").armed:
+            self.force_arm(False)
+            self.wait(3)
+        self.set_led(r=0, g=255, b=0)
         # Threading control for async publisher
         self.publisher_thread = None
         self.stop_publisher = threading.Event()
+
+    def land_vertical(self, fall_speed=0.5, fall_time=3.0, final_z=-0.5):
+        """
+        Вертикальная посадка без горизонтального перемещения.
+        Просто уменьшает z координату до посадки.
+        
+        Args:
+            fall_speed (float): Скорость снижения (м/с)
+            fall_time (float): Время снижения (сек)
+            final_z (float): Финальная z координата относительно base_link
+        """
+        self.logger.info("Starting vertical landing")
+        self.set_led(effect='blink', r=255, g=165, b=0)
+        
+        # Получаем текущую позицию
+        telem = self.get_telemetry(frame_id="base_link")
+        
+        # Снижаемся вертикально
+        self.navigate(x=telem.x, y=telem.y, z=final_z, speed=fall_speed, frame_id="base_link")
+        self.wait(fall_time)
+        
+        # Останавливаем движение и разоружаем
+        self.navigate(x=telem.x, y=telem.y, z=final_z, speed=0, frame_id="base_link")
+        self.force_arm(False)
+        
+        self.logger.info("Vertical landing completed")
+        self.set_led(r=0, g=255, b=0)
+        
+        # Переключаем в режим STABILIZED и окончательно разоружаем
+        self.wait(0.2)
+        while self.get_telemetry(frame_id="body").mode != "STABILIZED":
+            self.set_mode_service(custom_mode="STABILIZED")
+            self.wait(3)
+        self.wait(1)
+        self.force_arm(True)
+        self.wait(1)
+        while self.get_telemetry(frame_id="body").armed:
+            self.force_arm(False)
+            self.wait(3)
+
+    def navigate_and_land(self, x=0.0, y=0.0, z=1.0, takeoff_z=1.5, speed=0.5, frame_id="aruco_map", 
+                         tolerance=0.2, hover_time=2.0, fall_speed=0.5, fall_time=3.0, final_z=-0.5):
+        """
+        Взлетает, летит к указанным координатам и производит вертикальную посадку.
+        
+        Args:
+            x, y, z (float): Целевые координаты для полета
+            takeoff_z (float): Высота взлета
+            speed (float): Скорость полета
+            frame_id (str): Система координат
+            tolerance (float): Допуск прибытия к цели
+            hover_time (float): Время зависания перед посадкой
+            fall_speed (float): Скорость вертикальной посадки
+            fall_time (float): Время посадки
+            final_z (float): Финальная z координата для посадки
+        """
+        self.logger.info(f"Starting navigate_and_land sequence to x={x}, y={y}, z={z}")
+        
+        # 1. Взлет
+        self.logger.info(f"Taking off to {takeoff_z}m")
+        if 'speed' in self.takeoff.__code__.co_varnames:
+            self.takeoff(z=takeoff_z, delay=2, speed=speed)
+        else:
+            self.takeoff(z=takeoff_z, delay=2, time_spam=3.0, time_warm=2, time_up=1.0)
+        
+        # 2. Полет к целевым координатам
+        self.logger.info(f"Navigating to target coordinates")
+        self.navigate_wait(x=x, y=y, z=z, speed=speed, frame_id=frame_id, 
+                          auto_arm=False, tolerance=tolerance)
+        
+        # 3. Зависание в целевой точке
+        self.logger.info(f"Hovering at target for {hover_time}s")
+        self.wait(hover_time)
+        
+        # 4. Вертикальная посадка
+        self.logger.info("Starting vertical landing from target position")
+        self.land_vertical(fall_speed=fall_speed, fall_time=fall_time, final_z=final_z)
+        
+        self.logger.info("Navigate_and_land sequence completed")
 
     # --- Core flight primitives ---
     def navigate_wait(
@@ -161,35 +268,7 @@ class FlightControllerCustom:
         self.set_led(r=0, g=255, b=0)
         self.stop_fake_pos_async()
 
-    def land(self, prl_aruco="aruco_map", prl_speed=0.5, prl_bias_x=-0.08, prl_bias_y=0.1, prl_z=0.6, prl_tol=0.1, delay=4.0, fall_time=1, fall_z=-1, fall_speed=1):
-        telem = self.get_telemetry(frame_id="aruco_map")
-        self.logger.info("Pre-landing")
-        self.set_led(effect='blink', r=255, g=255, b=255)
-        if prl_aruco is None:
-            self.navigate_wait(x=telem.x, y=telem.y, z=prl_z, speed=prl_speed, frame_id="aruco_map", tolerance=prl_tol)
-        else:
-            self.navigate_wait(x=prl_bias_x, y=prl_bias_y, z=prl_z, speed=prl_speed, frame_id=prl_aruco, tolerance=prl_tol)
-        self.wait(2.0)
-        self.logger.info("Landing")
-        self.set_led(effect='blink', r=255, g=165, b=0)
-        telem = self.get_telemetry(frame_id="base_link")
-        self.navigate(x=telem.x, y=telem.y, z=fall_z, speed=fall_speed, frame_id="base_link")
-        self.wait(fall_time)
-        self.navigate(x=telem.x, y=telem.y, z=fall_z, speed=0, frame_id="base_link")
-        self.force_arm(False)
-        self.logger.info("Landed")
-        self.set_mode_service(custom_mode="AUTO.LAND")
-        self.wait(0.2)
-        while self.get_telemetry(frame_id="body").mode != "STABILIZED":
-            self.set_mode_service(custom_mode="STABILIZED")
-            self.wait(3)
-        self.wait(1)
-        self.force_arm(True)
-        self.wait(1)
-        while self.get_telemetry(frame_id="body").armed:
-            self.force_arm(False)
-            self.wait(3)
-        self.set_led(r=0, g=255, b=0)
+
 
     def wait(self, duration):
         rospy.sleep(duration)
@@ -320,6 +399,88 @@ class FlightControllerMain:
             except Exception:
                 pass
         self.logger.info("Land requested")
+
+    
+
+    def land_vertical(self, fall_speed=0.5, fall_time=3.0, final_z=-0.5):
+        """
+        Вертикальная посадка без горизонтального перемещения.
+        Просто уменьшает z координату до посадки.
+        
+        Args:
+            fall_speed (float): Скорость снижения (м/с)
+            fall_time (float): Время снижения (сек)
+            final_z (float): Финальная z координата относительно base_link
+        """
+        self.logger.info("Starting vertical landing")
+        self.set_led(effect='blink', r=255, g=165, b=0)
+        
+        # Получаем текущую позицию
+        telem = self.get_telemetry(frame_id="base_link")
+        
+        # Снижаемся вертикально
+        self.navigate(x=telem.x, y=telem.y, z=final_z, speed=fall_speed, frame_id="base_link")
+        self.wait(fall_time)
+        
+        # Останавливаем движение и разоружаем
+        self.navigate(x=telem.x, y=telem.y, z=final_z, speed=0, frame_id="base_link")
+        self.force_arm(False)
+        
+        self.logger.info("Vertical landing completed")
+        self.set_led(r=0, g=255, b=0)
+        
+        # Переключаем в режим STABILIZED и окончательно разоружаем
+        self.wait(0.2)
+        while self.get_telemetry(frame_id="body").mode != "STABILIZED":
+            self.set_mode_service(custom_mode="STABILIZED")
+            self.wait(3)
+        self.wait(1)
+        self.force_arm(True)
+        self.wait(1)
+        while self.get_telemetry(frame_id="body").armed:
+            self.force_arm(False)
+            self.wait(3)
+
+    def navigate_and_land(self, x=0.0, y=0.0, z=1.0, takeoff_z=1.5, speed=0.5, frame_id="aruco_map", 
+                         tolerance=0.2, hover_time=2.0, fall_speed=0.5, fall_time=3.0, final_z=-0.5):
+        """
+        Взлетает, летит к указанным координатам и производит вертикальную посадку.
+        
+        Args:
+            x, y, z (float): Целевые координаты для полета
+            takeoff_z (float): Высота взлета
+            speed (float): Скорость полета
+            frame_id (str): Система координат
+            tolerance (float): Допуск прибытия к цели
+            hover_time (float): Время зависания перед посадкой
+            fall_speed (float): Скорость вертикальной посадки
+            fall_time (float): Время посадки
+            final_z (float): Финальная z координата для посадки
+        """
+        self.logger.info(f"Starting navigate_and_land sequence to x={x}, y={y}, z={z}")
+        
+        # 1. Взлет
+        self.logger.info(f"Taking off to {takeoff_z}m")
+        if 'speed' in self.takeoff.__code__.co_varnames:
+            self.takeoff(z=takeoff_z, delay=2, speed=speed)
+        else:
+            self.takeoff(z=takeoff_z, delay=2, time_spam=3.0, time_warm=2, time_up=1.0)
+        
+        # 2. Полет к целевым координатам
+        self.logger.info(f"Navigating to target coordinates")
+        self.navigate_wait(x=x, y=y, z=z, speed=speed, frame_id=frame_id, 
+                          auto_arm=False, tolerance=tolerance)
+        
+        # 3. Зависание в целевой точке
+        self.logger.info(f"Hovering at target for {hover_time}s")
+        self.wait(hover_time)
+        
+        # 4. Вертикальная посадка
+        self.logger.info("Starting vertical landing from target position")
+        self.land_vertical(fall_speed=fall_speed, fall_time=fall_time, final_z=final_z)
+        
+        self.logger.info("Navigate_and_land sequence completed")
+
 
     def scan_qr_code(self, timeout=5.0):
         return scan_qr(self.logger, timeout)
