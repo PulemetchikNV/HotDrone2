@@ -84,8 +84,8 @@ class ESPBenchmark:
                                 self._received_acks.add(ack_id)
                         return
                     
-                    # Обрабатываем фрагментированные сообщения
-                    if msg_obj.get('fragmented'):
+                    # Обрабатываем фрагментированные сообщения (новый и старый формат)
+                    if msg_obj.get('fragmented') or msg_obj.get('f'):
                         self._handle_fragment(msg_obj)
                         return  # Не передаем фрагменты дальше
                     
@@ -113,25 +113,35 @@ class ESPBenchmark:
             self.logger.warning("Skyros not available; benchmark will not work")
 
     def _handle_fragment(self, fragment_obj: dict):
-        """Обработка фрагментированного сообщения"""
+        """Обработка фрагментированного сообщения (компактный формат)"""
         try:
-            msg_uuid = fragment_obj['msg_uuid']
-            frag_id = fragment_obj['frag_id']
-            total_frags = fragment_obj['total_frags']
-            data = fragment_obj['data']
+            # Поддерживаем и старый и новый формат
+            if 'f' in fragment_obj:  # Новый компактный формат
+                msg_uuid = fragment_obj['u']  # uuid
+                frag_id = fragment_obj['i']   # frag_id
+                total_frags = fragment_obj['t']  # total_frags
+                data = fragment_obj['d']      # data
+                original_msg_id = fragment_obj.get('m', '')  # original_msg_id
+            else:  # Старый формат
+                msg_uuid = fragment_obj['msg_uuid']
+                frag_id = fragment_obj['frag_id']
+                total_frags = fragment_obj['total_frags']
+                data = fragment_obj['data']
+                original_msg_id = fragment_obj.get('original_msg_id', '')
             
             # Инициализируем структуру для сборки если нужно
             if msg_uuid not in self._fragments:
                 self._fragments[msg_uuid] = {
                     'total': total_frags,
                     'received': {},
-                    'timestamp': time.time()
+                    'timestamp': time.time(),
+                    'original_msg_id': original_msg_id
                 }
             
             # Добавляем фрагмент
             self._fragments[msg_uuid]['received'][frag_id] = data
             
-            self.logger.debug(f"Fragment {frag_id+1}/{total_frags} received for {msg_uuid[:8]}")
+            self.logger.debug(f"Fragment {frag_id+1}/{total_frags} received for {msg_uuid}")
             
             # Проверяем, все ли фрагменты получены
             if len(self._fragments[msg_uuid]['received']) == total_frags:
@@ -141,18 +151,38 @@ class ESPBenchmark:
                     if i in self._fragments[msg_uuid]['received']:
                         assembled_data += self._fragments[msg_uuid]['received'][i]
                 
-                self.logger.info(f"Message {msg_uuid[:8]} assembled from {total_frags} fragments ({len(assembled_data)} chars)")
+                self.logger.info(f"Message {msg_uuid} assembled from {total_frags} fragments ({len(assembled_data)} chars)")
                 
-                # Отправляем ACK для собранного сообщения
-                if 'original_msg_id' in fragment_obj:
-                    with self._ack_lock:
-                        self._received_acks.add(fragment_obj['original_msg_id'])
+                # Парсим собранное сообщение
+                try:
+                    assembled_msg = json.loads(assembled_data)
+                    # Отправляем ACK для собранного сообщения
+                    if 'msg_id' in assembled_msg:
+                        self._send_ack(assembled_msg['msg_id'])
+                    
+                    # Обрабатываем собранное сообщение
+                    self._rx_total += 1
+                    
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Failed to parse assembled message: {e}")
                 
                 # Удаляем из буфера
                 del self._fragments[msg_uuid]
             
         except Exception as e:
             self.logger.warning(f"Fragment handling error: {e}")
+    
+    def _send_ack(self, msg_id: str):
+        """Отправляет ACK для полученного сообщения"""
+        ack_payload = {
+            'type': 'ack',
+            'ack_id': msg_id,
+            'from': self.drone_name
+        }
+        try:
+            self.swarm.broadcast_custom_message(json.dumps(ack_payload))
+        except Exception as e:
+            self.logger.warning(f"Failed to send ack for {msg_id}: {e}")
     
     def _cleanup_old_fragments(self):
         """Очистка старых неполных фрагментов"""
@@ -188,28 +218,33 @@ class ESPBenchmark:
             # Сообщение помещается в один пакет
             return [payload]
         
-        # Нужно фрагментировать
-        msg_uuid = uuid.uuid4().hex[:8]  # Короче UUID для экономии места
+        # Нужно фрагментировать - используем компактный формат
+        msg_uuid = uuid.uuid4().hex[:6]  # Еще короче UUID
         data_to_split = payload_json
         
-        # Сначала создаем тестовый фрагмент чтобы понять сколько места занимают метаданные
+        # Минимальный тестовый фрагмент для оценки накладных расходов
         test_fragment = {
-            "fragmented": True,
-            "msg_uuid": msg_uuid,
-            "frag_id": 999,  # Максимальное число для точной оценки
-            "total_frags": 999,
-            "data": "",
-            "original_msg_id": msg_id,
-            "to": self.target
+            "f": 1,  # fragmented (короткое имя)
+            "u": msg_uuid,  # uuid
+            "i": 0,  # frag_id  
+            "t": 1,  # total_frags
+            "d": "",  # data
+            "m": msg_id[:6],  # original_msg_id (сокращенный)
+            "to": self.target[:6] if len(self.target) > 6 else self.target  # сокращенное имя
         }
         
         # Вычисляем накладные расходы на метаданные
         metadata_size = len(json.dumps(test_fragment))
-        max_data_size = 124 - metadata_size - 5  # -5 для безопасности
+        max_data_size = 124 - metadata_size - 10  # -10 для безопасности
         
-        if max_data_size <= 0:
-            self.logger.error(f"Cannot fragment: metadata too large ({metadata_size} bytes)")
-            return [payload]  # Возвращаем исходное сообщение
+        self.logger.info(f"Metadata size: {metadata_size}, max_data_size: {max_data_size}")
+        
+        if max_data_size <= 10:
+            self.logger.error(f"Cannot fragment: metadata too large ({metadata_size} bytes), max_data_size={max_data_size}")
+            # Попробуем отправить урезанное исходное сообщение
+            truncated = payload_json[:120]
+            truncated_payload = json.loads(truncated) if truncated.endswith('}') else {"error": "truncated"}
+            return [truncated_payload]
         
         # Разбиваем данные на куски подходящего размера
         fragments = []
@@ -221,30 +256,34 @@ class ESPBenchmark:
             chunk_data = data_to_split[start:end]
             
             fragment = {
-                "fragmented": True,
-                "msg_uuid": msg_uuid,
-                "frag_id": i,
-                "total_frags": total_chunks,
-                "data": chunk_data,
-                "original_msg_id": msg_id,
-                "to": self.target
+                "f": 1,
+                "u": msg_uuid,
+                "i": i,
+                "t": total_chunks,
+                "d": chunk_data,
+                "m": msg_id[:6],
+                "to": self.target[:6] if len(self.target) > 6 else self.target
             }
             
-            # Финальная проверка размера
-            frag_json = json.dumps(fragment)
-            if len(frag_json) > 124:
-                # Если все еще не помещается, урезаем данные
-                excess = len(frag_json) - 124
-                if len(chunk_data) > excess:
-                    chunk_data = chunk_data[:-excess]
-                    fragment["data"] = chunk_data
+            # Финальная проверка размера с итеративным урезанием
+            while True:
+                frag_json = json.dumps(fragment)
+                if len(frag_json) <= 124:
+                    break
+                    
+                # Урезаем данные
+                if len(chunk_data) > 5:
+                    chunk_data = chunk_data[:-5]
+                    fragment["d"] = chunk_data
                 else:
                     self.logger.warning(f"Skipping fragment {i} - cannot fit in 124 chars")
-                    continue
+                    fragment = None
+                    break
             
-            fragments.append(fragment)
+            if fragment:
+                fragments.append(fragment)
         
-        self.logger.info(f"Message fragmented into {len(fragments)} parts (original: {len(payload_json)} chars, max_data_size: {max_data_size})")
+        self.logger.info(f"Message fragmented into {len(fragments)} parts (original: {len(payload_json)} chars)")
         return fragments
 
     def _broadcast_reliable(self, payload: dict, retries: int = 3, timeout: float = 0.5) -> bool:
@@ -306,28 +345,35 @@ class ESPBenchmark:
             if msg_id in self._received_acks:
                 self._received_acks.remove(msg_id)
 
-        # Фрагментируем сообщение если нужно
-        fragments = self._fragment_message(payload, msg_id)
+        # Проверяем размер исходного сообщения
+        payload_json = json.dumps(payload)
         
         t0 = time.time()
         
-        # Отправляем все фрагменты
-        for i, fragment in enumerate(fragments):
+        if len(payload_json) <= 124:
+            # Сообщение помещается в один пакет
             try:
-                frag_json = json.dumps(fragment)
-                if len(frag_json) > 124:
-                    self.logger.warning(f"Fragment {i} too long ({len(frag_json)} chars), truncating")
-                    frag_json = frag_json[:124]
-                
-                self.swarm.broadcast_custom_message(frag_json)
-                self.logger.debug(f"Sent fragment {i+1}/{len(fragments)}")
-                
-                # Небольшая задержка между фрагментами
-                if i < len(fragments) - 1:
-                    time.sleep(0.01)
-                    
+                self.swarm.broadcast_custom_message(payload_json)
+                self.logger.debug(f"Sent single message ({len(payload_json)} chars)")
             except Exception as e:
-                return False, 0.0, f"tx_error_frag_{i}:{e}"
+                return False, 0.0, f"tx_error:{e}"
+        else:
+            # Нужно фрагментировать
+            fragments = self._fragment_message(payload, msg_id)
+            
+            # Отправляем все фрагменты
+            for i, fragment in enumerate(fragments):
+                try:
+                    frag_json = json.dumps(fragment)
+                    self.swarm.broadcast_custom_message(frag_json)
+                    self.logger.debug(f"Sent fragment {i+1}/{len(fragments)} ({len(frag_json)} chars)")
+                    
+                    # Небольшая задержка между фрагментами
+                    if i < len(fragments) - 1:
+                        time.sleep(0.01)
+                        
+                except Exception as e:
+                    return False, 0.0, f"tx_error_frag_{i}:{e}"
 
         # Ждём ack для основного сообщения
         deadline = t0 + wait_ack_timeout
@@ -343,20 +389,27 @@ class ESPBenchmark:
         if not self.swarm:
             return False, 0.0, "no_swarm"
         
-        # Проверим нужна ли фрагментация
+        # Добавляем msg_id к payload
         msg_id = uuid.uuid4().hex[:6]
         payload = dict(payload)
         payload["msg_id"] = msg_id
         
-        fragments = self._fragment_message(payload, msg_id)
+        # Проверяем размер исходного сообщения
+        payload_json = json.dumps(payload)
         
         t0 = time.time()
         
-        if len(fragments) == 1:
+        if len(payload_json) <= 124:
             # Одно сообщение, используем собственную reliable логику
-            ok = self._broadcast_reliable(fragments[0], retries=retries, timeout=timeout)
+            ok = self._broadcast_reliable(payload, retries=retries, timeout=timeout)
             return ok, time.time() - t0, ("ok" if ok else "failed")
         else:
+            # Нужно фрагментировать
+            fragments = self._fragment_message(payload, msg_id)
+            
+            if not fragments:
+                return False, time.time() - t0, "no_fragments"
+            
             # Множественные фрагменты - отправляем каждый reliable
             success_count = 0
             for i, fragment in enumerate(fragments):
