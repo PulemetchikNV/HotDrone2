@@ -1,5 +1,6 @@
 import os
 import time
+import json
 
 # rospy fallback
 try:
@@ -84,6 +85,24 @@ class ChessDroneSingle:
 
         self.cam = CameraAdapter(self.logger)
 
+        # Загрузка карты ArUco для клеток (по умолчанию aruco_maps/aruco_map2.json)
+        default_map_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "aruco_maps",
+            "aruco_map2.json",
+        )
+        self.map_path = os.getenv("ARUCO_MAP_JSON", default_map_path)
+        self.cell_markers = {}
+        try:
+            with open(self.map_path, "r") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    self.cell_markers = data
+                else:
+                    self.logger.warning(f"Unexpected JSON structure in {self.map_path}")
+        except Exception as e:
+            self.logger.warning(f"Failed to load ArUco map from {self.map_path}: {e}")
+
     def move_to_xy(self, x: float, y: float, z: float):
         frame_id = f"aruco_{self.aruco_id}"
         # Если есть удобный метод — используем, иначе фолбэк на takeoff+navigate+land
@@ -118,8 +137,16 @@ class ChessDroneSingle:
         move = get_turn(board, time_budget_ms=5000)
         self.logger.info(f"Move: {move.from_cell} -> {move.to_cell} (uci={move.uci})")
 
-        # 3) Переводим to_cell в координаты и летим
-        x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
+        # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
+        marker = self.cell_markers.get(move.to_cell)
+        if isinstance(marker, dict) and "x" in marker and "y" in marker:
+            x, y = float(marker["x"]), float(marker["y"])
+            self.logger.info(f"Using map coords for {move.to_cell}: x={x:.3f}, y={y:.3f}")
+        else:
+            x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
+            self.logger.warning(
+                f"No map coords for {move.to_cell}. Using computed coords: x={x:.3f}, y={y:.3f}"
+            )
         self.move_to_xy(x, y, self.flight_z)
 
         # 4) Сообщаем alg об исполнении
