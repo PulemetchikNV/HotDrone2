@@ -1,9 +1,11 @@
 import logging
 
 try:
-    from .log_handler import UDPLogHandler
+    from .log.log_handler import UDPLogHandler
+    from .log.log_server import UDPLogServer
 except ImportError:
-    from log_handler import UDPLogHandler
+    from .log.log_handler import UDPLogHandler
+    from .log.log_server import UDPLogServer
 
 
 def setup_logging(drone_name, log_level=logging.INFO):
@@ -25,3 +27,8 @@ def setup_logging(drone_name, log_level=logging.INFO):
         logger.addHandler(udp_handler)
     
     return logger
+
+def setup_log_server(drone_name):
+    log_server = UDPLogServer(drone_name=drone_name)
+    log_server.start_server()
+    return log_server

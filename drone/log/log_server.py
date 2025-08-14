@@ -5,12 +5,12 @@ import json
 from collections import defaultdict
 
 class UDPLogServer:
-    def __init__(self, host='0.0.0.0', port=9999):
+    def __init__(self, host='0.0.0.0', port=9999, drone_name=None):
         self.host = host
         self.port = port
         self.drone_logs = defaultdict(list)
         self.running = True
-        
+        self.drone_name = drone_name
     def process_log(self, message, addr):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
@@ -19,7 +19,7 @@ class UDPLogServer:
             if len(parts) >= 3:
                 drone_id, log_type, log_message = parts
             else:
-                drone_id = f"unknown_{addr[0]}"
+                drone_id = self.drone_name
                 log_type = "unknown"
                 log_message = message
         except:
