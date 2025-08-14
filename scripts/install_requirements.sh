@@ -6,7 +6,7 @@
 # Конфигурация SSH
 SSH_USER="pi"
 SSH_PASS="raspberry"
-DRONE_DIR="/home/pi/DroneCraft"
+DRONE_DIR="/home/pi/HotDrone2"
 REQUIREMENTS_FILE="requirements.txt"
 DRONES_FILE="./drones.txt"
 
@@ -55,12 +55,15 @@ install_on_drone() {
             exit 1;
         fi
 
-        echo 'Updating pip...';
-        $PYTHON_CMD -m pip install --upgrade pip;
-        
-        echo 'Installing requirements from $REQUIREMENTS_FILE...';
-        $PYTHON_CMD -m pip install -r $REQUIREMENTS_FILE;
+        echo 'Creating/updating virtual environment...';
+        $PYTHON_CMD -m venv myvenv;
+
+        echo 'Activating venv and installing requirements...';
+        source myvenv/bin/activate;
+        pip install --upgrade pip;
+        pip install -r $REQUIREMENTS_FILE;
         local exit_code=\$?;
+        deactivate;
         
         if [ \$exit_code -eq 0 ]; then
             echo '--- Requirements installed successfully on $drone_name ---';
