@@ -8,10 +8,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-VENV_DIR="myvenv"
-SCRIPT_TO_RUN="test_taras.py"
+# Определяем корневую директорию проекта
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-echo -e "${GREEN}=== Running $SCRIPT_TO_RUN ===${NC}"
+VENV_DIR="$PROJECT_ROOT/myvenv"
+SCRIPT_TO_RUN_NAME="test_taras.py"
+SCRIPT_TO_RUN_PATH="$PROJECT_ROOT/$SCRIPT_TO_RUN_NAME"
+
+echo -e "${GREEN}=== Running $SCRIPT_TO_RUN_NAME ===${NC}"
 
 # 1. Проверка и активация виртуального окружения
 if [ ! -d "$VENV_DIR" ]; then
@@ -25,15 +30,15 @@ source $VENV_DIR/bin/activate
 echo -e "${GREEN}✓ Virtual environment activated.${NC}\n"
 
 # 2. Проверка существования скрипта
-if [ ! -f "$SCRIPT_TO_RUN" ]; then
-    echo -e "${RED}Error: Script '$SCRIPT_TO_RUN' not found!${NC}"
+if [ ! -f "$SCRIPT_TO_RUN_PATH" ]; then
+    echo -e "${RED}Error: Script '$SCRIPT_TO_RUN_NAME' not found at '$SCRIPT_TO_RUN_PATH'!${NC}"
     deactivate
     exit 1
 fi
 
 # 3. Запуск скрипта
-echo -e "${YELLOW}--- Executing $SCRIPT_TO_RUN ---${NC}"
-python3 $SCRIPT_TO_RUN
+echo -e "${YELLOW}--- Executing $SCRIPT_TO_RUN_NAME ---${NC}"
+python3 "$SCRIPT_TO_RUN_PATH"
 echo -e "${GREEN}--- Script execution finished ---${NC}\n"
 
 # Деактивация окружения
