@@ -1,5 +1,5 @@
-DRONE_LIST = 'drone15,drone16,drone21,drone21'
-LEADER_DRONE = 'drone15'
+DRONE_LIST = 'drone15,drone18,drone21,drone21'
+LEADER_DRONE = 'drone18'
 DRONES_TOTAL=4
 
 rovers = {
