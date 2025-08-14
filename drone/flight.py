@@ -350,7 +350,7 @@ class FlightControllerMain:
         self.logger.info("Land requested")
 
     def engine_turnoff(self):
-        print('MOCK ENGINE TURNOFF')
+        print('MOCK')
 
     def scan_qr_code(self, timeout=5.0):
         return scan_qr(self.logger, timeout)

@@ -116,7 +116,7 @@ class ChessDroneSingle:
             speed=self.speed,
             frame_id=frame_id,
             auto_arm=True,
-            arrival_tolerance=self.tolerance,
+            tolerance=0.2,
             hover_time=self.hover_time
         )
         
@@ -126,7 +126,7 @@ class ChessDroneSingle:
             speed=0.3,
             frame_id=frame_id,
             auto_arm=False,
-            arrival_tolerance=0.1,
+            tolerance=0.2,
             hover_time=0.5
         )
 
