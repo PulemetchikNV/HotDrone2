@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Переходим в корневую директорию проекта
+cd "$(dirname "$0")/.."
+
 # Скрипт для запуска основного скрипта на всех дронах
 # Использование: ./scripts/run_drones.sh [script_name]
 # Примеры:
@@ -91,6 +94,8 @@ start_log_server
 run_on_drone() {
     local drone_name=$1
     local drone_ip=$2
+    local is_leader=$3
+    local worker_urls=$4
     
     echo -e "${YELLOW}--- Starting $drone_name ($drone_ip) ---${NC}"
     
@@ -102,6 +107,13 @@ run_on_drone() {
         echo 'Current directory:' \$(pwd);
         echo 'Setting DRONE_NAME environment variable to: $drone_name';
         export DRONE_NAME='$drone_name';
+        
+        if [ \"$is_leader\" = "true" ]; then
+            echo 'This is the LEADER drone. Setting WORKER_DRONES...';
+            export WORKER_DRONES='$worker_urls';
+            echo 'WORKER_DRONES set to: $WORKER_DRONES';
+        fi
+
         echo 'Starting script: $SCRIPT_NAME';
         echo 'Command: DRONE_NAME=$drone_name $PYTHON_CMD ./drone/$SCRIPT_NAME';
         echo '--- Script Output ---';
@@ -134,7 +146,9 @@ run_on_drone() {
 run_on_drone_sync() {
     local drone_name=$1
     local drone_ip=$2
-    
+    local is_leader=$3
+    local worker_urls=$4
+
     echo -e "${YELLOW}--- Running on $drone_name ($drone_ip) ---${NC}"
     
     # Команды для выполнения на дроне
@@ -153,6 +167,13 @@ run_on_drone_sync() {
         echo 'Current directory:' \$(pwd);
         echo 'Setting DRONE_NAME environment variable to: $drone_name';
         export DRONE_NAME='$drone_name';
+
+        if [ \"$is_leader\" = "true" ]; then
+            echo 'This is the LEADER drone. Setting WORKER_DRONES...';
+            export WORKER_DRONES='$worker_urls';
+            echo 'WORKER_DRONES set to: $WORKER_DRONES';
+        fi
+
         echo 'Starting script: $SCRIPT_NAME';
         echo 'Command: DRONE_NAME=$drone_name $PYTHON_CMD ./drone/$SCRIPT_NAME';
         echo '--- Script Output ---';
@@ -180,12 +201,35 @@ run_on_drone_sync() {
     echo ""
 }
 
+# Собираем URL-ы воркеров
+WORKER_URLS=""
+if [ -f "./workers.txt" ]; then
+    while IFS=':' read -r worker_name worker_ip || [[ -n "$worker_name" ]]; do
+        worker_name=$(echo "$worker_name" | xargs)
+        worker_ip=$(echo "$worker_ip" | sed 's/;//' | xargs)
+        if [[ -n "$worker_name" && -n "$worker_ip" ]]; then
+            if [ -n "$WORKER_URLS" ]; then
+                WORKER_URLS="$WORKER_URLS,"
+            fi
+            WORKER_URLS="$WORKER_URLS http://$worker_ip:3000"
+        fi
+    done < <(tr -d '\r' < "./workers.txt")
+    echo -e "${BLUE}Worker URLs for leader: $WORKER_URLS${NC}"
+else
+    echo -e "${YELLOW}Warning: workers.txt not found. Leader will not have WORKER_DRONES set.${NC}"
+fi
+echo ""
+
 # Проверяем режим запуска
 echo "Choose execution mode:"
 echo "1) Parallel (all drones simultaneously)"
 echo "2) Sequential (one by one)"
 read -p "Enter choice (1 or 2, default: 1): " choice
 choice=${choice:-1}
+
+# Определяем лидера (первый дрон в списке)
+LEADER_NAME=$(head -n 1 "$DRONES_FILE" | cut -d':' -f1 | xargs)
+echo -e "${BLUE}Leader drone identified as: $LEADER_NAME${NC}"
 
 if [ "$choice" = "2" ]; then
     echo -e "${BLUE}Running in sequential mode...${NC}"
@@ -210,7 +254,12 @@ if [ "$choice" = "2" ]; then
         drone_name=$(echo "$drone_name" | xargs)
         drone_ip=$(echo "$drone_ip" | xargs)
         
-        run_on_drone_sync "$drone_name" "$drone_ip"
+        is_leader="false"
+        if [ "$drone_name" = "$LEADER_NAME" ]; then
+            is_leader="true"
+        fi
+        
+        run_on_drone_sync "$drone_name" "$drone_ip" "$is_leader" "$WORKER_URLS"
     done
 else
     echo -e "${BLUE}Running in parallel mode...${NC}"
@@ -235,7 +284,12 @@ else
         drone_name=$(echo "$drone_name" | xargs)
         drone_ip=$(echo "$drone_ip" | xargs)
         
-        run_on_drone "$drone_name" "$drone_ip"
+        is_leader="false"
+        if [ "$drone_name" = "$LEADER_NAME" ]; then
+            is_leader="true"
+        fi
+        
+        run_on_drone "$drone_name" "$drone_ip" "$is_leader" "$WORKER_URLS"
     done
     
     echo -e "${GREEN}All drones started. Press Ctrl+C to stop all processes.${NC}"
