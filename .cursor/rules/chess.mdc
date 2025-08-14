@@ -1,0 +1,5 @@
+---
+globs: */chess.py
+alwaysApply: false
+description: Parts of chess.py file that are forbidden to change
+---

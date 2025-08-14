@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+- Don't ever test written code unless it's requested

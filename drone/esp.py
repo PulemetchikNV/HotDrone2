@@ -26,7 +26,7 @@ class EspController:
         self.logger = setup_logging(self.drone_name)
         self.swarm = swarm
         
-        # Определяем является ли дрон лидером
+        # Роль может меняться динамически (лидер/ведомый)
         self.is_leader = (self.drone_name == LEADER_DRONE)
         
         # Для обработки подтверждений
@@ -39,6 +39,11 @@ class EspController:
         
         # Для лидера - отслеживание подтверждений от ведомых
         self._expected_followers = set()  # будет заполняться при необходимости
+        
+        # Heartbeat/лидерство
+        self._hb_lock = threading.Lock()
+        self._last_heartbeat = None  # dict: {leader, term, ts, active}
+        self._leader_term = 0
         
         self.logger.info(f"EspController initialized: leader={self.is_leader}, drone={self.drone_name}")
 
@@ -95,6 +100,23 @@ class EspController:
         elif cmd_type == 'land':
             self.logger.info("Received LAND command from leader")
             # Для шахмат пока не используется, но оставляем для совместимости
+        
+        # Heartbeat от лидера
+        elif cmd_type == 'hb':
+            leader = obj.get('leader')
+            term = int(obj.get('term', 0))
+            active = obj.get('active', [])
+            with self._hb_lock:
+                self._last_heartbeat = {
+                    'leader': leader,
+                    'term': term,
+                    'ts': time.time(),
+                    'active': active if isinstance(active, list) else []
+                }
+                # Сохраняем последний известный term
+                self._leader_term = max(self._leader_term, term)
+            # Никаких действий напрямую по смене роли здесь не делаем;
+            # роль обновляется во внешней логике на основе таймаутов.
 
     def _broadcast_reliable(self, payload, retries=3, timeout=0.5):
         """Надежная отправка сообщения с ожиданием подтверждения."""
@@ -146,6 +168,52 @@ class EspController:
 
         self.logger.error(f"Broadcast failed after {max_attempts} retries for payload: {payload}")
         return False
+
+    def _broadcast_unreliable(self, payload: dict):
+        """Отправка сообщения без ожидания подтверждений (для heartbeat)."""
+        if not self.swarm:
+            return False
+        try:
+            msg = json.dumps(payload)
+            self.swarm.broadcast_custom_message(msg)
+            return True
+        except Exception as e:
+            self.logger.warning(f"Unreliable broadcast failed: {e}")
+            return False
+
+    def broadcast_heartbeat(self, leader_name: str, term: int, active_drones: list):
+        payload = {
+            'type': 'hb',
+            'leader': leader_name,
+            'term': int(term),
+            'active': list(active_drones or [])
+        }
+        self._broadcast_unreliable(payload)
+
+    def get_last_heartbeat(self):
+        with self._hb_lock:
+            # Возвращаем копию, чтобы снаружи не меняли
+            return dict(self._last_heartbeat) if self._last_heartbeat else None
+
+    def get_last_heartbeat_ts(self) -> float:
+        with self._hb_lock:
+            return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
+
+    def get_known_leader_and_term(self):
+        with self._hb_lock:
+            leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
+            term = self._leader_term
+            return leader, term
+
+    def bump_term(self) -> int:
+        with self._hb_lock:
+            self._leader_term += 1
+            return self._leader_term
+
+    def update_role(self, is_leader: bool):
+        if self.is_leader != is_leader:
+            self.is_leader = is_leader
+            self.logger.info(f"ESP role updated: is_leader={self.is_leader}")
 
 
 def create_chess_move_message(to_drone, chess_move):

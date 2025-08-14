@@ -1,8 +1,6 @@
-DRONE_LIST = 'drone15,drone16,drone17'
+DRONE_LIST = 'drone15,drone16,drone21,drone21'
 LEADER_DRONE = 'drone15'
-DRONES_TOTAL=3
-
-START_CELL_MOCK = 'e2'
+DRONES_TOTAL=4
 
 rovers = {
     '1': {

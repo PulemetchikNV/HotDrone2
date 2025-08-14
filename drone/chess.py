@@ -18,13 +18,15 @@ try:
     from .helpers import setup_logging
     from .alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
     from .esp import EspController, create_chess_move_message, parse_chess_move
-    from .const import DRONE_LIST, LEADER_DRONE
+    from .const import DRONE_LIST, LEADER_DRONE, rovers
+    from .rover import RoverController
 except ImportError:
     from flight import FlightController
     from helpers import setup_logging
     from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
     from esp import EspController, create_chess_move_message, parse_chess_move
-    from const import DRONE_LIST, LEADER_DRONE
+    from const import DRONE_LIST, LEADER_DRONE, rovers
+    from rover import RoverController
 
 try:
     from skyros.drone import Drone as SkyrosDrone
@@ -99,9 +101,27 @@ class ChessDroneSingle:
                 self.swarm.set_custom_message_callback(self.esp._on_custom_message)
                 self.logger.info("ESP message handler registered")
         
-        # Список доступных дронов для назначения задач
-        self.available_drones = DRONE_LIST.split(',') if DRONE_LIST else []
+        # Список доступных дронов для назначения задач (постоянный порядок)
+        self.available_drones = [d.strip() for d in (DRONE_LIST.split(',') if DRONE_LIST else []) if d.strip()]
         self.logger.info(f"Available drones: {self.available_drones}")
+
+        # Параметры лидерства/heartbeat
+        self.heartbeat_interval = float(os.getenv("HB_INTERVAL", "0.5"))
+        self.heartbeat_timeout = float(os.getenv("HB_TIMEOUT", "1.5"))
+        self._last_hb_sent = 0.0
+        # Текущий лидер и term
+        self.current_leader = LEADER_DRONE if LEADER_DRONE else (self.available_drones[0] if self.available_drones else self.drone_name)
+        # Синхронизируемся с ESP при наличии
+        if self.esp:
+            leader, term = self.esp.get_known_leader_and_term()
+            if leader:
+                self.current_leader = leader
+            self.current_term = int(term)
+            self.esp.update_role(self.drone_name == self.current_leader)
+        else:
+            self.current_term = 0
+        # Локальная оценка активных (пока предположение, уточняется heartbeat'ом лидера)
+        self.active_drones = list(self.available_drones)
 
         # Параметры поля
         self.cell_size = float(os.getenv("CELL_SIZE_M", "0.35"))
@@ -114,6 +134,10 @@ class ChessDroneSingle:
         self.speed = float(os.getenv("SPEED", "0.3"))
 
         self.cam = CameraAdapter(self.logger)
+
+        # Контроллер роверов (пешки)
+        self.rover = RoverController(logger=self.logger)
+        self.rover_ids = list(rovers.keys()) if isinstance(rovers, dict) else []
 
         # Загрузка карты ArUco для клеток (по умолчанию aruco_maps/aruco_map2.json)
         default_map_path = os.path.join(
@@ -180,7 +204,7 @@ class ChessDroneSingle:
 
     def run_once(self, current_turn):
         """Выполняется только на лидере - получает ход и отправляет команду дрону"""
-        if not self.is_leader:
+        if not self.esp or not self.esp.is_leader:
             self.logger.warning("run_once called on non-leader drone")
             return
             
@@ -188,6 +212,15 @@ class ChessDroneSingle:
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
+
+        # 2.1) Определяем исполнитель: пешка (ровер) или дрон
+        is_pawn = self._is_pawn_move(board.fen, getattr(move, 'from_cell', None))
+        if is_pawn and self.rover_ids:
+            self._execute_rover_move(move)
+            # Сообщаем алгоритму об исполнении
+            self.cam.commit_move(move, success=True)
+            self.logger.info(f"Leader completed rover move: {move.from_cell}->{move.to_cell}")
+            return
 
         # Временная логика для тестирования - назначаем клетки по очереди
         to_cell = ''
@@ -212,7 +245,7 @@ class ChessDroneSingle:
         self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
 
         # 3) Отправляем команду выбранному дрону через ESP
-        if target_drone and self.esp:
+        if (self.esp and self.esp.is_leader) and target_drone:
             payload = create_chess_move_message(target_drone, chess_move)
             success = self.esp._broadcast_reliable(payload)
             if success:
@@ -226,9 +259,63 @@ class ChessDroneSingle:
         self.cam.commit_move(move, success=True)
         self.logger.info(f"Leader completed turn {current_turn}: {chess_move}")
 
-    def wait_and_execute_move(self, timeout=30.0):
+    def _fen_piece_at(self, fen: str, cell: str):
+        try:
+            board_part = fen.split()[0]
+            ranks = board_part.split('/')
+            file_char, rank_char = cell[0], cell[1]
+            file_idx = FILES.index(file_char)
+            rank_idx = 8 - int(rank_char)
+            row = ranks[rank_idx]
+            col = 0
+            for ch in row:
+                if ch.isdigit():
+                    col += int(ch)
+                else:
+                    if col == file_idx:
+                        return ch
+                    col += 1
+            return None
+        except Exception:
+            return None
+
+    def _is_pawn_move(self, fen: str, from_cell: str) -> bool:
+        if not fen or not from_cell or len(from_cell) != 2:
+            return False
+        piece = self._fen_piece_at(fen, from_cell)
+        return piece in ('P', 'p')
+
+    def _pick_rover_id_for_cell(self, cell: str) -> str:
+        if not self.rover_ids:
+            return None
+        try:
+            file_idx = FILES.index(cell[0])
+        except Exception:
+            file_idx = 0
+        # Делим 8 файлов на количество доступных роверов равными сегментами
+        n = max(1, len(self.rover_ids))
+        seg = max(1, 8 // n)
+        bucket = min(n - 1, file_idx // seg)
+        return self.rover_ids[bucket]
+
+    def _execute_rover_move(self, move):
+        # Определяем ID ровера по колонке клетки-источника
+        rover_id = self._pick_rover_id_for_cell(move.from_cell)
+        if not rover_id:
+            self.logger.error("No rover available to execute pawn move")
+            return
+        # Координаты целевой клетки
+        x, y = self.get_cell_coordinates(move.to_cell)
+        # TODO: Конвертация координат из системы шахматной доски в систему ровера (если отличается)
+        self.logger.info(f"Sending rover {rover_id} to cell {move.to_cell} -> ({x:.3f}, {y:.3f})")
+        try:
+            self.rover.navigate(rover_id, x=x, y=y, yaw=0)
+        except Exception as e:
+            self.logger.error(f"Failed to send rover navigate: {e}")
+
+    def wait_and_execute_move(self, timeout=0.5):
         """Выполняется на ведомых дронах - ждет команду от лидера и выполняет её"""
-        if self.is_leader:
+        if self.esp and self.esp.is_leader:
             self.logger.warning("wait_and_execute_move called on leader drone")
             return False
             
@@ -269,18 +356,121 @@ class ChessDroneSingle:
             self.logger.warning(f"Timeout waiting for chess move command ({timeout}s)")
             return False
 
+    def _order_index(self, name: str) -> int:
+        try:
+            return self.available_drones.index(name)
+        except ValueError:
+            return len(self.available_drones) + 1
+
+    def _next_active_leader(self, current: str, active: list) -> str:
+        if not active:
+            return None
+        # Ищем следующего по постоянному порядку в active
+        order = self.available_drones
+        if current in order:
+            start = (order.index(current) + 1) % len(order)
+        else:
+            start = 0
+        for i in range(len(order)):
+            idx = (start + i) % len(order)
+            cand = order[idx]
+            if cand in active:
+                return cand
+        return None
+
+    def _estimate_active_drones(self) -> list:
+        # Хук для интеграции детектирования по камере
+        # Пока — используем последнее известное множество active или весь список
+        last_hb = self.esp.get_last_heartbeat() if self.esp else None
+        if last_hb and isinstance(last_hb.get('active'), list) and last_hb['active']:
+            # Гарантируем порядок согласно DRONE_LIST
+            ordered = [d for d in self.available_drones if d in last_hb['active']]
+            return ordered if ordered else list(self.available_drones)
+        return list(self.available_drones)
+
+    def _tick_leader_election(self):
+        now = time.time()
+        if not self.esp:
+            return
+        last_hb_ts = self.esp.get_last_heartbeat_ts()
+        last_hb = self.esp.get_last_heartbeat()
+        known_leader, known_term = self.esp.get_known_leader_and_term()
+
+        # Принятие более свежего лидера
+        if last_hb and int(known_term) >= int(getattr(self, 'current_term', 0)):
+            self.current_term = int(known_term)
+            if known_leader:
+                self.current_leader = known_leader
+                self.esp.update_role(self.drone_name == self.current_leader)
+
+        # Лидер считается потерянным, если heartbeat старее таймаута
+        if (now - last_hb_ts) > self.heartbeat_timeout:
+            active = (last_hb.get('active') if last_hb else None) or list(self.available_drones)
+            candidate = self._next_active_leader(self.current_leader, active) or (active[0] if active else self.drone_name)
+            # Детерминированная задержка по позиции, чтобы снизить коллизии выборов
+            delay = 0.05 * self._order_index(self.drone_name)
+            if (now - last_hb_ts) > (self.heartbeat_timeout + delay):
+                if self.drone_name == candidate:
+                    new_term = self.esp.bump_term()
+                    self.current_term = int(new_term)
+                    self.current_leader = self.drone_name
+                    self.esp.update_role(True)
+                    self.active_drones = self._estimate_active_drones()
+                    self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
+                    self._last_hb_sent = now
+
     def run(self):
         try:
             rospy.init_node("chess_drone_single")
         except Exception:
             pass
 
-        if self.is_leader:
-            self.logger.info("Starting chess drone LEADER...")
-            self.run_leader()
-        else:
-            self.logger.info("Starting chess drone FOLLOWER...")
-            self.run_follower()
+        self.logger.info("Starting chess drone MAIN LOOP (dynamic leadership)...")
+
+        TURN_LIMIT = 5
+        turn_count = 0
+        last_move_ts = 0.0
+        move_interval = 5.0
+
+        while not rospy.is_shutdown():
+            try:
+                # Обработка лидерства/heartbeat
+                self._tick_leader_election()
+
+                now = time.time()
+                if self.esp and self.esp.is_leader:
+                    # Периодический heartbeat
+                    if (now - self._last_hb_sent) >= self.heartbeat_interval:
+                        self.active_drones = self._estimate_active_drones()
+                        self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
+                        self._last_hb_sent = now
+
+                    # Ходы лидера с паузой между ними
+                    if turn_count < TURN_LIMIT and (now - last_move_ts) >= move_interval:
+                        self.logger.info(f"=== Leader executing turn {turn_count + 1} ===")
+                        # Перед началом ещё раз убедимся, что мы лидер
+                        if self.esp.is_leader:
+                            self.run_once(turn_count)
+                            turn_count += 1
+                            last_move_ts = time.time()
+                        else:
+                            self.logger.info("Leadership lost before executing turn; skipping")
+                    elif turn_count >= TURN_LIMIT:
+                        # После лимита — просто жить как лидер и рассылать heartbeats
+                        pass
+                else:
+                    # Ведомый: ждём команды небольшими таймаутами, чтобы не блокировать выборы
+                    self.wait_and_execute_move(timeout=0.3)
+
+                # Небольшая пауза цикла
+                self.fc.wait(0.05)
+
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                self.logger.error(f"main loop error: {e}")
+                self.fc.wait(0.3)
+        self.logger.info("Main loop stopped.")
 
     def run_leader(self):
         """Основной цикл для дрона-лидера"""
