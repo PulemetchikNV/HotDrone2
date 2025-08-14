@@ -117,7 +117,6 @@ class ChessDroneSingle:
             frame_id=frame_id,
             auto_arm=True,
             tolerance=0.2,
-            hover_time=self.hover_time
         )
         
         # 4. Снижение до z=0.5
@@ -127,7 +126,6 @@ class ChessDroneSingle:
             frame_id=frame_id,
             auto_arm=False,
             tolerance=0.2,
-            hover_time=0.5
         )
 
         # self.fc.land()
