@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 
-import env_loader
+from . import env_loader
 
 def parse_args():
     drone_name = None
@@ -16,10 +16,7 @@ def parse_args():
 env_loader.load_env_file()
 
 
-try:
-    from .chess import ChessDroneSingle as Drone
-except ImportError:
-    from chess import ChessDroneSingle as Drone
+from .chess import ChessDroneSingle as Drone
 
 try:
     import rospy
@@ -34,4 +31,4 @@ rospy.init_node('chess')
 
 drone = Drone()
 
-drone.run() 
+drone.run()
