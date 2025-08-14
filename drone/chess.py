@@ -128,7 +128,7 @@ class ChessDroneSingle:
             auto_arm=False,
         )
 
-        self.fc.wait(5.0)
+        self.fc.wait(1.0)
 
         self.fc.navigate_wait(
             x=x, 
