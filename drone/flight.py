@@ -9,7 +9,7 @@ try:
     import rospy
     from clover import srv
     from std_srvs.srv import Trigger
-    from mavros_msgs.srv import CommandBool, SetMode
+    from mavros_msgs.srv import CommandBool, SetMode, CommandLong
     from geometry_msgs.msg import PoseStamped
     from std_msgs.msg import String
     IS_MOCK_MODE = False
@@ -187,6 +187,42 @@ class FlightControllerCustom:
         self.logger.info("Takeoff done")
         self.set_led(r=0, g=255, b=0)
         self.stop_fake_pos_async()
+
+    def force_disarm():
+        rospy.init_node('force_disarm_node', anonymous=True)
+
+        # Ждём, пока сервис станет доступен
+        rospy.wait_for_service('/mavros/cmd/command', timeout=5)
+
+        try:
+            # Создаём прокси к сервису
+            command_service = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
+
+            # Вызываем команду MAV_CMD_COMPONENT_ARM_DISARM
+            # command=400 -> MAV_CMD_COMPONENT_ARM_DISARM
+            # param1=0 -> disarm
+            # param2=21196 -> force disarm
+            response = command_service(
+                command=400,           # MAV_CMD_COMPONENT_ARM_DISARM
+                param1=0.0,            # 0 = disarm
+                param2=21196.0,        # 21196 = force disarm
+                param3=0.0,
+                param4=0.0,
+                param5=0.0,
+                param6=0.0,
+                param7=0.0,
+                confirmation=1         # обязательно!
+            )
+
+            if response.success:
+                rospy.loginfo("✅ Дрон успешно дизармлен (принудительно)")
+            else:
+                rospy.logerr(f"❌ Ошибка дизарма: {response.message}")
+
+        except rospy.ROSException as e:
+            rospy.logerr(f"Сервис недоступен: {e}")
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Ошибка вызова сервиса: {e}")
 
 
 

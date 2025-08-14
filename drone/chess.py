@@ -119,19 +119,18 @@ class ChessDroneSingle:
         )
         self.fc.wait(0.5)
         
-        # 4. Снижение до z=0.5
         self.fc.navigate_wait(
             x=x, 
             y=y, 
             z=0.20,
-            speed=0.3,
+            speed=0.2,
             auto_arm=False,
         )
 
 
-        self.fc.wait(5.0)
+        self.fc.wait(0.4)
 
-        # eval('rosrun mavros mavsafety kill')
+        self.fc.force_disarm()
 
         # self.fc.land()
         
