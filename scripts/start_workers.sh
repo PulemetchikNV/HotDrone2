@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Переходим в корневую директорию проекта
+cd "$(dirname "$0")/.."
+
 # Скрипт для ЗАПУСКА FastAPI воркеров на всех дронах в фоновом режиме.
 
 # Конфигурация
@@ -7,7 +10,7 @@ SSH_USER="pi"
 SSH_PASS="raspberry"
 DRONE_DIR="/home/pi/HotDrone2"
 DRONES_FILE="./workers.txt"
-WORKER_PORT=8080
+WORKER_PORT=3000
 
 # Цвета
 RED='\033[0;31m'
