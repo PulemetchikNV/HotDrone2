@@ -6,7 +6,7 @@
 SSH_USER="pi"
 SSH_PASS="raspberry"
 DRONE_DIR="/home/pi/DroneCraft"
-DRONES_FILE="./drones.txt"
+DRONES_FILE="./workers.txt"
 WORKER_PORT=8080
 
 # Цвета

@@ -19,8 +19,8 @@ def run_test(mode: str):
         print("Запуск теста в РАСПРЕДЕЛЕННОМ режиме")
         print("=" * 50)
         # В распределенном режиме нам нужны URL воркеров
-        # Читаем адреса из файла drones.txt
-        with open('drones.txt', 'r') as f:
+        # Читаем адреса из файла workers.txt
+        with open('workers.txt', 'r') as f:
             drones_data = f.read().strip()
         
         worker_addresses = []
