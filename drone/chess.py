@@ -142,16 +142,16 @@ class ChessDroneSingle:
         move = get_turn(board, time_budget_ms=5000)
 
         to_cell = ''
-        match current_turn:
-            case 0:
-                to_cell = 'b3'
-            case 1:
-                to_cell = 'c5'
-            case 2:
-                to_cell = 'e7'
-            case 3:
-                to_cell = 'g5'
-
+        if current_turn == 0:
+            to_cell = 'b3'
+        elif current_turn == 1:
+            to_cell = 'c5'
+        elif current_turn == 2:
+            to_cell = 'e7'
+        elif current_turn == 3:
+            to_cell = 'g5'
+        else:
+            to_cell = ''
         self.logger.info(f"Move: {move.from_cell} -> {to_cell} (uci={move.uci})")
 
         # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
