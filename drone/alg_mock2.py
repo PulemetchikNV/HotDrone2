@@ -15,6 +15,12 @@ except ImportError:
         def Literal(*args):
             return str
 
+# Импорт камеры
+try:
+    from .camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
+except ImportError:
+    from camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
+
 
 # -----------------------------
 # Исключения уровня алгоритма
@@ -50,10 +56,21 @@ class MoveDecision:
     meta: Union[Dict[str, Any], None] = None
 
 # -----------------------------
-# Внутренний мок-источник данных камеры
+# Источник данных камеры
 # -----------------------------
 FILES = "abcdefgh"
 RANKS = "12345678"
+
+# Глобальный экземпляр камеры (создается при первом обращении)
+_camera_controller = None
+
+
+def _get_camera_controller():
+    """Получает экземпляр контроллера камеры (singleton)"""
+    global _camera_controller
+    if _camera_controller is None:
+        _camera_controller = create_camera_controller()
+    return _camera_controller
 
 
 def _normalize_cell(cell: str) -> str:
@@ -65,11 +82,54 @@ def _normalize_cell(cell: str) -> str:
     return f + r
 
 
+def _camera_read_board() -> Dict[str, Any]:
+    """Читает данные с камеры и возвращает структурированную информацию о доске"""
+    try:
+        camera = _get_camera_controller()
+        positions = camera.get_board_positions()
+        
+        # Преобразуем в более удобный формат для алгоритма
+        board_info = {
+            'positions': positions,
+            'timestamp': time.time()
+        }
+        
+        # Определяем "текущую клетку" для совместимости с существующим кодом
+        # Берем первую найденную фигуру или дефолтную клетку
+        current_cell = os.getenv("START_CELL", "e2")
+        
+        for color_data in positions.values():
+            for piece in color_data.values():
+                current_cell = piece.cell
+                break
+            if current_cell != os.getenv("START_CELL", "e2"):
+                break
+        
+        board_info['current_cell'] = current_cell
+        return board_info
+        
+    except CameraTemporaryError as e:
+        # Временные ошибки камеры прокидываем как AlgTemporaryError
+        raise AlgTemporaryError(f"Camera temporary error: {e}")
+        
+    except CameraPermanentError as e:
+        # Постоянные ошибки камеры прокидываем как AlgPermanentError
+        raise AlgPermanentError(f"Camera permanent error: {e}")
+        
+    except Exception as e:
+        # Неожиданные ошибки считаем временными
+        raise AlgTemporaryError(f"Unexpected camera error: {e}")
+
+
 def _camera_mock_read_cell() -> str:
-    # В реальном коде здесь будет чтение с камеры + распознавание.
-    # Пока используем стабильный источник из переменной окружения.
-    cell = os.getenv("START_CELL", "e2")
-    return _normalize_cell(cell)
+    """Fallback метод для совместимости - читает текущую клетку"""
+    try:
+        board_info = _camera_read_board()
+        return _normalize_cell(board_info['current_cell'])
+    except (AlgTemporaryError, AlgPermanentError):
+        # При ошибках камеры возвращаем дефолтную клетку
+        cell = os.getenv("START_CELL", "e2")
+        return _normalize_cell(cell)
 
 
 def _next_cell_simple(current: str) -> str:
@@ -90,27 +150,42 @@ def _next_cell_simple(current: str) -> str:
 def get_board_state() -> BoardState:
     """Считывает текущее состояние с камеры и возвращает BoardState.
 
-    Сейчас реализован мок: берём текущую клетку из START_CELL.
+    Использует камеру для получения позиций фигур и построения FEN.
     """
     try:
-        current_cell = _camera_mock_read_cell()
+        board_info = _camera_read_board()
+        current_cell = board_info['current_cell']
+        positions = board_info['positions']
+        
+        # TODO: Построить реальный FEN на основе позиций фигур
+        # Пока используем дефолтный FEN для совместимости
+        default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        
+        # Расширяем meta информацией о позициях фигур
+        meta = {
+            "current_cell": current_cell,
+            "positions": positions,
+            "camera_timestamp": board_info['timestamp']
+        }
+        
+        ts = time.time()
+        return BoardState(
+            fen=default_fen,
+            turn="w",
+            move_number=1,
+            timestamp=ts,
+            meta=meta,
+        )
+        
     except AlgPermanentError:
         # Прокидываем дальше как фатальную ошибку
+        raise
+    except AlgTemporaryError:
+        # Прокидываем временные ошибки
         raise
     except Exception as e:
         # Любые иные сбои считаем временными
         raise AlgTemporaryError(str(e))
-
-    # Валидный FEN по умолчанию (стартовая позиция)
-    default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    ts = time.time()
-    return BoardState(
-        fen=default_fen,
-        turn="w",
-        move_number=1,
-        timestamp=ts,
-        meta={"current_cell": current_cell},
-    )
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:

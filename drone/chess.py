@@ -288,8 +288,61 @@ class ChessDroneSingle:
             return False
         piece = self._fen_piece_at(fen, from_cell)
         return piece in ('P', 'p')
+    
+    def _is_pawn_move_by_camera(self, from_cell: str) -> tuple:
+        """
+        Определяет, является ли ход пешкой на основе данных камеры.
+        
+        Returns:
+            tuple: (is_pawn, pawn_id) где is_pawn - bool, pawn_id - str или None
+        """
+        try:
+            board = self.cam.read_board()
+            positions = board.meta.get('positions', {}) if board.meta else {}
+            
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    if piece_pos.cell == from_cell and piece_type.startswith('pawn_'):
+                        # Извлекаем ID пешки из piece_type (например, "pawn_1" -> "1")
+                        pawn_id = piece_type.replace('pawn_', '')
+                        return True, pawn_id
+            
+            return False, None
+            
+        except Exception as e:
+            self.logger.debug(f"Camera pawn detection failed: {e}")
+            return False, None
+
+    def _pick_rover_id_for_pawn(self, pawn_id: str) -> str:
+        """
+        Сопоставляет ID пешки с ID ровера на основе маппинга.
+        
+        Args:
+            pawn_id: ID пешки из камеры (например, "1", "2", "3", "4")
+            
+        Returns:
+            str: ID ровера из rovers dict или None
+        """
+        if not self.rover_ids or not pawn_id:
+            return None
+            
+        # Простое сопоставление: pawn_1 -> rover "1", pawn_2 -> rover "2", и т.д.
+        if pawn_id in self.rover_ids:
+            return pawn_id
+        
+        # Fallback: если точного соответствия нет, берем по индексу
+        try:
+            pawn_idx = int(pawn_id) - 1  # pawn_1 -> index 0
+            if 0 <= pawn_idx < len(self.rover_ids):
+                return self.rover_ids[pawn_idx]
+        except ValueError:
+            pass
+        
+        # Последний fallback: первый доступный ровер
+        return self.rover_ids[0] if self.rover_ids else None
 
     def _pick_rover_id_for_cell(self, cell: str) -> str:
+        """Fallback метод для определения ровера по клетке (старая логика)"""
         if not self.rover_ids:
             return None
         try:
@@ -303,11 +356,22 @@ class ChessDroneSingle:
         return self.rover_ids[bucket]
 
     def _execute_rover_move(self, move):
-        # Определяем ID ровера по колонке клетки-источника
-        rover_id = self._pick_rover_id_for_cell(move.from_cell)
+        # Сначала пытаемся определить конкретную пешку по камере
+        is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(move.from_cell)
+        
+        if is_pawn_camera and pawn_id:
+            # Используем точное сопоставление пешки с ровером
+            rover_id = self._pick_rover_id_for_pawn(pawn_id)
+            self.logger.info(f"Camera detected pawn_{pawn_id} -> rover {rover_id}")
+        else:
+            # Fallback: определяем ровер по клетке (старая логика)
+            rover_id = self._pick_rover_id_for_cell(move.from_cell)
+            self.logger.info(f"Using fallback rover selection for cell {move.from_cell} -> rover {rover_id}")
+        
         if not rover_id:
             self.logger.error("No rover available to execute pawn move")
             return
+        
         # Координаты целевой клетки
         x, y = self.get_cell_coordinates(move.to_cell)
         # TODO: Конвертация координат из системы шахматной доски в систему ровера (если отличается)
@@ -383,8 +447,43 @@ class ChessDroneSingle:
         return None
 
     def _estimate_active_drones(self) -> list:
-        # Хук для интеграции детектирования по камере
-        # Пока — используем последнее известное множество active или весь список
+        # Интеграция детектирования активности по камере
+        try:
+            # Получаем данные с камеры о позициях фигур
+            board = self.cam.read_board()
+            positions = board.meta.get('positions', {}) if board.meta else {}
+            
+            # Определяем активные дроны на основе видимых фигур
+            # Пешки управляются роверами, остальные фигуры — дронами
+            active_drones = set()
+            
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    # Пешки не считаем (они управляются роверами)
+                    # Поддерживаем как старый формат 'pawn', так и новый 'pawn_X'
+                    if piece_type.lower() == 'pawn' or piece_type.lower().startswith('pawn_'):
+                        continue
+                    
+                    # Для остальных фигур определяем дрон по позиции/типу
+                    # Простая логика: разные типы фигур = разные дроны
+                    drone_mapping = {
+                        'king': 0, 'queen': 1, 'rook': 2, 'knight': 3, 'bishop': 4
+                    }
+                    
+                    drone_idx = drone_mapping.get(piece_type.lower(), 0)
+                    if drone_idx < len(self.available_drones):
+                        active_drones.add(self.available_drones[drone_idx])
+            
+            if active_drones:
+                # Возвращаем в порядке DRONE_LIST
+                ordered = [d for d in self.available_drones if d in active_drones]
+                self.logger.debug(f"Camera detected active drones: {ordered}")
+                return ordered
+                
+        except Exception as e:
+            self.logger.debug(f"Camera-based activity detection failed: {e}")
+        
+        # Fallback: используем heartbeat или весь список
         last_hb = self.esp.get_last_heartbeat() if self.esp else None
         if last_hb and isinstance(last_hb.get('active'), list) and last_hb['active']:
             # Гарантируем порядок согласно DRONE_LIST
