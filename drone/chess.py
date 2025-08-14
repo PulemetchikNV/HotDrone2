@@ -17,10 +17,19 @@ try:
     from .flight import FlightController
     from .helpers import setup_logging
     from .alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+    from .esp import EspController, create_chess_move_message, parse_chess_move
+    from .const import DRONE_LIST, LEADER_DRONE
 except ImportError:
     from flight import FlightController
     from helpers import setup_logging
     from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+    from esp import EspController, create_chess_move_message, parse_chess_move
+    from const import DRONE_LIST, LEADER_DRONE
+
+try:
+    from skyros.drone import Drone as SkyrosDrone
+except Exception:
+    SkyrosDrone = None
 
 
 FILES = "abcdefgh"
@@ -66,13 +75,35 @@ class CameraAdapter:
 class ChessDroneSingle:
     def __init__(self):
         self.drone_name = os.environ.get("DRONE_NAME", "drone")
+        self.is_leader = self.drone_name == LEADER_DRONE
         self.logger = setup_logging(self.drone_name)
+
+        self.swarm = None
+        if SkyrosDrone is not None:
+            try:
+                self.swarm = SkyrosDrone(name=self.drone_name)
+            except Exception as e:
+                self.logger.warning(f"Skyros init failed: {e}")
+                self.swarm = None
 
         # Не переопределяем FLIGHT_IMPL — используйте main/custom/mock через env
         self.fc = FlightController(drone_name=self.drone_name, logger=self.logger)
+        
+        # ESP контроллер для коммуникации между дронами
+        self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
+        
+        # Регистрируем обработчик сообщений если есть swarm
+        if self.swarm and self.esp:
+            # Предполагаем что swarm имеет метод set_custom_message_callback
+            if hasattr(self.swarm, 'set_custom_message_callback'):
+                self.swarm.set_custom_message_callback(self.esp._on_custom_message)
+                self.logger.info("ESP message handler registered")
+        
+        # Список доступных дронов для назначения задач
+        self.available_drones = DRONE_LIST.split(',') if DRONE_LIST else []
+        self.logger.info(f"Available drones: {self.available_drones}")
 
         # Параметры поля
-        self.aruco_id = int(os.getenv("BOARD_ARUCO_ID", "89"))
         self.cell_size = float(os.getenv("CELL_SIZE_M", "0.35"))
         self.origin_x = float(os.getenv("BOARD_ORIGIN_X", "0.0"))  # центр доски = (0,0)
         self.origin_y = float(os.getenv("BOARD_ORIGIN_Y", "0.0"))
@@ -81,8 +112,6 @@ class ChessDroneSingle:
         self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.0"))
         self.flight_z = float(os.getenv("FLIGHT_Z", "1.0"))
         self.speed = float(os.getenv("SPEED", "0.3"))
-        self.tolerance = float(os.getenv("TOLERANCE", "0.25"))
-        self.hover_time = float(os.getenv("HOVER_TIME", "1.0"))
 
         self.cam = CameraAdapter(self.logger)
 
@@ -103,6 +132,18 @@ class ChessDroneSingle:
                     self.logger.warning(f"Unexpected JSON structure in {self.map_path}")
         except Exception as e:
             self.logger.warning(f"Failed to load ArUco map from {self.map_path}: {e}")
+
+    def get_cell_coordinates(self, cell):
+        """Получает координаты клетки из карты или вычисляет их"""
+        marker = self.cell_markers.get(cell)
+        if isinstance(marker, dict) and "x" in marker and "y" in marker:
+            x, y = float(marker["x"]), float(marker["y"])
+            self.logger.info(f"Using map coords for {cell}: x={x:.3f}, y={y:.3f}")
+            return x, y
+        else:
+            x, y = cell_to_xy(cell, self.cell_size, self.origin_x, self.origin_y)
+            self.logger.warning(f"No map coords for {cell}. Using computed coords: x={x:.3f}, y={y:.3f}")
+            return x, y
 
     def move_to_xy(self, x: float, y: float, z: float):
         
@@ -138,39 +179,95 @@ class ChessDroneSingle:
         # self.fc.wait(0.5)
 
     def run_once(self, current_turn):
+        """Выполняется только на лидере - получает ход и отправляет команду дрону"""
+        if not self.is_leader:
+            self.logger.warning("run_once called on non-leader drone")
+            return
+            
         # 1) Получаем состояние доски через alg
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
 
+        # Временная логика для тестирования - назначаем клетки по очереди
         to_cell = ''
+        target_drone = None
         if current_turn == 0:
             to_cell = 'a1'
+            target_drone = self.available_drones[0] if self.available_drones else None
         elif current_turn == 1:
             to_cell = 'g1'
+            target_drone = self.available_drones[1] if len(self.available_drones) > 1 else self.available_drones[0]
         elif current_turn == 2:
             to_cell = 'e5'
+            target_drone = self.available_drones[2] if len(self.available_drones) > 2 else self.available_drones[0]
         elif current_turn == 3:
             to_cell = 'h8'
+            target_drone = self.available_drones[0] if self.available_drones else None
         else:
-            to_cell = ''
-        self.logger.info(f"Move: {move.from_cell} -> {to_cell} (uci={move.uci})")
+            to_cell = move.to_cell if hasattr(move, 'to_cell') else 'e4'
+            target_drone = self.available_drones[0] if self.available_drones else None
+            
+        chess_move = f"{move.from_cell}->{to_cell}" if hasattr(move, 'from_cell') else f"e2->{to_cell}"
+        self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
 
-        # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
-        marker = self.cell_markers.get(to_cell)
-        if isinstance(marker, dict) and "x" in marker and "y" in marker:
-            x, y = float(marker["x"]), float(marker["y"])
-            self.logger.info(f"Using map coords for {to_cell}: x={x:.3f}, y={y:.3f}")
+        # 3) Отправляем команду выбранному дрону через ESP
+        if target_drone and self.esp:
+            payload = create_chess_move_message(target_drone, chess_move)
+            success = self.esp._broadcast_reliable(payload)
+            if success:
+                self.logger.info(f"Successfully sent move command to {target_drone}")
+            else:
+                self.logger.error(f"Failed to send move command to {target_drone}")
         else:
-            x, y = cell_to_xy(move.to_cell, self.cell_size, self.origin_x, self.origin_y)
-            self.logger.warning(
-                f"No map coords for {move.to_cell}. Using computed coords: x={x:.3f}, y={y:.3f}"
-            )
-        self.move_to_xy(x, y, self.flight_z)
+            self.logger.warning("No ESP controller or target drone available")
 
         # 4) Сообщаем alg об исполнении
         self.cam.commit_move(move, success=True)
-        self.logger.info(f"Done: now at {to_cell}")
+        self.logger.info(f"Leader completed turn {current_turn}: {chess_move}")
+
+    def wait_and_execute_move(self, timeout=30.0):
+        """Выполняется на ведомых дронах - ждет команду от лидера и выполняет её"""
+        if self.is_leader:
+            self.logger.warning("wait_and_execute_move called on leader drone")
+            return False
+            
+        if not self.esp:
+            self.logger.error("No ESP controller available for follower")
+            return False
+            
+        self.logger.info(f"Follower {self.drone_name} waiting for chess move command...")
+        
+        # Ждем команду от лидера
+        if self.esp._chess_move_event.wait(timeout):
+            # Получили команду
+            chess_move = self.esp._received_chess_move
+            self.esp._chess_move_event.clear()  # Сбрасываем событие
+            self.esp._received_chess_move = None
+            
+            self.logger.info(f"Received chess move command: {chess_move}")
+            
+            # Парсим команду
+            from_cell, to_cell = parse_chess_move(chess_move)
+            if not to_cell:
+                self.logger.error(f"Invalid chess move format: {chess_move}")
+                return False
+                
+            # Получаем координаты целевой клетки
+            x, y = self.get_cell_coordinates(to_cell)
+            
+            # Выполняем движение
+            try:
+                self.logger.info(f"Flying to {to_cell} at coordinates ({x:.3f}, {y:.3f})")
+                self.move_to_xy(x, y, self.flight_z)
+                self.logger.info(f"Successfully completed move to {to_cell}")
+                return True
+            except Exception as e:
+                self.logger.error(f"Failed to execute move: {e}")
+                return False
+        else:
+            self.logger.warning(f"Timeout waiting for chess move command ({timeout}s)")
+            return False
 
     def run(self):
         try:
@@ -178,17 +275,31 @@ class ChessDroneSingle:
         except Exception:
             pass
 
-        self.logger.info("Starting autonomous chess drone (single piece)…")
+        if self.is_leader:
+            self.logger.info("Starting chess drone LEADER...")
+            self.run_leader()
+        else:
+            self.logger.info("Starting chess drone FOLLOWER...")
+            self.run_follower()
 
-        TURN_LIMIT = 3
+    def run_leader(self):
+        """Основной цикл для дрона-лидера"""
+        TURN_LIMIT = 5
         turn_count = 0
+        
         while not rospy.is_shutdown():
             try:
-                if(TURN_LIMIT > turn_count):
+                if TURN_LIMIT > turn_count:
+                    self.logger.info(f"=== Leader executing turn {turn_count + 1} ===")
                     self.run_once(turn_count)
                     turn_count += 1
+                    
+                    # Пауза между ходами
+                    self.fc.wait(5.0)
+                else:
+                    self.logger.info("Leader completed all turns, waiting...")
+                    self.fc.wait(10.0)
 
-                self.fc.wait(2.0)
             except KeyboardInterrupt:
                 break
             except AlgTemporaryError as e:
@@ -198,10 +309,45 @@ class ChessDroneSingle:
                 self.logger.error(f"permanent error in alg: {e}")
                 self.fc.wait(3.0)
             except Exception as e:
-                self.logger.error(f"loop error: {e}")
+                self.logger.error(f"leader error: {e}")
                 self.fc.wait(3.0)
-        self.logger.info("Stopped.")
+        self.logger.info("Leader stopped.")
+
+    def run_follower(self):
+        """Основной цикл для дрона-ведомого"""
+        while not rospy.is_shutdown():
+            try:
+                # Ждем команду от лидера и выполняем её
+                success = self.wait_and_execute_move(timeout=30.0)
+                if success:
+                    self.logger.info("Move executed successfully, waiting for next command...")
+                else:
+                    self.logger.warning("Failed to execute move or timeout, continuing...")
+                    
+                # Короткая пауза перед следующим ожиданием
+                self.fc.wait(1.0)
+
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                self.logger.error(f"follower error: {e}")
+                self.fc.wait(3.0)
+        self.logger.info("Follower stopped.")
 
 
 if __name__ == "__main__":
+    # Для использования с swarm коммуникацией:
+    # chess_drone = ChessDroneSingle(swarm=your_swarm_instance)
+    # chess_drone.run()
+    
+    # Для автономного запуска без swarm:
     ChessDroneSingle().run()
+
+"""
+Использование:
+Логика работы:
+   - Лидер получает ходы от алгоритма и отправляет команды ведомым
+   - Ведомые ждут команды формата "c2->d4" и летят в указанную клетку
+   - Координаты берутся из aruco_map2.json или вычисляются
+   - Коммуникация через ESP контроллер с подтверждениями
+"""

@@ -49,7 +49,6 @@ class MoveDecision:
     reason: Optional[str] = None
     meta: Union[Dict[str, Any], None] = None
 
-
 # -----------------------------
 # Внутренний мок-источник данных камеры
 # -----------------------------

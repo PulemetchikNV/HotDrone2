@@ -97,7 +97,7 @@ eval $SUDO cp -f /etc/hosts /etc/hosts.bak || true
 echo "$NEW_HOST" | eval $SUDO tee /etc/hostname >/dev/null
 
 if grep -qE '^127\.0\.1\.1' /etc/hosts; then
-  eval $SUDO sed -i "s/^127\\.0\\.1\\.1.*/127.0.1.1    $NEW_HOST/" /etc/hosts
+  eval $SUDO sed -i "s/^127\\.0\\.1\\.1.*/127.0.1.1\t$NEW_HOST/" /etc/hosts
 else
   echo -e "127.0.1.1\t$NEW_HOST" | eval $SUDO tee -a /etc/hosts >/dev/null
 fi
