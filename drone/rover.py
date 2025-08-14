@@ -10,9 +10,8 @@ except ImportError:
     from const import rovers
 
 class RoverControllerMain:
-    def __init__(self, drone_name=None, logger=None):
-        self.drone_name = os.environ.get('DRONE_NAME', 'unknown_drone')
-        self.logger = logger or setup_logging(self.drone_name)
+    def __init__(self, initial_x=0, initial_y=0, initial_yaw=0, logger=None):
+        self.logger = logger or setup_logging('rover')
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
