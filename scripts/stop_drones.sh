@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr//bin/env bash
 
 # Скрипт для остановки всех процессов Python на дронах
 # Использование: ./scripts/stop_drones.sh
@@ -84,4 +84,4 @@ for entry in "${DRONE_ENTRIES[@]}"; do
     stop_on_drone "$drone_name" "$drone_ip"
 done
 
-echo -e "${GREEN}=== Stop process completed ===${NC}" 
+echo -e "${GREEN}=== Stop process completed ===${NC}"

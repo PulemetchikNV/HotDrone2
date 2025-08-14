@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Скрипт для быстрой настройки .env файлов для дронов
 # Использование: ./scripts/setup_env.sh [drone_name]

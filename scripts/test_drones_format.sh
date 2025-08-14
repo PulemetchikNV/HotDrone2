@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Тестовый скрипт для проверки разбора формата drones.txt
 # Использование: ./scripts/test_drones_format.sh
@@ -40,4 +40,4 @@ for entry in "${DRONE_ENTRIES[@]}"; do
     echo "Drone: $drone_name, IP: $drone_ip"
 done
 
-echo "=== Test completed ===" 
+echo "=== Test completed ==="

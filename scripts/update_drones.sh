@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Скрипт для обновления кода на всех дронах через git pull
 # Использование: ./scripts/update_drones.sh
@@ -95,4 +95,4 @@ if ! command -v sshpass &> /dev/null; then
     echo -e "${YELLOW}Tip: Install sshpass for automatic password handling:${NC}"
     echo "  macOS: brew install hudochenkov/sshpass/sshpass"
     echo "  Ubuntu: sudo apt-get install sshpass"
-fi 
+fi

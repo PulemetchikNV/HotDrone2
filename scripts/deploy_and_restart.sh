@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Сводный скрипт для смены ArUco карты и перезапуска clover
 # Использование: ./scripts/deploy_and_restart.sh
@@ -72,4 +72,4 @@ echo -e "${YELLOW}Next steps:${NC}"
 echo "• Test drone positioning with the new map"
 echo "• Run your flight scripts:"
 echo "  ./scripts/run_drones.sh main.py"
-echo "  ./scripts/run_drones.sh main_stage1_mod.py" 
+echo "  ./scripts/run_drones.sh main_stage1_mod.py"
