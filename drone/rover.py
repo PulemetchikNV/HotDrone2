@@ -18,7 +18,7 @@ class RoverControllerMain:
         
         # Словарь для хранения текущих позиций каждого ровера
         self.rover_positions = {}
-        fo1r rover_id in rovers.keys():
+        for rover_id in rovers.keys():
             self.rover_positions[rover_id] = {'x': 0, 'y': 0, 'yaw': 0}
 
     def send_command(self, rover_id, command_str):

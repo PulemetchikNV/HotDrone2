@@ -17,14 +17,14 @@ try:
     from .flight import FlightController
     from .helpers import setup_logging
     from .alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-    from .esp import EspController, create_chess_move_message, parse_chess_move
+    from .esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
     from .const import DRONE_LIST, LEADER_DRONE, rovers
     from .rover import RoverController
 except ImportError:
     from flight import FlightController
     from helpers import setup_logging
     from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-    from esp import EspController, create_chess_move_message, parse_chess_move
+    from esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
     from const import DRONE_LIST, LEADER_DRONE, rovers
     from rover import RoverController
 
@@ -91,8 +91,12 @@ class ChessDroneSingle:
         # Не переопределяем FLIGHT_IMPL — используйте main/custom/mock через env
         self.fc = FlightController(drone_name=self.drone_name, logger=self.logger)
         
-        # ESP контроллер для коммуникации между дронами
-        self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
+        # Контроллер связи (ESP по радиоканалу или Wi‑Fi) — выбирается по COMM_IMPL
+        try:
+            self.esp = create_comm_controller(self.swarm, self.drone_name)
+        except Exception:
+            # Фолбэк на старую реализацию
+            self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
         
         # Регистрируем обработчик сообщений если есть swarm
         if self.swarm and self.esp:

@@ -3,6 +3,7 @@ import time
 import uuid
 import os
 import threading
+import socket
 
 try:
     from .helpers import setup_logging
@@ -214,6 +215,226 @@ class EspController:
         if self.is_leader != is_leader:
             self.is_leader = is_leader
             self.logger.info(f"ESP role updated: is_leader={self.is_leader}")
+
+
+class WifiEspController:
+    def __init__(self, swarm, drone_name=None):
+        # Параметры сети
+        self.bind_ip = os.environ.get('WIFI_BIND_IP', '0.0.0.0')
+        self.port = int(os.environ.get('WIFI_PORT', '47000'))
+        self.broadcast_addr = os.environ.get('WIFI_BROADCAST_ADDR', '255.255.255.255')
+        self.unicast_targets = [ip.strip() for ip in os.environ.get('WIFI_TARGETS', '').split(',') if ip.strip()]
+
+        self.drone_name = drone_name or os.environ.get('DRONE_NAME', 'unknown_drone')
+        self.logger = setup_logging(self.drone_name)
+        # Совместимость по сигнатурам: swarm не используется в WiFi-режиме
+        self.swarm = None
+
+        # Роль (лидер/ведомый)
+        self.is_leader = (self.drone_name == LEADER_DRONE)
+
+        # Ack/Move/Heartbeat состояния — совместимы с EspController
+        self._ack_lock = threading.Lock()
+        self._received_acks = set()
+        self._chess_move_event = threading.Event()
+        self._received_chess_move = None
+        self._expected_followers = set()
+        self._hb_lock = threading.Lock()
+        self._last_heartbeat = None
+        self._leader_term = 0
+
+        # UDP сокет: bind + broadcast
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        except Exception:
+            pass
+        try:
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        except Exception:
+            pass
+        self.sock.bind((self.bind_ip, self.port))
+
+        # Поток приёма
+        self._stop_event = threading.Event()
+        self._rx_thread = threading.Thread(target=self._recv_loop, name=f"wifi-rx-{self.drone_name}", daemon=True)
+        self._rx_thread.start()
+
+        self.logger.info(f"WifiEspController initialized on {self.bind_ip}:{self.port}, leader={self.is_leader}, drone={self.drone_name}")
+
+    # Совместимый обработчик входящих сообщений
+    def _on_custom_message(self, message: str):
+        try:
+            obj = json.loads(message)
+        except Exception:
+            return
+
+        cmd_type = obj.get('type')
+
+        # Ack
+        if cmd_type == 'ack':
+            if self.is_leader:
+                ack_id = obj.get('ack_id')
+                with self._ack_lock:
+                    self._received_acks.add(ack_id)
+            return
+
+        # Фильтр адресата
+        target = obj.get('to', '*')
+        if target != '*' and target != self.drone_name and target != drone_name_to_short(self.drone_name):
+            return
+
+        # Отправляем ack (не лидер)
+        if 'msg_id' in obj and not self.is_leader:
+            ack_payload = {
+                'type': 'ack',
+                'ack_id': obj['msg_id'],
+                'from': self.drone_name
+            }
+            self._send_json(ack_payload)
+
+        # Шахматный ход
+        target_matches = (target == self.drone_name or target == drone_name_to_short(self.drone_name))
+        if cmd_type == 'move' and target_matches:
+            chess_move = obj.get('move')
+            if chess_move and '->' in chess_move:
+                self.logger.info(f"[WiFi] Received CHESS MOVE command: {chess_move}")
+                self._received_chess_move = chess_move
+                self._chess_move_event.set()
+            else:
+                self.logger.warning(f"[WiFi] Invalid chess move format: {chess_move}")
+
+        elif cmd_type == 'land':
+            self.logger.info("[WiFi] Received LAND command from leader")
+
+        elif cmd_type == 'hb':
+            leader = obj.get('leader')
+            term = int(obj.get('term', 0))
+            active = obj.get('active', [])
+            with self._hb_lock:
+                self._last_heartbeat = {
+                    'leader': leader,
+                    'term': term,
+                    'ts': time.time(),
+                    'active': active if isinstance(active, list) else []
+                }
+                self._leader_term = max(self._leader_term, term)
+
+    def _recv_loop(self):
+        while not self._stop_event.is_set():
+            try:
+                data, _addr = self.sock.recvfrom(65535)
+                try:
+                    text = data.decode('utf-8', errors='ignore')
+                except Exception:
+                    continue
+                self._on_custom_message(text)
+            except Exception as e:
+                # Не шумим в логи слишком часто
+                time.sleep(0.01)
+
+    def _send_json(self, payload: dict):
+        try:
+            msg = json.dumps(payload)
+        except Exception as e:
+            self.logger.warning(f"[WiFi] encode failed: {e}")
+            return False
+        data = msg.encode('utf-8')
+        sent_any = False
+        # Broadcast
+        try:
+            self.sock.sendto(data, (self.broadcast_addr, self.port))
+            sent_any = True
+        except Exception as e:
+            self.logger.debug(f"[WiFi] broadcast send failed: {e}")
+        # Unicast targets (optional)
+        for ip in self.unicast_targets:
+            try:
+                self.sock.sendto(data, (ip, self.port))
+                sent_any = True
+            except Exception as e:
+                self.logger.debug(f"[WiFi] unicast send to {ip} failed: {e}")
+        return sent_any
+
+    def _broadcast_reliable(self, payload, retries=3, timeout=0.5):
+        msg_id = uuid.uuid4().hex[:4]
+        payload['msg_id'] = msg_id
+        is_move_command = payload.get('type') == 'move'
+        max_attempts = retries * 2 if is_move_command else retries
+
+        attempt = 0
+        while attempt < max_attempts:
+            attempt += 1
+            with self._ack_lock:
+                if msg_id in self._received_acks:
+                    self._received_acks.remove(msg_id)
+
+            if is_move_command:
+                self.logger.info(f"[WiFi] Broadcasting CHESS MOVE (attempt {attempt}/{max_attempts}): {payload}")
+            else:
+                self.logger.info(f"[WiFi] Broadcasting (attempt {attempt}/{max_attempts}): {payload}")
+
+            ok = self._send_json(payload)
+            if not ok:
+                time.sleep(timeout)
+                continue
+
+            time.sleep(timeout)
+            with self._ack_lock:
+                if msg_id in self._received_acks:
+                    self.logger.info(f"[WiFi] ACK received for msg_id: {msg_id}")
+                    return True
+
+            if is_move_command:
+                self.logger.warning(f"[WiFi] No ACK for CHESS MOVE {msg_id} (attempt {attempt}/{max_attempts})")
+            else:
+                self.logger.warning(f"[WiFi] No ACK for {msg_id} (attempt {attempt}/{max_attempts})")
+
+        self.logger.error(f"[WiFi] Broadcast failed after {max_attempts} retries for payload: {payload}")
+        return False
+
+    def _broadcast_unreliable(self, payload: dict):
+        return self._send_json(payload)
+
+    def broadcast_heartbeat(self, leader_name: str, term: int, active_drones: list):
+        payload = {
+            'type': 'hb',
+            'leader': leader_name,
+            'term': int(term),
+            'active': list(active_drones or [])
+        }
+        self._broadcast_unreliable(payload)
+
+    def get_last_heartbeat(self):
+        with self._hb_lock:
+            return dict(self._last_heartbeat) if self._last_heartbeat else None
+
+    def get_last_heartbeat_ts(self) -> float:
+        with self._hb_lock:
+            return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
+
+    def get_known_leader_and_term(self):
+        with self._hb_lock:
+            leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
+            term = self._leader_term
+            return leader, term
+
+    def bump_term(self) -> int:
+        with self._hb_lock:
+            self._leader_term += 1
+            return self._leader_term
+
+    def update_role(self, is_leader: bool):
+        if self.is_leader != is_leader:
+            self.is_leader = is_leader
+            self.logger.info(f"[WiFi] Role updated: is_leader={self.is_leader}")
+
+
+def create_comm_controller(swarm, drone_name=None):
+    impl = os.environ.get('COMM_IMPL', 'esp').lower()
+    if impl == 'wifi':
+        return WifiEspController(swarm=swarm, drone_name=drone_name)
+    return EspController(swarm=swarm, drone_name=drone_name)
 
 
 def create_chess_move_message(to_drone, chess_move):
