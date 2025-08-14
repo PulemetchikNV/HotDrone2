@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python3 test_distributed.py --mode distributed
+nix-shell drone/chess/shell.nix --run "python3 test_distributed.py --mode distributed"
