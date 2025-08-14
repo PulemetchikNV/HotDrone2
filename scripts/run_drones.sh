@@ -115,10 +115,11 @@ run_on_drone() {
         fi
 
         echo 'Starting script: $SCRIPT_NAME';
-        echo 'Command: DRONE_NAME=$drone_name $PYTHON_CMD ./drone/$SCRIPT_NAME';
+        local module_name=\$(echo "$SCRIPT_NAME" | sed 's/\.py//');
+        echo "Command: DRONE_NAME=$drone_name $PYTHON_CMD -m drone.\$module_name";
         echo '--- Script Output ---';
         export DRONE_NAME='$drone_name';
-        $PYTHON_CMD ./drone/$SCRIPT_NAME;
+        $PYTHON_CMD -m drone.\$module_name;
         
         echo '--- Script Finished ---';
         echo 'Execution completed for $drone_name';
@@ -175,9 +176,10 @@ run_on_drone_sync() {
         fi
 
         echo 'Starting script: $SCRIPT_NAME';
-        echo 'Command: DRONE_NAME=$drone_name $PYTHON_CMD ./drone/$SCRIPT_NAME';
+        local module_name=\$(echo "$SCRIPT_NAME" | sed 's/\.py//');
+        echo "Command: DRONE_NAME=$drone_name $PYTHON_CMD -m drone.\$module_name";
         echo '--- Script Output ---';
-        DRONE_NAME='$drone_name' $PYTHON_CMD ./drone/$SCRIPT_NAME;
+        DRONE_NAME='$drone_name' $PYTHON_CMD -m drone.\$module_name;
         local exit_code=\$?;
         echo '--- Script Finished (exit code: '\$exit_code') ---';
         echo 'Execution completed for $drone_name';
