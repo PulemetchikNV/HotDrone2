@@ -122,7 +122,9 @@ class ChessDroneSingle:
 
         # Роль текущего дрона (какую фигуру он представляет)
         self.drone_role = os.getenv("DRONE_ROLE", "").lower()
-        self.logger.info(f"Drone role: {self.drone_role}")
+        # Начальная буква/клетка для данного дрона
+        self.initial_letter = os.getenv("INITIAL_LETTER", "").lower()
+        self.logger.info(f"Drone role: {self.drone_role}, initial_letter: {self.initial_letter}")
         
         # Маппинг ролей дронов (строится динамически из доступных дронов и их ролей)
         self.drone_role_mapping = self._build_drone_role_mapping()
@@ -216,7 +218,7 @@ class ChessDroneSingle:
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
-        
+
         from_cell = getattr(move, 'from_cell', 'e2')
         to_cell = getattr(move, 'to_cell', 'e4')
         
@@ -263,13 +265,25 @@ class ChessDroneSingle:
         mapping = {}
         
         for drone_name in self.available_drones:
-            # Пытаемся получить роль конкретного дрона из DRONE_ROLE_{drone_name}
+            # Получаем роль и начальную букву/клетку для каждого дрона
             role_var = f"DRONE_ROLE_{drone_name.upper()}"
+            initial_var = f"INITIAL_LETTER_{drone_name.upper()}"
+            
             role = os.getenv(role_var, "").lower()
+            initial = os.getenv(initial_var, "").lower()
             
             if role:
-                mapping[role] = drone_name
-                self.logger.info(f"Drone {drone_name} mapped to role: {role}")
+                # Для уникальных фигур (король, ферзь) используем только роль
+                if role in ['king', 'queen']:
+                    mapping[role] = drone_name
+                    self.logger.info(f"Drone {drone_name} mapped to unique role: {role}")
+                elif initial:
+                    # Для остальных фигур используем формат role_initial
+                    full_role = f"{role}_{initial}"
+                    mapping[full_role] = drone_name
+                    self.logger.info(f"Drone {drone_name} mapped to role: {full_role}")
+                else:
+                    self.logger.warning(f"Drone {drone_name} has role {role} but no initial letter (env var {initial_var})")
             else:
                 self.logger.warning(f"No role defined for drone {drone_name} (env var {role_var})")
         
@@ -299,17 +313,35 @@ class ChessDroneSingle:
         
         piece_type = piece_type.lower()
         
-        # Прямое соответствие роли (king, queen, rook, etc.)
+        # Прямое соответствие для уникальных фигур (king, queen)
         if piece_type in self.drone_role_mapping:
             return self.drone_role_mapping[piece_type]
         
-        # Для фигур с ID (knight_1, bishop_2, etc.) - извлекаем базовый тип
+        # Для фигур в формате {тип}_{начальная_клетка}
         if '_' in piece_type:
-            base_type = piece_type.split('_')[0]
-            if base_type in self.drone_role_mapping:
-                return self.drone_role_mapping[base_type]
+            # Пытаемся найти точное соответствие сначала
+            if piece_type in self.drone_role_mapping:
+                return self.drone_role_mapping[piece_type]
+            
+            # Если не найдено, пытаемся извлечь базовый тип и начальную клетку
+            parts = piece_type.split('_', 1)
+            if len(parts) == 2:
+                base_type, initial_cell = parts
+                
+                # Формируем ключ для поиска в маппинге
+                full_role_key = f"{base_type}_{initial_cell}"
+                if full_role_key in self.drone_role_mapping:
+                    return self.drone_role_mapping[full_role_key]
+                
+                # Также пробуем с только буквой файла (для совместимости)
+                if len(initial_cell) >= 1:
+                    file_letter = initial_cell[0]
+                    full_role_key_short = f"{base_type}_{file_letter}"
+                    if full_role_key_short in self.drone_role_mapping:
+                        return self.drone_role_mapping[full_role_key_short]
         
         # Fallback: первый доступный дрон
+        self.logger.warning(f"No specific drone found for piece {piece_type}, using fallback")
         return self.available_drones[0] if self.available_drones else None
 
     def _execute_drone_move(self, move, current_turn):
@@ -388,7 +420,7 @@ class ChessDroneSingle:
         Определяет, является ли ход пешкой на основе данных камеры.
         
         Returns:
-            tuple: (is_pawn, pawn_id) где is_pawn - bool, pawn_id - str или None
+            tuple: (is_pawn, initial_cell) где is_pawn - bool, initial_cell - str или None
         """
         try:
             board = self.cam.read_board()
@@ -397,9 +429,9 @@ class ChessDroneSingle:
             for color_data in positions.values():
                 for piece_type, piece_pos in color_data.items():
                     if piece_pos.cell == from_cell and piece_type.startswith('pawn_'):
-                        # Извлекаем ID пешки из piece_type (например, "pawn_1" -> "1")
-                        pawn_id = piece_type.replace('pawn_', '')
-                        return True, pawn_id
+                        # Извлекаем начальную клетку из piece_type (например, "pawn_a2" -> "a2")
+                        initial_cell = piece_type.replace('pawn_', '')
+                        return True, initial_cell
             
             return False, None
             
@@ -407,32 +439,30 @@ class ChessDroneSingle:
             self.logger.debug(f"Camera pawn detection failed: {e}")
             return False, None
 
-    def _pick_rover_id_for_pawn(self, pawn_id: str) -> str:
+    def _pick_rover_id_for_pawn(self, initial_cell: str) -> str:
         """
-        Сопоставляет ID пешки с ID ровера на основе маппинга.
+        Сопоставляет начальную клетку пешки с ID ровера на основе маппинга.
         
         Args:
-            pawn_id: ID пешки из камеры (например, "1", "2", "3", "4")
+            initial_cell: Начальная клетка пешки из камеры (например, "a2", "b2", "c7")
             
         Returns:
             str: ID ровера из rovers dict или None
         """
-        if not self.rover_ids or not pawn_id:
+        if not self.rover_ids or not initial_cell:
             return None
-            
-        # Простое сопоставление: pawn_1 -> rover "1", pawn_2 -> rover "2", и т.д.
-        if pawn_id in self.rover_ids:
-            return pawn_id
         
-        # Fallback: если точного соответствия нет, берем по индексу
-        try:
-            pawn_idx = int(pawn_id) - 1  # pawn_1 -> index 0
-            if 0 <= pawn_idx < len(self.rover_ids):
-                return self.rover_ids[pawn_idx]
-        except ValueError:
-            pass
+        # Извлекаем букву файла из клетки (a2 -> a, b7 -> b)
+        file_letter = initial_cell[0].lower() if initial_cell else ""
         
-        # Последний fallback: первый доступный ровер
+        # Ищем ровер с соответствующей initial_letter
+        for rover_id, rover_config in rovers.items():
+            rover_initial = rover_config.get('initial_letter', '').lower()
+            if rover_initial == file_letter:
+                return rover_id
+        
+        # Fallback: если не найден по букве, используем первый доступный
+        self.logger.warning(f"No rover found for initial cell {initial_cell}, using fallback")
         return self.rover_ids[0] if self.rover_ids else None
 
     def _pick_rover_id_for_cell(self, cell: str) -> str:
@@ -451,12 +481,12 @@ class ChessDroneSingle:
 
     def _execute_rover_move(self, move):
         # Сначала пытаемся определить конкретную пешку по камере
-        is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(move.from_cell)
+        is_pawn_camera, initial_cell = self._is_pawn_move_by_camera(move.from_cell)
         
-        if is_pawn_camera and pawn_id:
-            # Используем точное сопоставление пешки с ровером
-            rover_id = self._pick_rover_id_for_pawn(pawn_id)
-            self.logger.info(f"Camera detected pawn_{pawn_id} -> rover {rover_id}")
+        if is_pawn_camera and initial_cell:
+            # Используем точное сопоставление пешки с ровером по начальной клетке
+            rover_id = self._pick_rover_id_for_pawn(initial_cell)
+            self.logger.info(f"Camera detected pawn_{initial_cell} -> rover {rover_id}")
         else:
             # Fallback: определяем ровер по клетке (старая логика)
             rover_id = self._pick_rover_id_for_cell(move.from_cell)

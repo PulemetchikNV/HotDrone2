@@ -107,8 +107,10 @@ class CameraController:
             'black': {'king': {'x': 1.0, 'y': 1.0, 'cell': 'a1'}},
             'white': {
                 'queen': {'x': 0.5, 'y': -0.5, 'cell': 'g6'},
-                'pawn_1': {'x': -3.5, 'y': -2.5, 'cell': 'a2'},
-                'pawn_2': {'x': -2.5, 'y': -2.5, 'cell': 'b2'}
+                'pawn_a2': {'x': -3.5, 'y': -2.5, 'cell': 'a2'},
+                'pawn_b2': {'x': -2.5, 'y': -2.5, 'cell': 'b2'},
+                'rook_a1': {'x': -3.5, 'y': -3.5, 'cell': 'a1'},
+                'knight_b1': {'x': -2.5, 'y': -3.5, 'cell': 'b1'}
             }
         }
         """
@@ -200,19 +202,50 @@ class CameraController:
         except CameraError:
             return {'white': [], 'black': []}
     
-    def get_pawn_by_id(self, pawn_id: str) -> Optional[PiecePosition]:
+    def get_pawn_by_initial_cell(self, initial_cell: str) -> Optional[PiecePosition]:
         """
-        Находит пешку по ID
+        Находит пешку по её начальной клетке
         
         Args:
-            pawn_id: ID пешки (например, "1", "2")
+            initial_cell: Начальная клетка пешки (например, "a2", "b7")
             
         Returns:
             PiecePosition или None если не найдена
         """
         try:
             positions = self.get_board_positions()
-            target_piece_type = f"pawn_{pawn_id}"
+            target_piece_type = f"pawn_{initial_cell.lower()}"
+            
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    if piece_type.lower() == target_piece_type.lower():
+                        return piece_pos
+            
+            return None
+            
+        except CameraError:
+            return None
+    
+    def get_piece_by_initial_cell(self, piece_base_type: str, initial_cell: str) -> Optional[PiecePosition]:
+        """
+        Находит фигуру по типу и начальной клетке
+        
+        Args:
+            piece_base_type: Базовый тип фигуры (например, "rook", "knight")
+            initial_cell: Начальная клетка (например, "a1", "b1")
+            
+        Returns:
+            PiecePosition или None если не найдена
+        """
+        try:
+            positions = self.get_board_positions()
+            
+            # Для уникальных фигур (король, ферзь) ищем без суффикса
+            if piece_base_type.lower() in ['king', 'queen']:
+                target_piece_type = piece_base_type.lower()
+            else:
+                # Для остальных фигур используем формат {тип}_{начальная_клетка}
+                target_piece_type = f"{piece_base_type.lower()}_{initial_cell.lower()}"
             
             for color_data in positions.values():
                 for piece_type, piece_pos in color_data.items():
@@ -232,29 +265,35 @@ class MockCameraController(CameraController):
         super().__init__(logger)
         self.logger.info("Mock camera controller initialized")
         
-        # Мок данные по умолчанию с пешками с ID
+        # Мок данные по умолчанию в новом формате {тип}_{начальная_клетка}
         self.mock_data = {
             'white': {
                 'king': {'x': 0.0, 'y': -3.5, 'cell': 'e1'},
                 'queen': {'x': -0.5, 'y': -3.5, 'cell': 'd1'},
-                'rook': {'x': -3.5, 'y': -3.5, 'cell': 'a1'},
-                'knight': {'x': -2.5, 'y': -3.5, 'cell': 'b1'},
-                'bishop': {'x': -1.5, 'y': -3.5, 'cell': 'c1'},
-                'pawn_1': {'x': -3.5, 'y': -2.5, 'cell': 'a2'},
-                'pawn_2': {'x': -2.5, 'y': -2.5, 'cell': 'b2'},
-                'pawn_3': {'x': -1.5, 'y': -2.5, 'cell': 'c2'},
-                'pawn_4': {'x': -0.5, 'y': -2.5, 'cell': 'd2'}
+                'rook_a1': {'x': -3.5, 'y': -3.5, 'cell': 'a1'},
+                'rook_h1': {'x': 3.5, 'y': -3.5, 'cell': 'h1'},
+                'knight_b1': {'x': -2.5, 'y': -3.5, 'cell': 'b1'},
+                'knight_g1': {'x': 2.5, 'y': -3.5, 'cell': 'g1'},
+                'bishop_c1': {'x': -1.5, 'y': -3.5, 'cell': 'c1'},
+                'bishop_f1': {'x': 1.5, 'y': -3.5, 'cell': 'f1'},
+                'pawn_a2': {'x': -3.5, 'y': -2.5, 'cell': 'a2'},
+                'pawn_b2': {'x': -2.5, 'y': -2.5, 'cell': 'b2'},
+                'pawn_c2': {'x': -1.5, 'y': -2.5, 'cell': 'c2'},
+                'pawn_d2': {'x': -0.5, 'y': -2.5, 'cell': 'd2'}
             },
             'black': {
                 'king': {'x': 0.0, 'y': 3.5, 'cell': 'e8'},
                 'queen': {'x': -0.5, 'y': 3.5, 'cell': 'd8'},
-                'rook': {'x': -3.5, 'y': 3.5, 'cell': 'a8'},
-                'knight': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
-                'bishop': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
-                'pawn_1': {'x': -3.5, 'y': 2.5, 'cell': 'a7'},
-                'pawn_2': {'x': -2.5, 'y': 2.5, 'cell': 'b7'},
-                'pawn_3': {'x': -1.5, 'y': 2.5, 'cell': 'c7'},
-                'pawn_4': {'x': -0.5, 'y': 2.5, 'cell': 'd7'}
+                'rook_a8': {'x': -3.5, 'y': 3.5, 'cell': 'a8'},
+                'rook_h8': {'x': 3.5, 'y': 3.5, 'cell': 'h8'},
+                'knight_b8': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
+                'knight_g8': {'x': 2.5, 'y': 3.5, 'cell': 'g8'},
+                'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
+                'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
+                'pawn_a7': {'x': -3.5, 'y': 2.5, 'cell': 'a7'},
+                'pawn_b7': {'x': -2.5, 'y': 2.5, 'cell': 'b7'},
+                'pawn_c7': {'x': -1.5, 'y': 2.5, 'cell': 'c7'},
+                'pawn_d7': {'x': -0.5, 'y': 2.5, 'cell': 'd7'}
             }
         }
     
