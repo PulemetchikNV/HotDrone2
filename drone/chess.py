@@ -122,7 +122,7 @@ class ChessDroneSingle:
         
         # 4. Снижение до z=0.5
         self.fc.navigate_wait(
-            x=x, y=y, z=0.25,
+            x=x, y=y, z=0.15,
             speed=0.3,
             frame_id=frame_id,
             auto_arm=False,
@@ -130,17 +130,28 @@ class ChessDroneSingle:
             hover_time=0.5
         )
 
-        self.fc.land()
+        # self.fc.land()
         
         # 5. Финальное зависание перед завершением
         # self.fc.wait(0.5)
 
-    def run_once(self):
+    def run_once(self, current_turn):
         # 1) Получаем состояние доски через alg
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
-        to_cell = 'f6' # move.to_cell
+
+        to_cell = ''
+        match current_turn:
+            case 0:
+                to_cell = 'b3'
+            case 1:
+                to_cell = 'c5'
+            case 2:
+                to_cell = 'e7'
+            case 3:
+                to_cell = 'g5'
+
         self.logger.info(f"Move: {move.from_cell} -> {to_cell} (uci={move.uci})")
 
         # 3) Берём координаты клетки из JSON-карты и летим (фолбэк на формулу при отсутствии)
@@ -167,12 +178,12 @@ class ChessDroneSingle:
 
         self.logger.info("Starting autonomous chess drone (single piece)…")
 
-        TURN_LIMIT = 1
+        TURN_LIMIT = 3
         turn_count = 0
         while not rospy.is_shutdown():
             try:
                 if(TURN_LIMIT > turn_count):
-                    self.run_once()
+                    self.run_once(turn_count)
                     turn_count += 1
 
                 self.fc.wait(2.0)
