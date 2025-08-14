@@ -128,7 +128,7 @@ class ChessDroneSingle:
             auto_arm=False,
         )
 
-        self.fc.wait(0.5)
+        self.fc.wait(5.0)
 
         self.fc.navigate_wait(
             x=x, 
@@ -138,7 +138,9 @@ class ChessDroneSingle:
             auto_arm=False,
         )
 
-        eval('rosrun mavros mavsafety kill')
+        self.fc.wait(5.0)
+
+        # eval('rosrun mavros mavsafety kill')
 
         # self.fc.land()
         
