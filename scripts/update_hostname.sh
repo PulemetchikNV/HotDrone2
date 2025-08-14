@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Скрипт: обновление hostname на выбранном дроне по SSH и правка локального drones.txt
 # Требования: ssh, (опционально) sshpass для безынтерактивного ввода пароля
@@ -127,6 +127,3 @@ echo "$rebuilt" > "$DRONES_FILE"
 echo -e "${GREEN}✓ Updated $DRONES_FILE -> ${DRONE_NAME}:$NEW_ADDR${NC}"
 
 echo -e "${GREEN}Done.${NC}"
-
-
-

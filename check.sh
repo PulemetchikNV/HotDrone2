@@ -16,7 +16,7 @@ echo -e "${YELLOW}=== ЗАПУСК КОМПЛЕКСНОЙ ПРОВЕРКИ ===${
 echo -e "\n${YELLOW}--- 1. Тестирование централизованного режима... ---${NC}"
 
 # Запускаем тест в централизованном режиме и сохраняем вывод в переменную
-centralized_output=$(nix-shell drone/chess/shell.nix --run "python test_distributed.py --mode centralized" 2>&1)
+centralized_output=$(python test_distributed.py --mode centralized 2>&1)
 
 # Проверяем, что тест завершился успешно и причина решения верна
 if echo "$centralized_output" | grep -q "Тест завершен." && echo "$centralized_output" | grep -q "Причина: centralized_stockfish"; then
@@ -36,7 +36,7 @@ echo "Этот тест проверит, что мастер пытается �
 echo "Для полной проверки убедитесь, что воркеры запущены на дронах."
 
 # Запускаем тест в распределенном режиме
-distributed_output=$(nix-shell drone/chess/shell.nix --run "python test_distributed.py --mode distributed" 2>&1)
+distributed_output=$(python test_distributed.py --mode distributed 2>&1)
 
 # Проверяем ключевые этапы в логе
 if echo "$distributed_output" | grep -q "Этап 1: Локальный поиск" && \

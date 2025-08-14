@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Скрипт для перезапуска сервиса clover на всех дронах
 # Использование: ./scripts/restart_clover.sh
@@ -111,4 +111,4 @@ if ! command -v sshpass &> /dev/null; then
     echo -e "\n${YELLOW}Tip: Install sshpass for automatic password handling:${NC}"
     echo "  macOS: brew install hudochenkov/sshpass/sshpass"
     echo "  Ubuntu: sudo apt-get install sshpass"
-fi 
+fi
