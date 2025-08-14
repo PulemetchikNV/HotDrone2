@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python3 ./drone/main_2.py
+python3 test_distributed.py --mode distributed
