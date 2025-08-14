@@ -2,6 +2,7 @@ import os
 import time
 import json
 import math
+from dataclasses import replace
 
 # rospy fallback
 try:
@@ -127,6 +128,13 @@ class ChessDroneSingle:
         # Локальная оценка активных (пока предположение, уточняется heartbeat'ом лидера)
         self.active_drones = list(self.available_drones)
 
+        # Роль текущего дрона (какую фигуру он представляет)
+        self.drone_role = os.getenv("DRONE_ROLE", "").lower()
+        self.logger.info(f"Drone role: {self.drone_role}")
+        
+        # Маппинг ролей дронов (строится динамически из доступных дронов и их ролей)
+        self.drone_role_mapping = self._build_drone_role_mapping()
+
         # Параметры поля
         self.cell_size = float(os.getenv("CELL_SIZE_M", "0.35"))
         self.origin_x = float(os.getenv("BOARD_ORIGIN_X", "0.0"))  # центр доски = (0,0)
@@ -207,7 +215,7 @@ class ChessDroneSingle:
         # self.fc.wait(0.5)
 
     def run_once(self, current_turn):
-        """Выполняется только на лидере - получает ход и отправляет команду дрону"""
+        """Выполняется только на лидере - получает ход и отправляет команду исполнителю"""
         if not self.esp or not self.esp.is_leader:
             self.logger.warning("run_once called on non-leader drone")
             return
@@ -216,52 +224,146 @@ class ChessDroneSingle:
         board = self.cam.read_board()
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
-
-        # 2.1) Определяем исполнитель: пешка (ровер) или дрон
-        is_pawn = self._is_pawn_move(board.fen, getattr(move, 'from_cell', None))
-        if is_pawn and self.rover_ids:
-            self._execute_rover_move(move)
-            # Сообщаем алгоритму об исполнении
-            self.cam.commit_move(move, success=True)
-            self.logger.info(f"Leader completed rover move: {move.from_cell}->{move.to_cell}")
-            return
-
-        # Временная логика для тестирования - назначаем клетки по очереди
-        to_cell = ''
-        target_drone = None
+        
+        from_cell = getattr(move, 'from_cell', 'e2')
+        to_cell = getattr(move, 'to_cell', 'e4')
+        
+        # ДЕБАГ: Переопределение целевой клетки для тестирования
+        debug_to_cell = None
         if current_turn == 0:
-            to_cell = 'a1'
-            target_drone = self.available_drones[0] if self.available_drones else None
+            debug_to_cell = 'a1'
         elif current_turn == 1:
-            to_cell = 'g1'
-            target_drone = self.available_drones[1] if len(self.available_drones) > 1 else self.available_drones[0]
+            debug_to_cell = 'g1'
         elif current_turn == 2:
-            to_cell = 'e5'
-            target_drone = self.available_drones[2] if len(self.available_drones) > 2 else self.available_drones[0]
+            debug_to_cell = 'e5'
         elif current_turn == 3:
-            to_cell = 'h8'
-            target_drone = self.available_drones[0] if self.available_drones else None
+            debug_to_cell = 'h8'
+        
+        if debug_to_cell:
+            self.logger.info(f"DEBUG: Overriding to_cell from {to_cell} to {debug_to_cell}")
+            to_cell = debug_to_cell
+            # Создаём новый объект хода с переопределённой целевой клеткой
+            try:
+                move = replace(move, to_cell=to_cell, uci=f"{from_cell}{to_cell}")
+            except:
+                # Fallback если replace не работает
+                move.to_cell = to_cell
+                move.uci = f"{from_cell}{to_cell}"
+
+        # 3) Определяем исполнителя по фигуре на from_cell через камеру
+        is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(from_cell)
+        
+        if is_pawn_camera and self.rover_ids:
+            # Пешка -> выполняем ход ровером
+            self.logger.info(f"Executing pawn move {from_cell}->{to_cell} with rover")
+            self._execute_rover_move(move)
+            self.cam.commit_move(move, success=True)
+            self.logger.info(f"Leader completed rover move: {from_cell}->{to_cell}")
         else:
-            to_cell = move.to_cell if hasattr(move, 'to_cell') else 'e4'
-            target_drone = self.available_drones[0] if self.available_drones else None
+            # Не пешка -> выполняем ход дроном
+            self.logger.info(f"Executing piece move {from_cell}->{to_cell} with drone")
+            self._execute_drone_move(move, current_turn)
+            self.cam.commit_move(move, success=True)
+            self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
+    
+    def _build_drone_role_mapping(self):
+        """Строит маппинг ролей дронов из переменных окружения"""
+        mapping = {}
+        
+        for drone_name in self.available_drones:
+            # Пытаемся получить роль конкретного дрона из DRONE_ROLE_{drone_name}
+            role_var = f"DRONE_ROLE_{drone_name.upper()}"
+            role = os.getenv(role_var, "").lower()
             
-        chess_move = f"{move.from_cell}->{to_cell}" if hasattr(move, 'from_cell') else f"e2->{to_cell}"
-        self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
-
-        # 3) Отправляем команду выбранному дрону через ESP
-        if (self.esp and self.esp.is_leader) and target_drone:
-            payload = create_chess_move_message(target_drone, chess_move)
-            success = self.esp._broadcast_reliable(payload)
-            if success:
-                self.logger.info(f"Successfully sent move command to {target_drone}")
+            if role:
+                mapping[role] = drone_name
+                self.logger.info(f"Drone {drone_name} mapped to role: {role}")
             else:
-                self.logger.error(f"Failed to send move command to {target_drone}")
-        else:
-            self.logger.warning("No ESP controller or target drone available")
+                self.logger.warning(f"No role defined for drone {drone_name} (env var {role_var})")
+        
+        return mapping
+    
+    def _get_piece_on_cell_from_camera(self, cell: str):
+        """Получает тип фигуры на указанной клетке из данных камеры"""
+        try:
+            board = self.cam.read_board()
+            positions = board.meta.get('positions', {}) if board.meta else {}
+            
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    if piece_pos.cell == cell:
+                        return piece_type.lower()
+            
+            return None
+            
+        except Exception as e:
+            self.logger.debug(f"Failed to get piece from camera for cell {cell}: {e}")
+            return None
+    
+    def _find_drone_for_piece(self, piece_type: str):
+        """Находит дрон, ответственный за данный тип фигуры"""
+        if not piece_type:
+            return None
+        
+        piece_type = piece_type.lower()
+        
+        # Прямое соответствие роли (king, queen, rook, etc.)
+        if piece_type in self.drone_role_mapping:
+            return self.drone_role_mapping[piece_type]
+        
+        # Для фигур с ID (knight_1, bishop_2, etc.) - извлекаем базовый тип
+        if '_' in piece_type:
+            base_type = piece_type.split('_')[0]
+            if base_type in self.drone_role_mapping:
+                return self.drone_role_mapping[base_type]
+        
+        # Fallback: первый доступный дрон
+        return self.available_drones[0] if self.available_drones else None
 
-        # 4) Сообщаем alg об исполнении
-        self.cam.commit_move(move, success=True)
-        self.logger.info(f"Leader completed turn {current_turn}: {chess_move}")
+    def _execute_drone_move(self, move, current_turn):
+        """Выполняет ход дрона через ESP или локально"""
+        from_cell = getattr(move, 'from_cell', 'e2')
+        to_cell = getattr(move, 'to_cell', 'e4')
+        
+        # Определяем фигуру на исходной клетке через камеру
+        piece_type = self._get_piece_on_cell_from_camera(from_cell)
+        if not piece_type:
+            self.logger.warning(f"No piece found on {from_cell} by camera, using fallback")
+            piece_type = "king"  # fallback
+        
+        # Находим дрон, ответственный за эту фигуру
+        target_drone = self._find_drone_for_piece(piece_type)
+        
+        if not target_drone:
+            self.logger.error(f"No drone found for piece {piece_type} on {from_cell}")
+            return
+        
+        chess_move = f"{from_cell}->{to_cell}"
+        self.logger.info(f"Piece {piece_type} on {from_cell} -> drone {target_drone}")
+        
+        # Если целевой дрон - это мы сами (лидер), выполняем ход локально
+        if target_drone == self.drone_name:
+            self.logger.info(f"Leader executing own move: {chess_move}")
+            try:
+                # Получаем координаты целевой клетки
+                x, y = self.get_cell_coordinates(to_cell)
+                # Выполняем движение локально
+                self.move_to_xy(x, y, self.flight_z)
+                self.logger.info(f"Leader completed own move to {to_cell}")
+            except Exception as e:
+                self.logger.error(f"Leader failed to execute own move: {e}")
+        else:
+            # Отправляем команду другому дрону через ESP
+            self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
+            if self.esp and self.esp.is_leader:
+                payload = create_chess_move_message(target_drone, chess_move)
+                success = self.esp._broadcast_reliable(payload)
+                if success:
+                    self.logger.info(f"Successfully sent move command to {target_drone}")
+                else:
+                    self.logger.error(f"Failed to send move command to {target_drone}")
+            else:
+                self.logger.warning("No ESP controller available for remote drone command")
 
     def _fen_piece_at(self, fen: str, cell: str):
         try:
