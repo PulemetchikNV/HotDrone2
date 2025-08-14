@@ -14,20 +14,12 @@ except ImportError:
         def sleep(self, t): time.sleep(t)
     rospy = MockRospy()
 
-try:
-    from .flight import FlightController
-    from .helpers import setup_logging
-    from .alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-    from .esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
-    from .const import DRONE_LIST, LEADER_DRONE, rovers
-    from .rover import RoverController
-except ImportError:
-    from flight import FlightController
-    from helpers import setup_logging
-    from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-    from esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
-    from const import DRONE_LIST, LEADER_DRONE, rovers
-    from rover import RoverController
+from .flight import FlightController
+from .helpers import setup_logging
+from .alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+from .esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
+from .const import DRONE_LIST, LEADER_DRONE, rovers
+from .rover import RoverController
 
 try:
     from skyros.drone import Drone as SkyrosDrone

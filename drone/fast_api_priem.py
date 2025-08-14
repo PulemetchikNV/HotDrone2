@@ -5,7 +5,7 @@ import os
 import logging
 from fastapi import FastAPI
 from pydantic import BaseModel
-from drone.log_handler import UDPLogHandler
+from drone.log.log_handler import UDPLogHandler
 
 # -----------------------------
 # 1. LOGGING SETUP

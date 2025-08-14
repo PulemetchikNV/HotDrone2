@@ -15,11 +15,7 @@ except ImportError:
         def Literal(*args):
             return str
 
-# Импорт камеры
-try:
-    from .camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
-except ImportError:
-    from camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
+from .camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
 
 
 # -----------------------------
@@ -245,5 +241,3 @@ def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) 
         timestamp=time.time(),
         meta=meta,
     )
-
-

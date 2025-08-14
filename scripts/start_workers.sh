@@ -5,8 +5,8 @@
 # Конфигурация
 SSH_USER="pi"
 SSH_PASS="raspberry"
-DRONE_DIR="/home/pi/DroneCraft"
-DRONES_FILE="./drones.txt"
+DRONE_DIR="/home/pi/HotDrone2"
+DRONES_FILE="./workers.txt"
 WORKER_PORT=8080
 
 # Цвета
@@ -43,9 +43,11 @@ start_worker_on_drone() {
 
         echo 'Запуск нового воркера в фоновом режиме на порту $WORKER_PORT...';
         export DRONE_NAME='$drone_name';
-        export LOG_SERVER_IP='$(hostname -I | awk '{print $1}')'; # Автоматически определяем IP хоста
+        export LOG_SERVER_IP='$(hostname -i | awk '{print $1}')'; # Автоматически определяем IP хоста
         
+        source myvenv/bin/activate;
         nohup python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT > /dev/null 2>&1 &
+        deactivate;
         
         sleep 2; # Даем время на запуск
         
