@@ -177,13 +177,13 @@ class FlightControllerMain:
 
         self.logger.info("Land requested")
 
-    def force_disarm():
-        rospy.init_node('force_disarm_node', anonymous=True)
-
-        # Ждём, пока сервис станет доступен
-        rospy.wait_for_service('/mavros/cmd/command', timeout=5)
-
+    def force_disarm(self):
+        self.logger.info("Принудительное дизарминг дрона")
+        
         try:
+            # Ждём, пока сервис станет доступен
+            rospy.wait_for_service('/mavros/cmd/command', timeout=5)
+            
             # Создаём прокси к сервису
             command_service = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
 
@@ -204,19 +204,19 @@ class FlightControllerMain:
             )
 
             if response.success:
-                rospy.loginfo("✅ Дрон успешно дизармлен (принудительно)")
+                self.logger.info("✅ Дрон успешно дизармлен (принудительно)")
             else:
-                rospy.logerr(f"❌ Ошибка дизарма: {response.message}")
+                self.logger.error(f"❌ Ошибка дизарма: {response.message}")
 
         except rospy.ROSException as e:
             try:
                 result = subprocess.run(['rosrun', 'mavros', 'mavsafety', 'kill'], check=True, capture_output=True, text=True)
-                print("Success:", result.stdout)
+                self.logger.info("Success:", result.stdout)
             except subprocess.CalledProcessError as e:
-                print("Error:", e.stderr)
-            rospy.logerr(f"Сервис недоступен: {e}")
+                self.logger.error("Error:", e.stderr)
+            self.logger.error(f"Сервис недоступен: {e}")
         except rospy.ServiceException as e:
-            rospy.logerr(f"Ошибка вызова сервиса: {e}")
+            self.logger.error(f"Ошибка вызова сервиса: {e}")
 
 
     def scan_qr_code(self, timeout=5.0):
@@ -335,6 +335,10 @@ class FlightControllerMock:
     def set_mode_service(self, custom_mode):
         """Имитация переключения режимов"""
         self.logger.info(f"🔄 MOCK MODE: {custom_mode}")
+    
+    def force_disarm(self):
+        """Имитация принудительного дизарминга"""
+        self.logger.info("🔒 MOCK FORCE DISARM")
 
 
 # Выбор реализации по переменной окружения
