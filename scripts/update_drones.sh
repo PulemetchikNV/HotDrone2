@@ -6,7 +6,7 @@
 # Конфигурация SSH
 SSH_USER="pi"
 SSH_PASS="raspberry"  # Или ваш пароль
-DRONE_DIR="/home/pi/DroneCraft"
+DRONE_DIR="/home/pi/HotDrone2"
 DRONES_FILE="./drones.txt"
 
 # Цвета для вывода
