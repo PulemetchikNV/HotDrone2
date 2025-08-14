@@ -19,11 +19,19 @@ def run_test(mode: str):
         print("Запуск теста в РАСПРЕДЕЛЕННОМ режиме")
         print("=" * 50)
         # В распределенном режиме нам нужны URL воркеров
-        worker_addresses = [
-            "http://drone15.local:8080/",
-            "http://drone18.local:8080/",
-        ]
+        # Читаем адреса из файла drones.txt
+        with open('drones.txt', 'r') as f:
+            drones_data = f.read().strip()
+        
+        worker_addresses = []
+        for entry in drones_data.split(';'):
+            if not entry:
+                continue
+            name, address = entry.split(':')
+            worker_addresses.append(f"http://{address.strip()}:8080/")
+
         os.environ["WORKER_DRONES"] = ",".join(worker_addresses)
+        print(f"Loaded {len(worker_addresses)} workers: {worker_addresses}")
     else:
         print("=" * 50)
         print("Запуск теста в ЦЕНТРАЛИЗОВАННОМ режиме")
