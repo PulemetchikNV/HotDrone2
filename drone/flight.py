@@ -276,31 +276,16 @@ class FlightControllerMain:
         self.logger.info(f"Navigating to x={x:.2f} y={y:.2f} z={z:.2f} in {frame_id}")
         self.navigate_service(x=x, y=y, z=z, yaw=yaw, speed=speed, frame_id=frame_id, auto_arm=auto_arm)
 
-    def navigate_wait(
-        self,
-        x=0.0,
-        y=0.0,
-        z=0.0,
-        yaw=float("nan"),
-        speed=0.5,
-        frame_id="",
-        auto_arm=False,
-        tolerance=0.2,
-    ):
+    def navigate_wait(self, x=0, y=0, z=1.15, yaw=float('nan'),speed=0.4, frame_id='aruco_map', auto_arm=False, tolerance=0.2):
         self.logger.info(f"Navigating to x={x:.2f} y={y:.2f} z={z:.2f} in {frame_id}")
         self.navigate(x=x, y=y, z=z, yaw=yaw, speed=speed, frame_id=frame_id, auto_arm=auto_arm)
 
-        telem = self.get_telemetry(frame_id="body")
-        if auto_arm and not telem.armed:
-            raise RuntimeError("Arming failed!")
-
-        while True:
-            telem = self.get_telemetry(frame_id="navigate_target")
-            if math.sqrt(telem.x**2 + telem.y**2 + telem.z**2) < tolerance:
-                self.wait(0.1)
-                self.logger.info("Arrived at target")
+        while not rospy.is_shutdown():
+            telem = self.get_telemetry(frame_id='navigate_target')
+            if math.sqrt(telem.x ** 2 + telem.y ** 2 + telem.z ** 2) < tolerance:
                 break
-            self.wait(0.1)
+            rospy.sleep(0.2)
+
 
     def takeoff(self, z=1.1, delay=0.5, speed=0.5):
         self.logger.info(f"Taking off to z={z:.2f}")

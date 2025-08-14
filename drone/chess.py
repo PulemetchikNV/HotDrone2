@@ -105,7 +105,6 @@ class ChessDroneSingle:
             self.logger.warning(f"Failed to load ArUco map from {self.map_path}: {e}")
 
     def move_to_xy(self, x: float, y: float, z: float):
-        frame_id = f"aruco_{self.aruco_id}"
         
         # 1. Взлёт на рабочую высоту
         self.fc.takeoff(z=self.takeoff_z, delay=2, speed=0.5)
@@ -114,18 +113,14 @@ class ChessDroneSingle:
         self.fc.navigate_wait(
             x=x, y=y, z=self.flight_z,
             speed=self.speed,
-            frame_id=frame_id,
             auto_arm=True,
-            tolerance=0.2,
         )
         
         # 4. Снижение до z=0.5
         self.fc.navigate_wait(
             x=x, y=y, z=0.15,
             speed=0.3,
-            frame_id=frame_id,
             auto_arm=False,
-            tolerance=0.2,
         )
 
         # self.fc.land()
