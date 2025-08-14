@@ -370,8 +370,42 @@ class FlightControllerMain:
 
         self.logger.info("Land requested")
 
-    def engine_turnoff(self):
-        print('MOCK')
+    def force_disarm():
+        rospy.init_node('force_disarm_node', anonymous=True)
+
+        # Ждём, пока сервис станет доступен
+        rospy.wait_for_service('/mavros/cmd/command', timeout=5)
+
+        try:
+            # Создаём прокси к сервису
+            command_service = rospy.ServiceProxy('/mavros/cmd/command', CommandLong)
+
+            # Вызываем команду MAV_CMD_COMPONENT_ARM_DISARM
+            # command=400 -> MAV_CMD_COMPONENT_ARM_DISARM
+            # param1=0 -> disarm
+            # param2=21196 -> force disarm
+            response = command_service(
+                command=400,           # MAV_CMD_COMPONENT_ARM_DISARM
+                param1=0.0,            # 0 = disarm
+                param2=21196.0,        # 21196 = force disarm
+                param3=0.0,
+                param4=0.0,
+                param5=0.0,
+                param6=0.0,
+                param7=0.0,
+                confirmation=1         # обязательно!
+            )
+
+            if response.success:
+                rospy.loginfo("✅ Дрон успешно дизармлен (принудительно)")
+            else:
+                rospy.logerr(f"❌ Ошибка дизарма: {response.message}")
+
+        except rospy.ROSException as e:
+            rospy.logerr(f"Сервис недоступен: {e}")
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Ошибка вызова сервиса: {e}")
+
 
     def scan_qr_code(self, timeout=5.0):
         return scan_qr(self.logger, timeout)
@@ -472,6 +506,7 @@ class FlightControllerMock:
                 self.armed = True
         
         return MockTelemetry()
+
     
     def set_led(self, effect=None, r=0, g=0, b=0):
         """Имитация управления светодиодами"""
