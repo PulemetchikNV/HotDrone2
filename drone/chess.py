@@ -111,17 +111,34 @@ class ChessDroneSingle:
         time.sleep(3)
 
         self.fc.navigate_wait(
-            x=x, y=y, z=self.flight_z,
+            x=x,
+            y=y,
+            z=self.flight_z,
             speed=self.speed,
             auto_arm=True,
         )
+        self.fc.wait(0.5)
         
         # 4. Снижение до z=0.5
         self.fc.navigate_wait(
-            x=x, y=y, z=0.15,
+            x=x, 
+            y=y, 
+            z=0.15,
             speed=0.3,
             auto_arm=False,
         )
+
+        self.fc.wait(0.5)
+
+        self.fc.navigate_wait(
+            x=x, 
+            y=y, 
+            z=0.0,
+            speed=0.3,
+            auto_arm=False,
+        )
+
+        eval('rosrun mavros mavsafety kill')
 
         # self.fc.land()
         

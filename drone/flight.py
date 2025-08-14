@@ -94,7 +94,6 @@ def scan_qr(logger, timeout=5.0):
     except rospy.ROSException:
         logger.warning("QR: таймаут ожидания результата")
         return []
-
 class FlightControllerCustom:
     def __init__(self, drone_name=None, logger=None):
         self.autoland = rospy.ServiceProxy("land", Trigger)
@@ -259,6 +258,7 @@ class FlightControllerMain:
     def __init__(self, drone_name=None, logger=None):
         self.autoland = rospy.ServiceProxy("land", Trigger)
         self.navigate = rospy.ServiceProxy('navigate', srv.Navigate)
+        
         self.get_telemetry = rospy.ServiceProxy('get_telemetry', srv.GetTelemetry)
         self.set_led = rospy.ServiceProxy('led/set_effect', srv.SetLEDEffect)
         self.set_mode_service = rospy.ServiceProxy("/mavros/set_mode", SetMode)
