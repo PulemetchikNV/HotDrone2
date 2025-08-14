@@ -111,64 +111,24 @@ class ChessDroneSingle:
         self.fc.takeoff(z=self.takeoff_z, delay=2, speed=0.5)
         time.sleep(3)
 
-        # 2. Навигация до целевой позиции на рабочей высоте
-        self.fc.navigate(
+        self.fc.navigate_wait(
             x=x, y=y, z=self.flight_z,
             speed=self.speed,
             frame_id=frame_id,
-            auto_arm=True
+            auto_arm=True,
+            arrival_tolerance=self.tolerance,
+            hover_time=self.hover_time
         )
-        time.sleep(0.5)
         
-        # Проверка прибытия в целевую позицию (как в stage1_mod.py)
-        arrival_tolerance = self.tolerance
-        self.logger.info(f"Ожидание прибытия в позицию ({x:.3f}, {y:.3f}, {self.flight_z:.3f}) с толерантностью {arrival_tolerance}")
-        
-        while not rospy.is_shutdown():
-            try:
-                telem = self.fc.get_telemetry(frame_id="navigate_target")
-                distance_to_target = math.sqrt(telem.x**2 + telem.y**2 + telem.z**2)
-                if distance_to_target < arrival_tolerance:
-                    self.logger.info(f"Прибыл в целевую позицию. Расстояние: {distance_to_target:.3f}м")
-                    break
-            except Exception as e:
-                self.logger.warning(f"Could not get navigate_target telemetry: {e}. Fallback to simple wait.")
-                time.sleep(3)
-                break
-            
-            time.sleep(0.2)
-        
-        # Зависание над целевой позицией
-        self.fc.wait(self.hover_time)
-        
-        
-        # 4. Медленное снижение до z=0
-        descent_speed = 0.3  # Медленная скорость снижения
-        self.logger.info(f"Медленное снижение до z=0 со скоростью {descent_speed} м/с")
-        self.fc.navigate(
-            x=x, y=y, z=0.0,
-            speed=descent_speed,
+        # 4. Снижение до z=0.5
+        self.fc.navigate_wait(
+            x=x, y=y, z=0.25,
+            speed=0.3,
             frame_id=frame_id,
-            auto_arm=False
+            auto_arm=False,
+            arrival_tolerance=0.1,
+            hover_time=0.5
         )
-        
-        # Проверка прибытия на уровень z=0
-        descent_tolerance = 0.1  # Более точная толерантность для посадки
-        self.logger.info(f"Ожидание снижения до z=0 с толерантностью {descent_tolerance}")
-        
-        while not rospy.is_shutdown():
-            try:
-                telem = self.fc.get_telemetry(frame_id="navigate_target")
-                distance_to_target = math.sqrt(telem.x**2 + telem.y**2 + telem.z**2)
-                if distance_to_target < descent_tolerance:
-                    self.logger.info(f"Снижение завершено. Расстояние до цели: {distance_to_target:.3f}м")
-                    break
-            except Exception as e:
-                self.logger.warning(f"Could not get navigate_target telemetry during descent: {e}. Fallback to simple wait.")
-                time.sleep(3)
-                break
-            
-            time.sleep(0.2)
 
         self.fc.land()
         

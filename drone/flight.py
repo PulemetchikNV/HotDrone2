@@ -107,6 +107,7 @@ class FlightControllerCustom:
         self.initial_z = 0.0
         self.drone_name = drone_name or os.environ.get('DRONE_NAME', 'unknown_drone')
         self.logger = logger or setup_logging(self.drone_name)
+
     def land(self, prl_aruco="aruco_map", prl_speed=0.5, prl_bias_x=-0.08, prl_bias_y=0.1, prl_z=0.6, prl_tol=0.1, delay=4.0, fall_time=1, fall_z=-1, fall_speed=1):
         telem = self.get_telemetry(frame_id="aruco_map")
         self.logger.info("Pre-landing")
@@ -312,20 +313,41 @@ class FlightControllerMain:
         self.set_led(r=0, g=255, b=0)
 
 
-    def land(self):
-        self.logger.info("Landing (standard)")
-        try:
-            self.land_new()
-            # self.autoland()
-        except Exception as e:
-            self.logger.warning(f"autoland failed: {e}, trying mode switch")
-            try:
-                self.set_mode_service(custom_mode="AUTO.LAND")
-            except Exception:
-                pass
-        self.logger.info("Land requested")
 
-    
+    def land(self, prl_aruco="aruco_map", prl_speed=0.5, prl_bias_x=-0.08, prl_bias_y=0.1, prl_z=0.6, prl_tol=0.1, delay=4.0, fall_time=1, fall_z=-1, fall_speed=1):
+        telem = self.get_telemetry(frame_id="aruco_map")
+        self.logger.info("Pre-landing")
+        self.set_led(effect='blink', r=255, g=255, b=255)
+        if prl_aruco is None:
+            self.navigate_wait(x=telem.x, y=telem.y, z=prl_z, speed=prl_speed, frame_id="aruco_map", tolerance=prl_tol)
+        else:
+            self.navigate_wait(x=prl_bias_x, y=prl_bias_y, z=prl_z, speed=prl_speed, frame_id=prl_aruco, tolerance=prl_tol)
+        self.wait(2.0)
+        self.logger.info("Landing")
+        self.set_led(effect='blink', r=255, g=165, b=0)
+        telem = self.get_telemetry(frame_id="base_link")
+        self.navigate(x=telem.x, y=telem.y, z=fall_z, speed=fall_speed, frame_id="base_link")
+        self.wait(fall_time)
+        self.navigate(x=telem.x, y=telem.y, z=fall_z, speed=0, frame_id="base_link")
+        self.force_arm(False)
+        self.logger.info("Landed")
+        self.set_mode_service(custom_mode="AUTO.LAND")
+        self.wait(0.2)
+        while self.get_telemetry(frame_id="body").mode != "STABILIZED":
+            self.set_mode_service(custom_mode="STABILIZED")
+            self.wait(3)
+        self.wait(1)
+        self.force_arm(True)
+        self.wait(1)
+        while self.get_telemetry(frame_id="body").armed:
+            self.force_arm(False)
+            self.wait(3)
+        self.set_led(r=0, g=255, b=0)
+        # Threading control for async publisher
+        self.publisher_thread = None
+        self.stop_publisher = threading.Event()
+
+        self.logger.info("Land requested")
 
     def scan_qr_code(self, timeout=5.0):
         return scan_qr(self.logger, timeout)
