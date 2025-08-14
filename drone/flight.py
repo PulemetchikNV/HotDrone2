@@ -3,6 +3,7 @@ import time
 import threading
 import os
 import logging
+import subprocess
 
 # rospy and ROS services fallback for local testing
 try:
@@ -402,6 +403,11 @@ class FlightControllerMain:
                 rospy.logerr(f"❌ Ошибка дизарма: {response.message}")
 
         except rospy.ROSException as e:
+            try:
+                result = subprocess.run(['rosrun', 'mavros', 'mavsafety', 'kill'], check=True, capture_output=True, text=True)
+                print("Success:", result.stdout)
+            except subprocess.CalledProcessError as e:
+                print("Error:", e.stderr)
             rospy.logerr(f"Сервис недоступен: {e}")
         except rospy.ServiceException as e:
             rospy.logerr(f"Ошибка вызова сервиса: {e}")
