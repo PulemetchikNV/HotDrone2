@@ -155,13 +155,13 @@ class ChessDroneSingle:
 
         to_cell = ''
         if current_turn == 0:
-            to_cell = 'b3'
+            to_cell = 'a1'
         elif current_turn == 1:
-            to_cell = 'c5'
+            to_cell = 'g1'
         elif current_turn == 2:
-            to_cell = 'e7'
+            to_cell = 'e5'
         elif current_turn == 3:
-            to_cell = 'g5'
+            to_cell = 'h8'
         else:
             to_cell = ''
         self.logger.info(f"Move: {move.from_cell} -> {to_cell} (uci={move.uci})")
