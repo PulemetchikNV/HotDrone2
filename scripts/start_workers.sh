@@ -46,7 +46,7 @@ start_worker_on_drone() {
 
         echo 'Запуск нового воркера в фоновом режиме на порту $WORKER_PORT...';
         export DRONE_NAME='$drone_name';
-        export LOG_SERVER_IP='$(hostname -i | awk '{print $1}')'; # Автоматически определяем IP хоста
+        # export LOG_SERVER_IP='$(hostname -I | awk '{print $1}')'; # Автоматически определяем IP хоста
         
         source myvenv/bin/activate;
         nohup python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT > /dev/null 2>&1 &
