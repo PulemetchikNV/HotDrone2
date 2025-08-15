@@ -3,3 +3,4 @@ uvicorn
 httpx
 python-chess
 psutil
+typing-extensions

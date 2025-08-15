@@ -4,7 +4,8 @@ import httpx
 import chess
 import subprocess
 from dataclasses import dataclass
-from typing import Optional, Literal, Dict, Any
+from typing import Optional, Dict, Any
+from typing_extensions import Literal
 
 # --- Модели данных ---
 @dataclass(frozen=True)
