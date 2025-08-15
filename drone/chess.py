@@ -2,7 +2,6 @@ import os
 import time
 import json
 import math
-from dataclasses import replace
 
 # rospy fallback
 try:
@@ -20,6 +19,7 @@ from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemp
 from esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
+from camera import create_camera_controller
 
 try:
     from skyros.drone import Drone as SkyrosDrone
@@ -50,21 +50,7 @@ def next_cell_simple(current: str) -> str:
     return "a1"
 
 
-class CameraAdapter:
-    """Адаптер к alg.get_board_state()/update_after_execution для совместимости с текущим кодом."""
-    def __init__(self, logger):
-        self.logger = logger
-        self._board = None
-
-    def read_board(self):
-        # Получаем снимок через alg API
-        self._board = get_board_state()
-        return self._board
-
-    def commit_move(self, move, success: bool):
-        # Обновляем локальное состояние после исполнения
-        if self._board is not None:
-            self._board = update_after_execution(self._board, move, success)
+ 
 
 
 class ChessDroneSingle:
@@ -141,7 +127,10 @@ class ChessDroneSingle:
         self.flight_z = float(os.getenv("FLIGHT_Z", "1.0"))
         self.speed = float(os.getenv("SPEED", "0.3"))
 
-        self.cam = CameraAdapter(self.logger)
+        # CameraAdapter removed; use unified camera controller as single source of truth
+        self.camera = create_camera_controller(self.logger)
+        self.our_team = os.getenv("OUR_TEAM", os.getenv("DRONE_COLOR", "white")).lower()
+        self.logger.info(f"Our team: {self.our_team}")
 
         # Контроллер роверов (пешки)
         self.rover = RoverController(logger=self.logger)
@@ -250,13 +239,23 @@ class ChessDroneSingle:
             self.logger.warning("run_once called on non-leader drone")
             return
             
-        # 1) Получаем состояние доски через alg
-        board = self.cam.read_board()
+        # 1) Получаем состояние доски через alg (источник данных — камера внутри alg)
+        board = get_board_state()
         
-        # Проверяем, чей ход
-        current_player = getattr(board, 'turn', 'white')
-        if current_player != self.drone_color:
-            self.logger.info(f"Not our turn. Current turn is {current_player}, we are {self.drone_color}. Waiting.")
+        # Проверяем, чей ход (предпочитаем камеру)
+        camera_turn = None
+        try:
+            if hasattr(self.camera, 'get_board_positions'):
+                # обновим внутреннее состояние камеры, чтобы получить turn
+                self.camera.get_board_positions()
+            if hasattr(self.camera, 'get_turn'):
+                camera_turn = self.camera.get_turn()
+        except Exception as e:
+            self.logger.debug(f"Failed to fetch camera turn: {e}")
+
+        current_player = (camera_turn or getattr(board, 'turn', 'white')).lower()
+        if current_player != self.our_team:
+            self.logger.info(f"Not our turn. Current turn is {current_player}, we are {self.our_team}. Waiting.")
             return
 
         # 2) Запрашиваем ход (внутри alg решается логика)
@@ -265,28 +264,6 @@ class ChessDroneSingle:
         from_cell = getattr(move, 'from_cell', 'e2')
         to_cell = getattr(move, 'to_cell', 'e4')
         
-        # ДЕБАГ: Переопределение целевой клетки для тестирования
-        debug_to_cell = None
-        if current_turn == 0:
-            debug_to_cell = 'a1'
-        elif current_turn == 1:
-            debug_to_cell = 'g1'
-        elif current_turn == 2:
-            debug_to_cell = 'e5'
-        elif current_turn == 3:
-            debug_to_cell = 'h8'
-        
-        if debug_to_cell:
-            self.logger.info(f"DEBUG: Overriding to_cell from {to_cell} to {debug_to_cell}")
-            to_cell = debug_to_cell
-            # Создаём новый объект хода с переопределённой целевой клеткой
-            try:
-                move = replace(move, to_cell=to_cell, uci=f"{from_cell}{to_cell}")
-            except:
-                # Fallback если replace не работает
-                move.to_cell = to_cell
-                move.uci = f"{from_cell}{to_cell}"
-
         # 3) Определяем исполнителя по фигуре на from_cell через камеру
         is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(from_cell)
         
@@ -294,13 +271,11 @@ class ChessDroneSingle:
             # Пешка -> выполняем ход ровером
             self.logger.info(f"Executing pawn move {from_cell}->{to_cell} with rover")
             self._execute_rover_move(move)
-            self.cam.commit_move(move, success=True)
             self.logger.info(f"Leader completed rover move: {from_cell}->{to_cell}")
         else:
             # Не пешка -> выполняем ход дроном
             self.logger.info(f"Executing piece move {from_cell}->{to_cell} with drone")
             self._execute_drone_move(move, current_turn)
-            self.cam.commit_move(move, success=True)
             self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
     
     def _build_drone_role_mapping(self):
@@ -335,8 +310,7 @@ class ChessDroneSingle:
     def _get_piece_on_cell_from_camera(self, cell: str):
         """Получает тип фигуры на указанной клетке из данных камеры"""
         try:
-            board = self.cam.read_board()
-            positions = board.meta.get('positions', {}) if board.meta else {}
+            positions = self.camera.get_board_positions()
             
             for color_data in positions.values():
                 for piece_type, piece_pos in color_data.items():
@@ -466,8 +440,7 @@ class ChessDroneSingle:
             tuple: (is_pawn, initial_cell) где is_pawn - bool, initial_cell - str или None
         """
         try:
-            board = self.cam.read_board()
-            positions = board.meta.get('positions', {}) if board.meta else {}
+            positions = self.camera.get_board_positions()
             
             for color_data in positions.values():
                 for piece_type, piece_pos in color_data.items():
@@ -639,8 +612,7 @@ class ChessDroneSingle:
         # Интеграция детектирования активности по камере
         try:
             # Получаем данные с камеры о позициях фигур
-            board = self.cam.read_board()
-            positions = board.meta.get('positions', {}) if board.meta else {}
+            positions = self.camera.get_board_positions()
             
             # Определяем активные дроны на основе видимых фигур
             # Пешки управляются роверами, остальные фигуры — дронами
@@ -763,58 +735,6 @@ class ChessDroneSingle:
                 self.logger.error(f"main loop error: {e}")
                 self.fc.wait(0.3)
         self.logger.info("Main loop stopped.")
-
-    def run_leader(self):
-        """Основной цикл для дрона-лидера"""
-        TURN_LIMIT = 5
-        turn_count = 0
-        
-        while not rospy.is_shutdown():
-            try:
-                if TURN_LIMIT > turn_count:
-                    self.logger.info(f"=== Leader executing turn {turn_count + 1} ===")
-                    self.run_once(turn_count)
-                    turn_count += 1
-                    
-                    # Пауза между ходами
-                    self.fc.wait(5.0)
-                else:
-                    self.logger.info("Leader completed all turns, waiting...")
-                    self.fc.wait(10.0)
-
-            except KeyboardInterrupt:
-                break
-            except AlgTemporaryError as e:
-                self.logger.warning(f"temporary error in alg: {e}")
-                self.fc.wait(1.0)
-            except AlgPermanentError as e:
-                self.logger.error(f"permanent error in alg: {e}")
-                self.fc.wait(3.0)
-            except Exception as e:
-                self.logger.error(f"leader error: {e}")
-                self.fc.wait(3.0)
-        self.logger.info("Leader stopped.")
-
-    def run_follower(self):
-        """Основной цикл для дрона-ведомого"""
-        while not rospy.is_shutdown():
-            try:
-                # Ждем команду от лидера и выполняем её
-                success = self.wait_and_execute_move(timeout=30.0)
-                if success:
-                    self.logger.info("Move executed successfully, waiting for next command...")
-                else:
-                    self.logger.warning("Failed to execute move or timeout, continuing...")
-                    
-                # Короткая пауза перед следующим ожиданием
-                self.fc.wait(1.0)
-
-            except KeyboardInterrupt:
-                break
-            except Exception as e:
-                self.logger.error(f"follower error: {e}")
-                self.fc.wait(3.0)
-        self.logger.info("Follower stopped.")
 
 
 if __name__ == "__main__":
