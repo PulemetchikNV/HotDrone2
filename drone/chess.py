@@ -738,7 +738,7 @@ class ChessDroneSingle:
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                self.logger.error(f"main loop error: {e}")
+                self.logger.error(f"main loop error: {e} {e.__traceback__}")
                 self.fc.wait(0.3)
         self.logger.info("Main loop stopped.")
 
