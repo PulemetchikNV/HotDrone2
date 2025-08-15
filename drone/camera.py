@@ -369,49 +369,40 @@ def get_board_state_from_camera(camera_controller) -> dict:
     Returns:
         Dict с информацией о доске
     """
-    try:
-        positions = camera_controller.get_board_positions()
-        
-        # Определяем текущую клетку (первая найденная фигура)
-        current_cell = os.getenv("START_CELL", "e2")
-        for color in ("white", "black"):
-            if color in positions and isinstance(positions[color], dict):
-                for piece in positions[color].values():
-                    if hasattr(piece, 'cell'):
-                        current_cell = piece.cell
-                        break
-                if current_cell != os.getenv("START_CELL", "e2"):
+    positions = camera_controller.get_board_positions()
+    
+    # Определяем текущую клетку (первая найденная фигура)
+    current_cell = os.getenv("START_CELL", "e2")
+    for color in ("white", "black"):
+        if color in positions and isinstance(positions[color], dict):
+            for piece in positions[color].values():
+                if hasattr(piece, 'cell'):
+                    current_cell = piece.cell
                     break
-        
-        # Чей ход
-        turn = 'white'
-        if hasattr(camera_controller, 'get_turn'):
-            camera_turn = camera_controller.get_turn()
-            if camera_turn:
-                turn = camera_turn.lower()
+            if current_cell != os.getenv("START_CELL", "e2"):
+                break
+    
+    # Чей ход
+    turn = 'white'
+    if hasattr(camera_controller, 'get_turn'):
+        camera_turn = camera_controller.get_turn()
+        if camera_turn:
+            turn = camera_turn.lower()
 
-        print(f"GOT TURN: {turn}")
-        
-        # Генерируем FEN
-        fen = positions_to_fen(positions, turn)
-        
-        return {
-            'positions': positions,
-            'current_cell': current_cell,
-            'turn': 'w' if turn.startswith('w') else 'b',
-            'fen': fen,
-            'timestamp': time.time()
-        }
-        
-    except Exception as e:
-        # При ошибках возвращаем минимальную структуру
-        return {
-            'positions': {},
-            'current_cell': os.getenv("START_CELL", "e2"),
-            'turn': 'w',
-            'fen': "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-            'timestamp': time.time()
-        }
+    print(f"GOT TURN: {turn}")
+    
+    # Генерируем FEN
+    fen = positions_to_fen(positions, turn)
+
+    print(f"GOT FEN: {fen}")
+    
+    return {
+        'positions': positions,
+        'current_cell': current_cell,
+        'turn': 'w' if turn.startswith('w') else 'b',
+        'fen': fen,
+        'timestamp': time.time()
+    }
 
 
 def create_camera_controller(logger=None) -> CameraController:
