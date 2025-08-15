@@ -638,10 +638,7 @@ class ChessDroneSingle:
                 else:
                     self.logger.info(f"New leader selected: {new_leader}")
         else:
-            self.logger.debug(f"Leader {self.current_leader} is healthy")
-
-        # MOCK для тестирования
-        self.current_leader = 'drone15'
+            self.logger.info(f"Leader {self.current_leader} is healthy")
     
     def _check_is_our_turn(self) -> bool:
         """Проверяет через камеру, наш ли сейчас ход"""
@@ -761,8 +758,6 @@ class ChessDroneSingle:
 
         self.logger.info("Starting chess drone MAIN LOOP (dynamic leadership)...")
 
-        TURN_LIMIT = 5
-        turn_count = 0
         last_move_ts = 0.0
         move_interval = 5.0
 
@@ -774,18 +769,14 @@ class ChessDroneSingle:
                 now = time.time()
                 if self.esp and self.esp.is_leader:
                     # Ходы лидера с паузой между ними
-                    if turn_count < TURN_LIMIT and (now - last_move_ts) >= move_interval:
-                        self.logger.info(f"=== Leader executing turn {turn_count + 1} ===")
+                    if (now - last_move_ts) >= move_interval:
+                        self.logger.info(f"=== Leader run_once call ===")
                         # Перед началом ещё раз убедимся, что мы лидер
                         if self.esp.is_leader:
-                            self.run_once(turn_count)
-                            turn_count += 1
+                            self.run_once()
                             last_move_ts = time.time()
                         else:
                             self.logger.info("Leadership lost before executing turn; skipping")
-                    elif turn_count >= TURN_LIMIT:
-                        # После лимита — просто ждём
-                        pass
                 else:
                     # Ведомый: ждём команды небольшими таймаутами
                     self.wait_and_execute_move(timeout=0.3)
