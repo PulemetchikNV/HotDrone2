@@ -29,9 +29,18 @@ if [ $? -ne 0 ]; then
 fi
 
 # 3. Find the installed Stockfish binary
-SYSTEM_STOCKFISH_PATH=$(which stockfish)
+SYSTEM_STOCKFISH_PATH=""
+POSSIBLE_PATHS=("/usr/games/stockfish" "/usr/bin/stockfish")
+for path in "${POSSIBLE_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        SYSTEM_STOCKFISH_PATH="$path"
+        break
+    fi
+done
+
 if [ -z "$SYSTEM_STOCKFISH_PATH" ]; then
     echo "Error: Could not find Stockfish binary after installation."
+    echo "Please find it manually and update the symlink."
     exit 1
 fi
 echo "Stockfish installed at: $SYSTEM_STOCKFISH_PATH"
