@@ -1,308 +1,343 @@
-Loaded DRONE_NAME=drone15
-Loaded INITIAL_LETTER=d
-Loaded DRONE_ROLE=queen
-Loaded DRONE_ROLE_DRONE15=queen
-Loaded DRONE_ROLE_DRONE21=king
-Loaded DRONE_COLOR=black
-Loaded LOG_LEVEL=INFO
-Loaded FLIGHT_IMPL=main
-Loaded ROVER_IMPL=mock
-Loaded CAMERA_IMPL=mock
-Loaded COMM_IMPL=wifi
-Loaded CAMERA_API_URL=http://192.168.1.119:8001/api/positions
-INITIALIZING COMM_IMPL: wifi
-[drone15] 15:34:56 - INFO - WifiEspController initialized on 0.0.0.0:47000, leader=True, drone=drone15
-[drone15] 15:34:56 - INFO - Custom message callback set
-[drone15] 15:34:56 - INFO - ESP message handler registered
-[drone15] 15:34:56 - INFO - Available drones: ['drone15']
-[drone15] 15:34:56 - INFO - Drone role: queen, color: black, initial_letter: d
-[drone15] 15:34:56 - INFO - Drone drone15 mapped to unique role: queen
-[drone15] 15:34:56 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
-[drone15] 15:34:56 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
-[drone15] 15:34:56 - INFO - Our team: black
-[drone15] 15:34:56 - INFO - Starting chess drone MAIN LOOP (dynamic leadership)...
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-[drone15] 15:34:56 - INFO - === Leader executing turn 1 ===
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-[camera] 15:34:56 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
-[camera] 15:34:56 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
-GOT TURN: white
-GOT FEN: 3qk3/8/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1
-GOT BOARD: BoardState(fen='3qk3/8/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1', turn='w', move_number=1, timestamp=1755268496.2159114, meta={'current_cell': 'e1', 'positions': {'black': {'queen': PiecePosition(x=0.0, y=3.5, cell='d8', piece_type='queen', color='black'), 'king': PiecePosition(x=0.0, y=3.5, cell='e8', piece_type='king', color='black')}, 'white': {'king': PiecePosition(x=0.0, y=-3.5, cell='e1', piece_type='king', color='white'), 'queen': PiecePosition(x=-0.5, y=-3.5, cell='d1', piece_type='queen', color='white'), 'rook_a1': PiecePosition(x=-3.5, y=-3.5, cell='a1', piece_type='rook_a1', color='white'), 'rook_h1': PiecePosition(x=3.5, y=-3.5, cell='h1', piece_type='rook_h1', color='white'), 'knight_b1': PiecePosition(x=-2.5, y=-3.5, cell='b1', piece_type='knight_b1', color='white'), 'knight_g1': PiecePosition(x=2.5, y=-3.5, cell='g1', piece_type='knight_g1', color='white'), 'bishop_c1': PiecePosition(x=-1.5, y=-3.5, cell='c1', piece_type='bishop_c1', color='white'), 'bishop_f1': PiecePosition(x=1.5, y=-3.5, cell='f1', piece_type='bishop_f1', color='white'), 'pawn_a2': PiecePosition(x=-3.5, y=-2.5, cell='a2', piece_type='pawn_a2', color='white'), 'pawn_b2': PiecePosition(x=-2.5, y=-2.5, cell='b2', piece_type='pawn_b2', color='white'), 'pawn_c2': PiecePosition(x=-1.5, y=-2.5, cell='c2', piece_type='pawn_c2', color='white'), 'pawn_d2': PiecePosition(x=-0.5, y=-2.5, cell='d2', piece_type='pawn_d2', color='white'), 'pawn_e2': PiecePosition(x=0.5, y=-2.5, cell='e2', piece_type='pawn_e2', color='white'), 'pawn_f2': PiecePosition(x=1.5, y=-2.5, cell='f2', piece_type='pawn_f2', color='white'), 'pawn_g2': PiecePosition(x=2.5, y=-2.5, cell='g2', piece_type='pawn_g2', color='white'), 'pawn_h2': PiecePosition(x=3.5, y=-2.5, cell='h2', piece_type='pawn_h2', color='white')}}, 'camera_timestamp': 1755268496.215902})
-[drone15] 15:34:56 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-[drone15] 15:35:01 - INFO - === Leader executing turn 2 ===
-GOT TURN: white
-GOT FEN: 3qk3/8/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1
-GOT BOARD: BoardState(fen='3qk3/8/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1', turn='w', move_number=1, timestamp=1755268501.4649785, meta={'current_cell': 'e1', 'positions': {'black': {'queen': PiecePosition(x=0.0, y=3.5, cell='d8', piece_type='queen', color='black'), 'king': PiecePosition(x=0.0, y=3.5, cell='e8', piece_type='king', color='black')}, 'white': {'king': PiecePosition(x=0.0, y=-3.5, cell='e1', piece_type='king', color='white'), 'queen': PiecePosition(x=-0.5, y=-3.5, cell='d1', piece_type='queen', color='white'), 'rook_a1': PiecePosition(x=-3.5, y=-3.5, cell='a1', piece_type='rook_a1', color='white'), 'rook_h1': PiecePosition(x=3.5, y=-3.5, cell='h1', piece_type='rook_h1', color='white'), 'knight_b1': PiecePosition(x=-2.5, y=-3.5, cell='b1', piece_type='knight_b1', color='white'), 'knight_g1': PiecePosition(x=2.5, y=-3.5, cell='g1', piece_type='knight_g1', color='white'), 'bishop_c1': PiecePosition(x=-1.5, y=-3.5, cell='c1', piece_type='bishop_c1', color='white'), 'bishop_f1': PiecePosition(x=1.5, y=-3.5, cell='f1', piece_type='bishop_f1', color='white'), 'pawn_a2': PiecePosition(x=-3.5, y=-2.5, cell='a2', piece_type='pawn_a2', color='white'), 'pawn_b2': PiecePosition(x=-2.5, y=-2.5, cell='b2', piece_type='pawn_b2', color='white'), 'pawn_c2': PiecePosition(x=-1.5, y=-2.5, cell='c2', piece_type='pawn_c2', color='white'), 'pawn_d2': PiecePosition(x=-0.5, y=-2.5, cell='d2', piece_type='pawn_d2', color='white'), 'pawn_e2': PiecePosition(x=0.5, y=-2.5, cell='e2', piece_type='pawn_e2', color='white'), 'pawn_f2': PiecePosition(x=1.5, y=-2.5, cell='f2', piece_type='pawn_f2', color='white'), 'pawn_g2': PiecePosition(x=2.5, y=-2.5, cell='g2', piece_type='pawn_g2', color='white'), 'pawn_h2': PiecePosition(x=3.5, y=-2.5, cell='h2', piece_type='pawn_h2', color='white')}}, 'camera_timestamp': 1755268501.4649608})
-[drone15] 15:35:01 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-[drone15] 15:35:06 - INFO - === Leader executing turn 3 ===
+GOT MOVE: MoveDecision(uci='e7c7', from_cell='e7', to_cell='c7', score_cp=1143, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 11.43, 'text': 'Move e7 → c7 (Qxc7): [11.43]. White is winning. Depth 12.', 'flags': 'c'})
+[drone15] 20:26:51 - INFO - MOVING e7->c7
+[drone15] 20:26:51 - INFO - Executing piece move e7->c7 with drone
+PIECE TYPE: queen
+[drone15] 20:26:51 - INFO - Piece queen on e7 -> drone drone15
+[drone15] 20:26:51 - INFO - Leader executing own move: e7->c7
+[drone15] 20:26:51 - INFO - Using map coords for c7: x=-0.654, y=1.090
+[drone15] 20:26:51 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
+[drone15] 20:26:51 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
+[drone15] 20:26:53 - INFO - [WiFi] Received CHESS MOVE command: e7->c7
+[drone15] 20:26:54 - INFO - [WiFi] Received CHESS MOVE command: e7->c7
+[drone15] 20:26:54 - INFO - [WiFi] Received CHESS MOVE command: e7->c7
+[drone15] 20:26:55 - INFO - [WiFi] Received CHESS MOVE command: e7->c7
+[drone15] 20:26:55 - INFO - [WiFi] Received CHESS MOVE command: e7->c7
+[drone15] 20:26:56 - INFO - [WiFi] Received CHESS MOVE command: e7->c7
+[drone15] 20:26:57 - INFO - ✅ Mock takeoff completed
+[drone15] 20:27:00 - INFO - 🎯 MOCK NAVIGATE to x=-0.65 y=1.09 z=1.00 in 
+[drone15] 20:27:00 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+[drone15] 20:27:06 - INFO - ✅ Mock navigation completed
+[drone15] 20:27:06 - INFO - 🎯 MOCK NAVIGATE to x=-0.65 y=1.09 z=0.15 in 
+[drone15] 20:27:06 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+[drone15] 20:27:12 - INFO - ✅ Mock navigation completed
+[drone15] 20:27:13 - INFO - 🔒 MOCK FORCE DISARM
+[drone15] 20:27:13 - INFO - Leader completed own move to c7
+[drone15] 20:27:13 - INFO - Leader completed drone move: e7->c7
+[drone15] 20:27:17 - INFO - Our turn detected - checking leader status
+[drone15] 20:27:18 - INFO - Leader drone15 is healthy
+[drone15] 20:27:18 - INFO - === Leader run_once call ===
 GOT TURN: black
-GOT FEN: 3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1
-GOT BOARD: BoardState(fen='3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1', turn='b', move_number=1, timestamp=1755268506.5616643, meta={'current_cell': 'e1', 'positions': {'black': {'queen': PiecePosition(x=0.0, y=3.5, cell='d8', piece_type='queen', color='black'), 'king': PiecePosition(x=0.0, y=3.5, cell='e8', piece_type='king', color='black')}, 'white': {'king': PiecePosition(x=0.0, y=-3.5, cell='e1', piece_type='king', color='white'), 'queen': PiecePosition(x=-0.5, y=-3.5, cell='d1', piece_type='queen', color='white'), 'rook_a1': PiecePosition(x=-3.5, y=-3.5, cell='a1', piece_type='rook_a1', color='white'), 'rook_h1': PiecePosition(x=3.5, y=-3.5, cell='h1', piece_type='rook_h1', color='white'), 'knight_b1': PiecePosition(x=-2.5, y=-3.5, cell='b1', piece_type='knight_b1', color='white'), 'knight_g1': PiecePosition(x=2.5, y=-3.5, cell='g1', piece_type='knight_g1', color='white'), 'bishop_c1': PiecePosition(x=-1.5, y=-3.5, cell='c1', piece_type='bishop_c1', color='white'), 'bishop_f1': PiecePosition(x=1.5, y=-3.5, cell='f1', piece_type='bishop_f1', color='white'), 'pawn_a2': PiecePosition(x=-3.5, y=-2.5, cell='a2', piece_type='pawn_a2', color='white'), 'pawn_b2': PiecePosition(x=-2.5, y=-2.5, cell='b2', piece_type='pawn_b2', color='white'), 'pawn_c2': PiecePosition(x=-1.5, y=-0.5, cell='c4', piece_type='pawn_c2', color='white'), 'pawn_d2': PiecePosition(x=-0.5, y=-2.5, cell='d2', piece_type='pawn_d2', color='white'), 'pawn_e2': PiecePosition(x=0.5, y=-2.5, cell='e2', piece_type='pawn_e2', color='white'), 'pawn_f2': PiecePosition(x=1.5, y=-2.5, cell='f2', piece_type='pawn_f2', color='white'), 'pawn_g2': PiecePosition(x=2.5, y=-2.5, cell='g2', piece_type='pawn_g2', color='white'), 'pawn_h2': PiecePosition(x=3.5, y=-2.5, cell='h2', piece_type='pawn_h2', color='white')}}, 'camera_timestamp': 1755268506.5616562})
-OUR TURN: 2
-SENDING FEN TO SF: 3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1
-GOT MOVE: MoveDecision(uci='e8f8', from_cell='e8', to_cell='f8', score_cp=1455, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 14.55, 'text': 'Move e8 → f8 (Kf8): [14.55]. White is winning. Depth 12.', 'flags': 'n'})
-[drone15] 15:35:07 - INFO - MOVING e8->f8
-[drone15] 15:35:07 - INFO - Executing piece move e8->f8 with drone
+GOT FEN: 4k3/2q5/5N2/8/8/8/PPPPPPPP/R1B1KB1R b - - 0 1
+GOT BOARD: 4k3/2q5/5N2/8/8/8/PPPPPPPP/R1B1KB1R b - - 0 1
+OUR TURN: black
+SENDING FEN TO SF: 4k3/2q5/5N2/8/8/8/PPPPPPPP/R1B1KB1R b - - 0 1
+GOT MOVE: MoveDecision(uci='e8f8', from_cell='e8', to_cell='f8', score_cp=1146, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 11.46, 'text': 'Move e8 → f8 (Kf8): [11.46]. White is winning. Depth 12.', 'flags': 'n'})
+[drone15] 20:27:19 - INFO - MOVING e8->f8
+[drone15] 20:27:19 - INFO - Executing piece move e8->f8 with drone
 PIECE TYPE: king
-[drone15] 15:35:07 - WARNING - No specific drone found for piece king, using fallback
-[drone15] 15:35:07 - INFO - Piece king on e8 -> drone drone15
-[drone15] 15:35:07 - INFO - Leader executing own move: e8->f8
-[drone15] 15:35:07 - INFO - Using map coords for f8: x=0.654, y=1.525
-[drone15] 15:35:07 - INFO - Taking off to z=1.00
-[drone15] 15:35:11 - INFO - Takeoff done
-[drone15] 15:35:14 - INFO - Navigating to x=0.65 y=1.52 z=1.00 in aruco_map
-[drone15] 15:35:18 - INFO - Navigating to x=0.65 y=1.52 z=0.15 in aruco_map
-[drone15] 15:35:23 - INFO - Принудительное дизарминг дрона
-[drone15] 15:35:23 - INFO - ✅ Дрон успешно дизармлен (принудительно)
-[drone15] 15:35:23 - INFO - Leader completed own move to f8
-[drone15] 15:35:23 - INFO - Leader completed drone move: e8->f8
-[drone15] 15:35:23 - ERROR - main loop error
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 162, in _new_conn
-    (self._dns_host, self.port), self.timeout, **extra_kw)
-  File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 80, in create_connection
-    raise err
-  File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 70, in create_connection
-    sock.connect(sa)
-ConnectionRefusedError: [Errno 111] Connection refused
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 601, in urlopen
-    chunked=chunked)
-  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 355, in _make_request
-    conn.request(method, url, **httplib_request_kw)
-  File "/usr/lib/python3.7/http/client.py", line 1264, in request
-    self._send_request(method, url, body, headers, encode_chunked)
-  File "/usr/lib/python3.7/http/client.py", line 1310, in _send_request
-    self.endheaders(body, encode_chunked=encode_chunked)
-  File "/usr/lib/python3.7/http/client.py", line 1259, in endheaders
-    self._send_output(message_body, encode_chunked=encode_chunked)
-  File "/usr/lib/python3.7/http/client.py", line 1034, in _send_output
-    self.send(msg)
-  File "/usr/lib/python3.7/http/client.py", line 974, in send
-    self.connect()
-  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 184, in connect
-    conn = self._new_conn()
-  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 171, in _new_conn
-    self, "Failed to establish a new connection: %s" % e)
-urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0xb3d99350>: Failed to establish a new connection: [Errno 111] Connection refused
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/requests/adapters.py", line 449, in send
-    timeout=timeout
-  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 639, in urlopen
-    _stacktrace=sys.exc_info()[2])
-  File "/usr/lib/python3/dist-packages/urllib3/util/retry.py", line 399, in increment
-    raise MaxRetryError(_pool, url, error or ResponseError(cause))
-urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /make_move (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xb3d99350>: Failed to establish a new connection: [Errno 111] Connection refused'))
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/pi/tmp/HotDrone2/drone/chess.py", line 745, in run
-    self.run_once(turn_count)
-  File "/home/pi/tmp/HotDrone2/drone/chess.py", line 290, in run_once
-    json={"move": f"{from_cell}->{to_cell}"}
-  File "/usr/lib/python3/dist-packages/requests/api.py", line 116, in post
-    return request('post', url, data=data, json=json, **kwargs)
-  File "/usr/lib/python3/dist-packages/requests/api.py", line 60, in request
-    return session.request(method=method, url=url, **kwargs)
-  File "/usr/lib/python3/dist-packages/requests/sessions.py", line 535, in request
-    resp = self.send(prep, **send_kwargs)
-  File "/usr/lib/python3/dist-packages/requests/sessions.py", line 648, in send
-    r = adapter.send(request, **kwargs)
-  File "/usr/lib/python3/dist-packages/requests/adapters.py", line 516, in send
-    raise ConnectionError(e, request=request)
-requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /make_move (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xb3d99350>: Failed to establish a new connection: [Errno 111] Connection refused'))
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
-[drone15] 15:35:24 - INFO - === Leader executing turn 3 ===
+[drone15] 20:27:19 - INFO - Piece king on e8 -> drone drone21
+[drone15] 20:27:19 - INFO - Checking if target drone drone21 is alive before sending command
+[drone15] 20:27:20 - INFO - Leader sending chess move: e8->f8 to drone drone21
+BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone21', 'move': 'e8->f8'}
+[drone15] 20:27:20 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:20 - WARNING - [WiFi] No ACK for CHESS MOVE c0bb (attempt 1/6)
+[drone15] 20:27:20 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 2/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:21 - WARNING - [WiFi] No ACK for CHESS MOVE c0bb (attempt 2/6)
+[drone15] 20:27:21 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 3/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:21 - WARNING - [WiFi] No ACK for CHESS MOVE c0bb (attempt 3/6)
+[drone15] 20:27:21 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 4/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:22 - WARNING - [WiFi] No ACK for CHESS MOVE c0bb (attempt 4/6)
+[drone15] 20:27:22 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 5/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:22 - WARNING - [WiFi] No ACK for CHESS MOVE c0bb (attempt 5/6)
+[drone15] 20:27:22 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 6/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:23 - WARNING - [WiFi] No ACK for CHESS MOVE c0bb (attempt 6/6)
+[drone15] 20:27:23 - ERROR - [WiFi] Broadcast failed after 6 retries for payload: {'type': 'move', 'to': 'drone21', 'move': 'e8->f8', 'msg_id': 'c0bb'}
+[drone15] 20:27:23 - ERROR - Failed to send move command to drone21
+[drone15] 20:27:23 - INFO - Leader completed drone move: e8->f8
+[drone15] 20:27:28 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 5k2/2q5/5N2/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 5k2/2q5/5N2/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:27:28 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:27:33 - INFO - === Leader run_once call ===
 GOT TURN: black
-GOT FEN: 3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1
-GOT BOARD: BoardState(fen='3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1', turn='b', move_number=1, timestamp=1755268524.5064766, meta={'current_cell': 'e1', 'positions': {'black': {'queen': PiecePosition(x=0.0, y=3.5, cell='d8', piece_type='queen', color='black'), 'king': PiecePosition(x=0.0, y=3.5, cell='e8', piece_type='king', color='black')}, 'white': {'king': PiecePosition(x=0.0, y=-3.5, cell='e1', piece_type='king', color='white'), 'queen': PiecePosition(x=-0.5, y=-3.5, cell='d1', piece_type='queen', color='white'), 'rook_a1': PiecePosition(x=-3.5, y=-3.5, cell='a1', piece_type='rook_a1', color='white'), 'rook_h1': PiecePosition(x=3.5, y=-3.5, cell='h1', piece_type='rook_h1', color='white'), 'knight_b1': PiecePosition(x=-2.5, y=-3.5, cell='b1', piece_type='knight_b1', color='white'), 'knight_g1': PiecePosition(x=2.5, y=-3.5, cell='g1', piece_type='knight_g1', color='white'), 'bishop_c1': PiecePosition(x=-1.5, y=-3.5, cell='c1', piece_type='bishop_c1', color='white'), 'bishop_f1': PiecePosition(x=1.5, y=-3.5, cell='f1', piece_type='bishop_f1', color='white'), 'pawn_a2': PiecePosition(x=-3.5, y=-2.5, cell='a2', piece_type='pawn_a2', color='white'), 'pawn_b2': PiecePosition(x=-2.5, y=-2.5, cell='b2', piece_type='pawn_b2', color='white'), 'pawn_c2': PiecePosition(x=-1.5, y=-0.5, cell='c4', piece_type='pawn_c2', color='white'), 'pawn_d2': PiecePosition(x=-0.5, y=-2.5, cell='d2', piece_type='pawn_d2', color='white'), 'pawn_e2': PiecePosition(x=0.5, y=-2.5, cell='e2', piece_type='pawn_e2', color='white'), 'pawn_f2': PiecePosition(x=1.5, y=-2.5, cell='f2', piece_type='pawn_f2', color='white'), 'pawn_g2': PiecePosition(x=2.5, y=-2.5, cell='g2', piece_type='pawn_g2', color='white'), 'pawn_h2': PiecePosition(x=3.5, y=-2.5, cell='h2', piece_type='pawn_h2', color='white')}}, 'camera_timestamp': 1755268524.5064662})
-OUR TURN: 2
-SENDING FEN TO SF: 3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1
-GOT MOVE: MoveDecision(uci='d8c8', from_cell='d8', to_cell='c8', score_cp=1468, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 14.68, 'text': 'Move d8 → c8 (Qc8): [14.68]. White is winning. Depth 12.', 'flags': 'n'})
-[drone15] 15:35:25 - INFO - MOVING d8->c8
-[drone15] 15:35:25 - INFO - Executing piece move d8->c8 with drone
-PIECE TYPE: queen
-[drone15] 15:35:25 - INFO - Piece queen on d8 -> drone drone15
-[drone15] 15:35:25 - INFO - Leader executing own move: d8->c8
-[drone15] 15:35:25 - INFO - Using map coords for c8: x=-0.654, y=1.552
-[drone15] 15:35:25 - INFO - Taking off to z=1.00
-[drone15] 15:35:29 - INFO - Takeoff done
-[drone15] 15:35:32 - INFO - Navigating to x=-0.65 y=1.55 z=1.00 in aruco_map
-[drone15] 15:35:37 - INFO - Navigating to x=-0.65 y=1.55 z=0.15 in aruco_map
-[drone15] 15:35:42 - INFO - Принудительное дизарминг дрона
-[drone15] 15:35:42 - INFO - ✅ Дрон успешно дизармлен (принудительно)
-[drone15] 15:35:42 - INFO - Leader completed own move to c8
-[drone15] 15:35:42 - INFO - Leader completed drone move: d8->c8
-[drone15] 15:35:42 - ERROR - main loop error
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 162, in _new_conn
-    (self._dns_host, self.port), self.timeout, **extra_kw)
-  File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 80, in create_connection
-    raise err
-  File "/usr/lib/python3/dist-packages/urllib3/util/connection.py", line 70, in create_connection
-    sock.connect(sa)
-ConnectionRefusedError: [Errno 111] Connection refused
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 601, in urlopen
-    chunked=chunked)
-  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 355, in _make_request
-    conn.request(method, url, **httplib_request_kw)
-  File "/usr/lib/python3.7/http/client.py", line 1264, in request
-    self._send_request(method, url, body, headers, encode_chunked)
-  File "/usr/lib/python3.7/http/client.py", line 1310, in _send_request
-    self.endheaders(body, encode_chunked=encode_chunked)
-  File "/usr/lib/python3.7/http/client.py", line 1259, in endheaders
-    self._send_output(message_body, encode_chunked=encode_chunked)
-  File "/usr/lib/python3.7/http/client.py", line 1034, in _send_output
-    self.send(msg)
-  File "/usr/lib/python3.7/http/client.py", line 974, in send
-    self.connect()
-  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 184, in connect
-    conn = self._new_conn()
-  File "/usr/lib/python3/dist-packages/urllib3/connection.py", line 171, in _new_conn
-    self, "Failed to establish a new connection: %s" % e)
-urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0xb45e17d0>: Failed to establish a new connection: [Errno 111] Connection refused
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/usr/lib/python3/dist-packages/requests/adapters.py", line 449, in send
-    timeout=timeout
-  File "/usr/lib/python3/dist-packages/urllib3/connectionpool.py", line 639, in urlopen
-    _stacktrace=sys.exc_info()[2])
-  File "/usr/lib/python3/dist-packages/urllib3/util/retry.py", line 399, in increment
-    raise MaxRetryError(_pool, url, error or ResponseError(cause))
-urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /make_move (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xb45e17d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/pi/tmp/HotDrone2/drone/chess.py", line 745, in run
-    self.run_once(turn_count)
-  File "/home/pi/tmp/HotDrone2/drone/chess.py", line 290, in run_once
-    json={"move": f"{from_cell}->{to_cell}"}
-  File "/usr/lib/python3/dist-packages/requests/api.py", line 116, in post
-    return request('post', url, data=data, json=json, **kwargs)
-  File "/usr/lib/python3/dist-packages/requests/api.py", line 60, in request
-    return session.request(method=method, url=url, **kwargs)
-  File "/usr/lib/python3/dist-packages/requests/sessions.py", line 535, in request
-    resp = self.send(prep, **send_kwargs)
-  File "/usr/lib/python3/dist-packages/requests/sessions.py", line 648, in send
-    r = adapter.send(request, **kwargs)
-  File "/usr/lib/python3/dist-packages/requests/adapters.py", line 516, in send
-    raise ConnectionError(e, request=request)
-requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /make_move (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xb45e17d0>: Failed to establish a new connection: [Errno 111] Connection refused'))
-BROADCASTING HEARTBEAT: drone15, 0, ['drone15']
-BROADCASTING UNRELIABLE: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-SENDING JSON: {'type': 'hb', 'leader': 'drone15', 'term': 0, 'active': ['drone15']}
-[drone15] 15:35:43 - INFO - === Leader executing turn 3 ===
-RECEIVED MESSAGE: {"type": "hb", "leader": "drone15", "term": 0, "active": ["drone15"]}
+GOT FEN: 5k2/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R b - - 0 1
+GOT BOARD: 5k2/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R b - - 0 1
+OUR TURN: black
+SENDING FEN TO SF: 5k2/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R b - - 0 1
+GOT MOVE: MoveDecision(uci='f8g8', from_cell='f8', to_cell='g8', score_cp=1032, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 10.32, 'text': 'Move f8 → g8 (Kg8): [10.32]. White is winning. Depth 12.', 'flags': 'n'})
+[drone15] 20:27:33 - INFO - MOVING f8->g8
+[drone15] 20:27:33 - INFO - Executing piece move f8->g8 with drone
+PIECE TYPE: king
+[drone15] 20:27:33 - INFO - Piece king on f8 -> drone drone21
+[drone15] 20:27:33 - INFO - Checking if target drone drone21 is alive before sending command
+[drone15] 20:27:34 - INFO - Leader sending chess move: f8->g8 to drone drone21
+BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone21', 'move': 'f8->g8'}
+[drone15] 20:27:34 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:35 - WARNING - [WiFi] No ACK for CHESS MOVE 05d0 (attempt 1/6)
+[drone15] 20:27:35 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 2/6): {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:35 - WARNING - [WiFi] No ACK for CHESS MOVE 05d0 (attempt 2/6)
+[drone15] 20:27:35 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 3/6): {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:36 - WARNING - [WiFi] No ACK for CHESS MOVE 05d0 (attempt 3/6)
+[drone15] 20:27:36 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 4/6): {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:36 - WARNING - [WiFi] No ACK for CHESS MOVE 05d0 (attempt 4/6)
+[drone15] 20:27:36 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 5/6): {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:37 - WARNING - [WiFi] No ACK for CHESS MOVE 05d0 (attempt 5/6)
+[drone15] 20:27:37 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 6/6): {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:37 - WARNING - [WiFi] No ACK for CHESS MOVE 05d0 (attempt 6/6)
+[drone15] 20:27:37 - ERROR - [WiFi] Broadcast failed after 6 retries for payload: {'type': 'move', 'to': 'drone21', 'move': 'f8->g8', 'msg_id': '05d0'}
+[drone15] 20:27:37 - ERROR - Failed to send move command to drone21
+[drone15] 20:27:37 - INFO - Leader completed drone move: f8->g8
+[drone15] 20:27:43 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:27:43 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:27:48 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:27:48 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:27:53 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:27:53 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:27:58 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:27:58 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:03 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:03 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:08 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:08 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:13 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:13 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:18 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:18 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:23 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:23 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:28 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:28 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:33 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:34 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:39 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:39 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:44 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:44 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:49 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:49 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:54 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:54 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:28:59 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:28:59 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:04 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:29:04 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:09 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:29:10 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:15 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:29:15 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:20 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+GOT BOARD: 6k1/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB1R w - - 0 1
+[drone15] 20:29:20 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:23 - INFO - Our turn detected - checking leader status
+[drone15] 20:29:24 - INFO - Leader drone15 is healthy
+[drone15] 20:29:25 - INFO - Our turn detected - checking leader status
+[drone15] 20:29:26 - INFO - Leader drone15 is healthy
+[drone15] 20:29:26 - INFO - === Leader run_once call ===
 GOT TURN: black
-GOT FEN: 3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1
-GOT BOARD: BoardState(fen='3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1', turn='b', move_number=1, timestamp=1755268543.2549677, meta={'current_cell': 'e1', 'positions': {'black': {'queen': PiecePosition(x=0.0, y=3.5, cell='d8', piece_type='queen', color='black'), 'king': PiecePosition(x=0.0, y=3.5, cell='e8', piece_type='king', color='black')}, 'white': {'king': PiecePosition(x=0.0, y=-3.5, cell='e1', piece_type='king', color='white'), 'queen': PiecePosition(x=-0.5, y=-3.5, cell='d1', piece_type='queen', color='white'), 'rook_a1': PiecePosition(x=-3.5, y=-3.5, cell='a1', piece_type='rook_a1', color='white'), 'rook_h1': PiecePosition(x=3.5, y=-3.5, cell='h1', piece_type='rook_h1', color='white'), 'knight_b1': PiecePosition(x=-2.5, y=-3.5, cell='b1', piece_type='knight_b1', color='white'), 'knight_g1': PiecePosition(x=2.5, y=-3.5, cell='g1', piece_type='knight_g1', color='white'), 'bishop_c1': PiecePosition(x=-1.5, y=-3.5, cell='c1', piece_type='bishop_c1', color='white'), 'bishop_f1': PiecePosition(x=1.5, y=-3.5, cell='f1', piece_type='bishop_f1', color='white'), 'pawn_a2': PiecePosition(x=-3.5, y=-2.5, cell='a2', piece_type='pawn_a2', color='white'), 'pawn_b2': PiecePosition(x=-2.5, y=-2.5, cell='b2', piece_type='pawn_b2', color='white'), 'pawn_c2': PiecePosition(x=-1.5, y=-0.5, cell='c4', piece_type='pawn_c2', color='white'), 'pawn_d2': PiecePosition(x=-0.5, y=-2.5, cell='d2', piece_type='pawn_d2', color='white'), 'pawn_e2': PiecePosition(x=0.5, y=-2.5, cell='e2', piece_type='pawn_e2', color='white'), 'pawn_f2': PiecePosition(x=1.5, y=-2.5, cell='f2', piece_type='pawn_f2', color='white'), 'pawn_g2': PiecePosition(x=2.5, y=-2.5, cell='g2', piece_type='pawn_g2', color='white'), 'pawn_h2': PiecePosition(x=3.5, y=-2.5, cell='h2', piece_type='pawn_h2', color='white')}}, 'camera_timestamp': 1755268543.25496})
-OUR TURN: 2
-SENDING FEN TO SF: 3qk3/8/8/8/2P5/8/PP1PPPPP/RNBQKBNR b - - 0 1
-GOT MOVE: MoveDecision(uci='d8h4', from_cell='d8', to_cell='h4', score_cp=1542, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 15.42, 'text': 'Move d8 → h4 (Qh4): [15.42]. White is winning. Depth 12.', 'flags': 'n'})
-[drone15] 15:35:43 - INFO - MOVING d8->h4
-[drone15] 15:35:43 - INFO - Executing piece move d8->h4 with drone
+GOT FEN: 6kR/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB2 b - - 0 1
+GOT BOARD: 6kR/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB2 b - - 0 1
+OUR TURN: black
+SENDING FEN TO SF: 6kR/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB2 b - - 0 1
+GOT MOVE: MoveDecision(uci='g8g7', from_cell='g8', to_cell='g7', score_cp=1082, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 10.82, 'text': 'Move g8 → g7 (Kg7): [10.82]. White is winning. Depth 12.', 'flags': 'n'})
+[drone15] 20:29:26 - INFO - MOVING g8->g7
+[drone15] 20:29:26 - INFO - Executing piece move g8->g7 with drone
+PIECE TYPE: king
+[drone15] 20:29:26 - INFO - Piece king on g8 -> drone drone21
+[drone15] 20:29:26 - INFO - Checking if target drone drone21 is alive before sending command
+[drone15] 20:29:27 - WARNING - [WiFi] Drone drone21 is not responding to ping
+[drone15] 20:29:27 - WARNING - Drone drone21 did not respond to ping
+[drone15] 20:29:27 - WARNING - Target drone drone21 is not alive, recalculating move with updated board state
+GOT TURN: black
+GOT FEN: 6kR/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB2 b - - 0 1
+[drone15] 20:29:27 - INFO - Removing king from dead drone drone21
+[drone15] 20:29:27 - INFO - Removing king from dead drone drone21
+[drone15] 20:29:27 - WARNING - No specific drone found for piece rook_a1, using fallback
+[drone15] 20:29:27 - WARNING - No specific drone found for piece rook_h1, using fallback
+[drone15] 20:29:27 - WARNING - No specific drone found for piece knight_b1, using fallback
+[drone15] 20:29:27 - WARNING - No specific drone found for piece bishop_c1, using fallback
+[drone15] 20:29:27 - WARNING - No specific drone found for piece bishop_f1, using fallback
+[drone15] 20:29:27 - INFO - Created updated board state without drone drone21 (simplified)
+[drone15] 20:29:27 - INFO - New board FEN would be: 7R/2Q5/6N1/8/8/8/8/R1B2B2 b KQkq - 0 1
+[drone15] 20:29:27 - INFO - Recalculating move with updated board state (without drone drone21)
+SENDING FEN TO SF: 6kR/2q5/6N1/8/8/8/PPPPPPPP/R1B1KB2 b - - 0 1
+[drone15] 20:29:28 - INFO - Recalculated move: g8->g7
+[drone15] 20:29:28 - ERROR - No valid target drone found for recalculated move or target is same dead drone
+[drone15] 20:29:28 - INFO - Leader completed drone move: g8->g7
+[drone15] 20:29:33 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/2q3k1/6N1/8/8/8/PPPPPPPP/R1B1KB2 w - - 0 1
+GOT BOARD: 7R/2q3k1/6N1/8/8/8/PPPPPPPP/R1B1KB2 w - - 0 1
+[drone15] 20:29:33 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:38 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/2q3k1/6N1/8/8/8/PPPPPPPP/R1B1KB2 w - - 0 1
+GOT BOARD: 7R/2q3k1/6N1/8/8/8/PPPPPPPP/R1B1KB2 w - - 0 1
+[drone15] 20:29:38 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:43 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/2q3k1/6N1/8/8/8/PPPPPPPP/R1B1KB2 w - - 0 1
+GOT BOARD: 7R/2q3k1/6N1/8/8/8/PPPPPPPP/R1B1KB2 w - - 0 1
+[drone15] 20:29:43 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:29:44 - INFO - Our turn detected - checking leader status
+[drone15] 20:29:45 - INFO - Leader drone15 is healthy
+[drone15] 20:29:45 - INFO - Our turn detected - checking leader status
+[drone15] 20:29:46 - INFO - Leader drone15 is healthy
+[drone15] 20:29:47 - INFO - Our turn detected - checking leader status
+[drone15] 20:29:48 - INFO - Leader drone15 is healthy
+[drone15] 20:29:48 - INFO - Our turn detected - checking leader status
+[drone15] 20:29:49 - INFO - Leader drone15 is healthy
+[drone15] 20:29:49 - INFO - === Leader run_once call ===
+GOT TURN: black
+GOT FEN: 7R/R1q3k1/6N1/8/8/8/PPPPPPPP/2B1KB2 b - - 0 1
+GOT BOARD: 7R/R1q3k1/6N1/8/8/8/PPPPPPPP/2B1KB2 b - - 0 1
+OUR TURN: black
+SENDING FEN TO SF: 7R/R1q3k1/6N1/8/8/8/PPPPPPPP/2B1KB2 b - - 0 1
+GOT MOVE: MoveDecision(uci='c7a7', from_cell='c7', to_cell='a7', score_cp=816, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 8.16, 'text': 'Move c7 → a7 (Qxa7): [8.16]. White is winning. Depth 12.', 'flags': 'c'})
+[drone15] 20:29:49 - INFO - MOVING c7->a7
+[drone15] 20:29:49 - INFO - Executing piece move c7->a7 with drone
 PIECE TYPE: queen
-[drone15] 15:35:43 - INFO - Piece queen on d8 -> drone drone15
-[drone15] 15:35:43 - INFO - Leader executing own move: d8->h4
-[drone15] 15:35:43 - INFO - Using map coords for h4: x=1.525, y=-0.218
-[drone15] 15:35:43 - INFO - Taking off to z=1.00
-[drone15] 15:35:49 - INFO - Takeoff done
-[drone15] 15:35:53 - INFO - Navigating to x=1.52 y=-0.22 z=1.00 in aruco_map
-^Z
-[2]+  Stopped                 python3 ./drone/main.py
+[drone15] 20:29:49 - INFO - Piece queen on c7 -> drone drone15
+[drone15] 20:29:49 - INFO - Leader executing own move: c7->a7
+[drone15] 20:29:49 - INFO - Using map coords for a7: x=-1.525, y=1.090
+[drone15] 20:29:49 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
+[drone15] 20:29:49 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
+[drone15] 20:29:55 - INFO - ✅ Mock takeoff completed
+[drone15] 20:29:57 - INFO - [WiFi] Received CHESS MOVE command: c7->a7
+[drone15] 20:29:58 - INFO - [WiFi] Received CHESS MOVE command: c7->a7
+[drone15] 20:29:58 - INFO - [WiFi] Received CHESS MOVE command: c7->a7
+[drone15] 20:29:58 - INFO - 🎯 MOCK NAVIGATE to x=-1.52 y=1.09 z=1.00 in 
+[drone15] 20:29:58 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+[drone15] 20:29:58 - INFO - [WiFi] Received CHESS MOVE command: c7->a7
+[drone15] 20:29:59 - INFO - [WiFi] Received CHESS MOVE command: c7->a7
+[drone15] 20:29:59 - INFO - [WiFi] Received CHESS MOVE command: c7->a7
+[drone15] 20:30:04 - INFO - ✅ Mock navigation completed
+[drone15] 20:30:05 - INFO - 🎯 MOCK NAVIGATE to x=-1.52 y=1.09 z=0.15 in 
+[drone15] 20:30:05 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+[drone15] 20:30:11 - INFO - ✅ Mock navigation completed
+[drone15] 20:30:12 - INFO - 🔒 MOCK FORCE DISARM
+[drone15] 20:30:12 - INFO - Leader completed own move to a7
+[drone15] 20:30:12 - INFO - Leader completed drone move: c7->a7
+[drone15] 20:30:17 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:17 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:22 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:22 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:27 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:27 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:32 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:32 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:37 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:37 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:42 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:42 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:47 - INFO - === Leader run_once call ===
+GOT TURN: white
+GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
+[drone15] 20:30:47 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 20:30:52 - INFO - === Leader run_once call ===
+GOT TURN: black
+GOT FEN: 7R/q5k1/6N1/8/4B3/8/PPPPPPPP/4KB2 b - - 0 1
+GOT BOARD: 7R/q5k1/6N1/8/4B3/8/PPPPPPPP/4KB2 b - - 0 1
+OUR TURN: black
+SENDING FEN TO SF: 7R/q5k1/6N1/8/4B3/8/PPPPPPPP/4KB2 b - - 0 1
+GOT MOVE: MoveDecision(uci='a7a2', from_cell='a7', to_cell='a2', score_cp=995, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 9.95, 'text': 'Move a7 → a2 (Qxa2): [9.95]. White is winning. Depth 12.', 'flags': 'c'})
+[drone15] 20:30:53 - INFO - MOVING a7->a2
+[drone15] 20:30:53 - INFO - Executing piece move a7->a2 with drone
+PIECE TYPE: queen
+[drone15] 20:30:53 - INFO - Piece queen on a7 -> drone drone15
+[drone15] 20:30:53 - INFO - Leader executing own move: a7->a2
+[drone15] 20:30:53 - INFO - Using map coords for a2: x=-1.525, y=-1.064
+[drone15] 20:30:53 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
+[drone15] 20:30:53 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
+[drone15] 20:30:59 - INFO - [WiFi] Received CHESS MOVE command: a7->a2
+[drone15] 20:30:59 - INFO - ✅ Mock takeoff completed
+[drone15] 20:30:59 - INFO - [WiFi] Received CHESS MOVE command: a7->a2
+[drone15] 20:31:00 - INFO - [WiFi] Received CHESS MOVE command: a7->a2
+[drone15] 20:31:00 - INFO - [WiFi] Received CHESS MOVE command: a7->a2
+[drone15] 20:31:01 - INFO - [WiFi] Received CHESS MOVE command: a7->a2
+[drone15] 20:31:01 - INFO - [WiFi] Received CHESS MOVE command: a7->a2
+[drone15] 20:31:02 - INFO - 🎯 MOCK NAVIGATE to x=-1.52 y=-1.06 z=1.00 in 
+[drone15] 20:31:02 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+[drone15] 20:31:08 - INFO - ✅ Mock navigation completed
+[drone15] 20:31:09 - INFO - 🎯 MOCK NAVIGATE to x=-1.52 y=-1.06 z=0.15 in 
+[drone15] 20:31:09 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+^X^Z
+[12]+  Stopped                 python3 ./drone/main.py

@@ -55,9 +55,13 @@ class EspController:
         # --- Ack handling (for leader) ---
         if cmd_type == 'ack':
             if self.is_leader:
-                ack_id = obj.get('ack_id')
-                with self._ack_lock:
-                    self._received_acks.add(ack_id)
+                # Проверяем что ACK предназначен для нас
+                ack_target = obj.get('to', '*')
+                if ack_target == '*' or ack_target == self.drone_name or ack_target == drone_name_to_short(self.drone_name):
+                    ack_id = obj.get('ack_id')
+                    with self._ack_lock:
+                        self._received_acks.add(ack_id)
+                        self.logger.debug(f"Received ACK {ack_id} from {obj.get('from', 'unknown')}")
             return
 
         # --- Command handling (for followers) ---
@@ -69,13 +73,17 @@ class EspController:
             
         # Отправляем ack, если есть msg_id
         if 'msg_id' in obj and not self.is_leader and self.swarm:
+            # Получаем отправителя команды
+            original_sender = obj.get('from', 'unknown')
             ack_payload = {
                 'type': 'ack',
                 'ack_id': obj['msg_id'],
+                'to': original_sender,  # Отправляем ACK конкретному отправителю
                 'from': self.drone_name
             }
             try:
                 self.swarm.broadcast_custom_message(json.dumps(ack_payload))
+                self.logger.debug(f"Sent ACK {obj['msg_id']} to {original_sender}")
             except Exception as e:
                 self.logger.warning(f"Failed to send ack via broadcast: {e}")
 
@@ -130,6 +138,9 @@ class EspController:
 
         msg_id = uuid.uuid4().hex[:4]
         payload['msg_id'] = msg_id
+        # Добавляем отправителя для корректной обработки ACK
+        if 'from' not in payload:
+            payload['from'] = self.drone_name
 
         # Для команды move делаем больше попыток
         is_move_command = payload.get('type') == 'move'
@@ -299,27 +310,35 @@ class WifiEspController:
 
         cmd_type = obj.get('type')
 
-        # Ack
+        # Ack - проверяем что он для нас перед обработкой
         if cmd_type == 'ack':
             if self.is_leader:
-                ack_id = obj.get('ack_id')
-                with self._ack_lock:
-                    self._received_acks.add(ack_id)
+                # Проверяем что ACK предназначен для нас
+                ack_target = obj.get('to', '*')
+                if ack_target == '*' or ack_target == self.drone_name or ack_target == drone_name_to_short(self.drone_name):
+                    ack_id = obj.get('ack_id')
+                    with self._ack_lock:
+                        self._received_acks.add(ack_id)
+                        self.logger.debug(f"[WiFi] Received ACK {ack_id} from {obj.get('from', 'unknown')}")
             return
 
-        # Фильтр адресата
+        # Фильтр адресата для остальных команд
         target = obj.get('to', '*')
         if target != '*' and target != self.drone_name and target != drone_name_to_short(self.drone_name):
             return
 
-        # Отправляем ack (не лидер)
+        # Отправляем ack (не лидер) с указанием отправителя команды
         if 'msg_id' in obj and not self.is_leader:
+            # Получаем отправителя команды из поля 'from' или определяем по контексту
+            original_sender = obj.get('from', 'unknown')
             ack_payload = {
                 'type': 'ack',
                 'ack_id': obj['msg_id'],
+                'to': original_sender,  # Отправляем ACK конкретному отправителю
                 'from': self.drone_name
             }
             self._send_json(ack_payload)
+            self.logger.debug(f"[WiFi] Sent ACK {obj['msg_id']} to {original_sender}")
 
         # Шахматный ход
         target_matches = (target == self.drone_name or target == drone_name_to_short(self.drone_name))
@@ -397,6 +416,9 @@ class WifiEspController:
         print(f"BROADCASTING RELIABLE: {payload}")  
         msg_id = uuid.uuid4().hex[:4]
         payload['msg_id'] = msg_id
+        # Добавляем отправителя для корректной обработки ACK
+        if 'from' not in payload:
+            payload['from'] = self.drone_name
         is_move_command = payload.get('type') == 'move'
         max_attempts = retries * 2 if is_move_command else retries
 
