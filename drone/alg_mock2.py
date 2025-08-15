@@ -2,6 +2,7 @@ import os
 import time
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
+import httpx
 
 # Для Python 3.7 совместимости
 try:
@@ -126,33 +127,81 @@ def get_board_state() -> BoardState:
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
-    """Возвращает следующий ход (мок-логика детерминированна)."""
+    """Возвращает следующий ход, предпочитая Stockfish API; при сбое — простой фолбэк."""
     if board is None or not isinstance(board, BoardState):
         raise AlgPermanentError("board must be BoardState")
-    meta = board.meta or {}
-    cur = meta.get("current_cell")
-    if not cur:
-        raise AlgPermanentError("board.meta.current_cell is required")
-    cur = _normalize_cell(cur)
-    # Простая последовательность
-    f_idx = FILES.index(cur[0])
-    r_idx = RANKS.index(cur[1])
-    if r_idx < 7:
-        to_cell = f"{cur[0]}{RANKS[r_idx+1]}"
-    elif f_idx < 7:
-        to_cell = f"{FILES[f_idx+1]}1"
-    else:
-        to_cell = "a1"
-    uci = f"{cur}{to_cell}"
-    return MoveDecision(
-        uci=uci,
-        from_cell=cur,
-        to_cell=to_cell,
-        score_cp=0,
-        is_mate=False,
-        reason="mock-next-cell",
-        meta={"policy": "simple_sequence"},
-    )
+
+    fen = board.fen
+    # Попытка получить ход от chess-api.com (Stockfish)
+    try:
+        timeout_s = max(1.0, float(time_budget_ms) / 1000.0)
+        with httpx.Client(timeout=timeout_s) as client:
+            resp = client.post("https://chess-api.com/v1", json={"fen": fen})
+            resp.raise_for_status()
+            data = resp.json()
+
+        # Извлекаем ход в UCI, поддерживаем промоции
+        uci_move = (
+            (data.get("move") or data.get("lan") or "").strip()
+        )
+
+        from_cell = data.get("from")
+        to_cell = data.get("to")
+
+        if (not from_cell or not to_cell) and len(uci_move) in (4, 5):
+            from_cell = uci_move[0:2]
+            to_cell = uci_move[2:4]
+
+        if not (from_cell and to_cell):
+            raise AlgTemporaryError("Stockfish API returned no parsable move")
+
+        # Сборка итоговой структуры
+        uci = uci_move if len(uci_move) >= 4 else f"{from_cell}{to_cell}"
+        cp = None
+        try:
+            cp = int(str(data.get("centipawns", "")).strip()) if data.get("centipawns") else None
+        except Exception:
+            cp = None
+
+        return MoveDecision(
+            uci=uci,
+            from_cell=_normalize_cell(from_cell),
+            to_cell=_normalize_cell(to_cell),
+            score_cp=cp,
+            is_mate=bool(data.get("mate")),
+            reason="stockfish-api",
+            meta={
+                "depth": data.get("depth"),
+                "eval": data.get("eval"),
+                "text": data.get("text"),
+                "flags": data.get("flags"),
+            },
+        )
+    except Exception:
+        # Фолбэк: простой детерминированный ход на основе current_cell
+        meta = board.meta or {}
+        cur = meta.get("current_cell")
+        if not cur:
+            raise AlgPermanentError("board.meta.current_cell is required")
+        cur = _normalize_cell(cur)
+        f_idx = FILES.index(cur[0])
+        r_idx = RANKS.index(cur[1])
+        if r_idx < 7:
+            to_cell = f"{cur[0]}{RANKS[r_idx+1]}"
+        elif f_idx < 7:
+            to_cell = f"{FILES[f_idx+1]}1"
+        else:
+            to_cell = "a1"
+        uci = f"{cur}{to_cell}"
+        return MoveDecision(
+            uci=uci,
+            from_cell=cur,
+            to_cell=to_cell,
+            score_cp=0,
+            is_mate=False,
+            reason="fallback-simple-sequence",
+            meta={"policy": "simple_sequence"},
+        )
 
 
 def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) -> BoardState:
