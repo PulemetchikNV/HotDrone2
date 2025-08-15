@@ -2,9 +2,8 @@ import sys
 import os
 import logging
 
-# Используем относительные импорты, так как скрипт предназначен для запуска как модуль
 # командой `python3 -m drone.main`
-from . import env_loader
+from .env_loader import load_env_file
 from .chess import ChessDroneSingle as Drone
 
 def parse_args():
@@ -17,7 +16,7 @@ def parse_args():
     return drone_name
 
 # Загружаем переменные окружения из .env файла
-env_loader.load_env_file()
+load_env_file()
 
 # Мок rospy для локального тестирования, если он недоступен
 try:
