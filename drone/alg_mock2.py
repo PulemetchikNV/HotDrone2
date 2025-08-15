@@ -127,13 +127,13 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
         )
         our_color = OUR_TEAM
         stockfish_color = data.get("color", "w")
-        if stockfish_color.lower() != our_color[0].lower():
-            print(f"NOT OUR TURN: {stockfish_color} != {our_color[0]}")
-            return MoveDecision(
-                uci="",
-                from_cell="",
-                to_cell="",
-            )
+        # if stockfish_color.lower() != our_color[0].lower():
+        #     print(f"NOT OUR TURN: {stockfish_color} != {our_color[0]}")
+        #     return MoveDecision(
+        #         uci="",
+        #         from_cell="",
+        #         to_cell="",
+        #     )
 
         from_cell = data.get("from")
         to_cell = data.get("to")

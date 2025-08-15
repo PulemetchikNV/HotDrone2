@@ -400,7 +400,7 @@ class ChessDroneSingle:
                 self.move_to_xy(x, y, self.flight_z)
                 self.logger.info(f"Leader completed own move to {to_cell}")
             except Exception as e:
-                self.logger.error(f"Leader failed to execute own move: {e}")
+                self.logger.error(f"Leader failed to execute own move")
         else:
             # Отправляем команду другому дрону через ESP
             self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
