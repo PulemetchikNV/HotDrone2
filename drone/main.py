@@ -2,9 +2,8 @@ import sys
 import os
 import logging
 
-# командой `python3 -m drone.main`
-from .env_loader import load_env_file
-from .chess import ChessDroneSingle as Drone
+from env_loader import load_env_file
+from chess import ChessDroneSingle as Drone
 
 def parse_args():
     drone_name = None
