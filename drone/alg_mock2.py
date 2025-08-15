@@ -120,6 +120,8 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
             resp.raise_for_status()
             data = resp.json()
 
+
+        print(f"==== RAW STOCKFISH DATA: {data}")
         # Извлекаем ход в UCI, поддерживаем промоции
         uci_move = (
             (data.get("move") or data.get("lan") or "").strip()
