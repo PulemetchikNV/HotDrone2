@@ -14,7 +14,7 @@ echo "Installing/updating Python packages..."
 pip3 install -r requirements.txt
 
 echo "Downloading and setting up Stockfish..."
-./scripts/download_arm_stockfish.sh
+./scripts/download_stockfish.sh
 
 echo "Starting master drone..."
 python3 drone/parallel_master.py
