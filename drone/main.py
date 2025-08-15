@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 
-from . import env_loader
+from .env_loader import load_env_file
 
 def parse_args():
     drone_name = None
@@ -13,7 +13,7 @@ def parse_args():
             drone_name = sys.argv[i + 1]
     return drone_name
 
-env_loader.load_env_file()
+load_env_file()
 
 
 from .chess import ChessDroneSingle as Drone
