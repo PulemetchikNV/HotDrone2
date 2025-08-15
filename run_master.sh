@@ -4,8 +4,8 @@ export DRONE_NAME=drone18
 export PYTHONPATH=.
 export WORKER_DRONES="http://192.168.1.3:3000"
 
-echo "Making Stockfish executable..."
-chmod +x drone/chess/stockfish/stockfish
+echo "Downloading and setting up Stockfish..."
+./scripts/download_arm_stockfish.sh
 
 echo "Starting master drone..."
 python3 drone/parallel_master.py
