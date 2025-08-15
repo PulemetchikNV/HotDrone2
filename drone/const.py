@@ -1,7 +1,7 @@
-DRONE_LIST = 'drone15,drone18,drone21,drone21'
-LEADER_DRONE = 'drone18'
-INITIAL_LETTER = 'b'
-DRONES_TOTAL=4
+DRONE_LIST = 'drone15'
+#,drone18,drone21,drone21'
+LEADER_DRONE = 'drone15'
+DRONES_TOTAL=1
 
 rovers = {
     '2': {
