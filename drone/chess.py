@@ -71,11 +71,7 @@ class ChessDroneSingle:
         self.fc = FlightController(drone_name=self.drone_name, logger=self.logger)
         
         # Контроллер связи (ESP по радиоканалу или Wi‑Fi) — выбирается по COMM_IMPL
-        try:
-            self.esp = create_comm_controller(self.swarm, self.drone_name)
-        except Exception:
-            # Фолбэк на старую реализацию
-            self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
+        self.esp = create_comm_controller(self.swarm, self.drone_name)
         
         # Регистрируем обработчик сообщений если есть swarm
         if self.swarm and self.esp:
