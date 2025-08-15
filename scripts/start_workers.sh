@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SCRIPT_VERSION=v3
+# SCRIPT_VERSION=v4_final
 
 # Move to the project's root directory
 cd "$(dirname "$0")/.."
@@ -18,7 +18,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}=== Starting workers on all drones (v3) ===${NC}"
+echo -e "${YELLOW}=== Starting workers on all drones (v4_final) ===${NC}"
 
 if [ ! -f "$WORKERS_FILE" ]; then
     echo -e "${RED}Error: Workers file not found: $WORKERS_FILE${NC}"
@@ -33,7 +33,6 @@ start_worker_on_drone() {
     echo -e "${YELLOW}--- Starting worker on $drone_name ($drone_ip) ---${NC}"
     
     # Commands to execute on the remote drone
-    # IMPORTANT: This is a multi-line string. Do not use 'local' inside it.
     remote_commands="
         echo 'Connecting to $drone_name...';
         cd $DRONE_DIR || { echo 'Directory not found: $DRONE_DIR'; exit 1; };
@@ -42,24 +41,29 @@ start_worker_on_drone() {
         pkill -f 'drone.run_worker' || echo 'Old process not found, continuing.';
         sleep 1;
 
-        echo 'Starting new worker...';
+        echo 'Starting new worker in background on port $WORKER_PORT...';
         export DRONE_NAME='$drone_name';
         
         source myvenv/bin/activate;
-        
-        echo '--- Python script output will follow ---';
-        python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT;
-        echo '--- Python script finished ---';
-
+        nohup python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT > /dev/null 2>&1 &
         deactivate;
+        
+        sleep 2; # Give it time to start
+        
+        # Check if the process has started
+        if pgrep -f 'drone.run_worker' > /dev/null; then
+            echo '✓ Worker started successfully on $drone_name.';
+        else
+            echo '✗ Failed to start worker on $drone_name.';
+        fi
     "
     
     # Execute commands via SSH
     if command -v sshpass &> /dev/null; then
-        sshpass -p "$SSH_PASS" ssh -t -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$SSH_USER@$drone_ip" "$remote_commands"
+        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$drone_ip" "$remote_commands"
     else
         echo -e "${YELLOW}Warning: sshpass not found. You may need to enter the password manually.${NC}"
-        ssh -t -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$SSH_USER@$drone_ip" "$remote_commands"
+        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$drone_ip" "$remote_commands"
     fi
     echo ""
 }
@@ -74,7 +78,10 @@ while IFS=':' read -r drone_name drone_ip || [[ -n "$drone_name" ]]; do
         continue
     fi
     
-    start_worker_on_drone "$drone_name" "$drone_ip"
+    start_worker_on_drone "$drone_name" "$drone_ip" &
 done < <(tr -d '\r' < "$WORKERS_FILE")
 
-echo -e "${GREEN}=== Worker launch process finished. ===${NC}"
+echo "Waiting for all SSH sessions to complete..."
+wait
+
+echo -e "${GREEN}=== All workers have been launched. ===${NC}"

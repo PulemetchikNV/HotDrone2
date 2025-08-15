@@ -3,7 +3,7 @@ import asyncio
 import os
 
 # --- Конфигурация ---
-# IP-адрес дрона-воркера (drone3). В реальной системе это может браться из файла или переменных окружения.
+# IP-адрес дрона-воркера (drone3).
 DRONE3_IP = "192.168.1.71" 
 WORKER_PORT = 3000
 
@@ -25,7 +25,7 @@ async def run_test():
     # Устанавливаем переменные окружения, как будто мы - главный дрон
     os.environ["DRONE_NAME"] = "drone18"
     os.environ["LEADER_DRONE"] = "drone18"
-    print(f"Имитируем запуск от имени: DRONE_NAME={os.getenv('DRONE_NAME')}, LEADER_DRONE={os.getenv('LEADER_DRONE')}")
+    print(f"Имитируем запуск от имени: DRONE_NAME={os.getenv('DRONE_NAME')}")
     
     # Тело запроса
     payload = {
@@ -39,19 +39,24 @@ async def run_test():
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(EVALUATE_URL, json=payload)
+            # Сначала проверим /health эндпоинт
+            print("\nШаг 1: Проверка состояния воркера (/health)...")
+            health_response = await client.get(f"http://{DRONE3_IP}:{WORKER_PORT}/health")
+            health_response.raise_for_status()
+            print("✅ Воркер доступен и отвечает.")
 
-            # Проверяем статус ответа
+            # Затем отправим основной запрос
+            print("\nШаг 2: Отправка запроса на оценку (/evaluate)...")
+            response = await client.post(EVALUATE_URL, json=payload)
             response.raise_for_status() 
 
-            # Выводим результат
             result = response.json()
             print("\n✅ Успешный ответ от drone3!")
             print(f"  - Оценка позиции (score_cp): {result.get('score_cp')}")
 
     except httpx.ConnectError as e:
         print(f"\n❌ Ошибка подключения: Не удалось соединиться с drone3 по адресу {EVALUATE_URL}.")
-        print("  - Убедитесь, что на drone3 запущен воркер (./scripts/start_workers.sh).")
+        print("  - Убедитесь, что на drone3 запущен воркер, и что нет фаервола.")
         print(f"  - Детали ошибки: {e}")
     except httpx.HTTPStatusError as e:
         print(f"\n❌ Ошибка HTTP: Дрон-воркер ответил с ошибкой (статус {e.response.status_code}).")
@@ -60,8 +65,17 @@ async def run_test():
         print(f"\n❌ Произошла непредвиденная ошибка: {e}")
 
 if __name__ == "__main__":
-    print("Для запуска этого теста, сначала убедитесь, что на дроне drone3 запущен FastAPI воркер.")
-    print("Вы можете запустить его командой: ./scripts/start_workers.sh")
-    print("После этого, на главном дроне (drone18) запустите этот скрипт: python3 mintik.py\n")
+    print("--- ИНСТРУКЦИЯ ПО ЗАПУСКУ ТЕСТА ---")
+    print("\n1. На дроне-воркере (drone3):")
+    print("   - Зайдите в директорию проекта: cd ~/HotDrone2")
+    print("   - Активируйте виртуальное окружение: source myvenv/bin/activate")
+    print("   - Установите переменные окружения: export DRONE_NAME=drone3")
+    print("   - Запустите воркер напрямую. Вы должны увидеть вывод uvicorn:")
+    print("     python3 -m drone.run_worker --host 0.0.0.0 --port 3000")
+    print("   - Если при запуске возникнут ошибки, пришлите их мне.")
+    print("\n2. На главном дроне (drone18):")
+    print("   - Убедитесь, что воркер на drone3 запущен и работает.")
+    print("   - Запустите этот скрипт:")
+    print("     python3 mintik.py\n")
     
     asyncio.run(run_test())
