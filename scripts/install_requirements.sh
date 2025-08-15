@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Move to the project's root directory
+cd "$(dirname "$0")/.."
+
 # --- Configuration ---
 SSH_USER="pi"
 SSH_PASS="raspberry"
