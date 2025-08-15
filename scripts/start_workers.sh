@@ -37,30 +37,27 @@ start_worker_on_drone() {
     # 2. Запускаем новый воркер с помощью nohup, чтобы он продолжал работать после закрытия SSH.
     # 3. Перенаправляем вывод в /dev/null, чтобы не создавать nohup.out файлы.
     commands="
-        echo 'Подключение к $drone_name...';
-        cd $DRONE_DIR || { echo 'Директория не найдена: $DRONE_DIR'; exit 1; };
+        echo 'Connecting to $drone_name...';
+        cd $DRONE_DIR || { echo 'Directory not found: $DRONE_DIR'; exit 1; };
         
-        echo 'Остановка старого процесса воркера (если есть)...';
-        pkill -f 'drone.run_worker' || echo 'Старый процесс не найден, все в порядке.';
+        echo 'Stopping old worker process (if any)...';
+        pkill -f 'drone.run_worker' || echo 'Old process not found, continuing.';
         sleep 1;
 
-        echo 'Запуск нового воркера в фоновом режиме на порту $WORKER_PORT...';
+        echo 'Starting new worker in background on port $WORKER_PORT...';
         export DRONE_NAME='$drone_name';
-        # export LOG_SERVER_IP='$(hostname -I | awk '{print $1}')'; # Автоматически определяем IP хоста
         
         source myvenv/bin/activate;
-        echo "--- Запуск Python-скрипта ---";
-        python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT;
-        echo "--- Python-скрипт завершился ---";
+        nohup python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT > /dev/null 2>&1 &
         deactivate;
         
-        sleep 2; # Даем время на запуск
+        sleep 2; # Give it time to start
         
-        # Проверяем, что процесс запустился
+        # Check if the process has started
         if pgrep -f 'drone.run_worker' > /dev/null; then
-            echo '✓ Воркер успешно запущен на $drone_name.';
+            echo '✓ Worker started successfully on $drone_name.';
         else
-            echo '✗ Не удалось запустить воркер на $drone_name.';
+            echo '✗ Failed to start worker on $drone_name.';
         fi
     "
     
