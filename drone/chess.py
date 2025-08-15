@@ -86,23 +86,11 @@ class ChessDroneSingle:
         self.available_drones = [d.strip() for d in (DRONE_LIST.split(',') if DRONE_LIST else []) if d.strip()]
         self.logger.info(f"Available drones: {self.available_drones}")
 
-        # Параметры лидерства/heartbeat
-        self.heartbeat_interval = float(os.getenv("HB_INTERVAL", "0.5"))
-        self.heartbeat_timeout = float(os.getenv("HB_TIMEOUT", "1.5"))
-        self._last_hb_sent = 0.0
-        # Текущий лидер и term
+        # Текущий лидер (упрощённая логика без heartbeat/term)
         self.current_leader = LEADER_DRONE if LEADER_DRONE else (self.available_drones[0] if self.available_drones else self.drone_name)
-        # Синхронизируемся с ESP при наличии
+        # Устанавливаем роль в ESP контроллере
         if self.esp:
-            leader, term = self.esp.get_known_leader_and_term()
-            if leader:
-                self.current_leader = leader
-            self.current_term = int(term)
             self.esp.update_role(self.drone_name == self.current_leader)
-        else:
-            self.current_term = 0
-        # Локальная оценка активных (пока предположение, уточняется heartbeat'ом лидера)
-        self.active_drones = list(self.available_drones)
 
         # Роль текущего дрона (какую фигуру он представляет)
         self.drone_role = os.getenv("DRONE_ROLE", "").lower()
@@ -154,6 +142,10 @@ class ChessDroneSingle:
                     self.logger.warning(f"Unexpected JSON structure in {self.map_path}")
         except Exception as e:
             self.logger.warning(f"Failed to load ArUco map from {self.map_path}: {e}")
+        
+        # Для упрощенной логики выбора лидера
+        self._is_our_turn_cache = False
+        self._last_turn_check = 0.0
 
     def get_cell_coordinates(self, cell):
         """Получает координаты клетки из карты или вычисляет их"""
@@ -608,105 +600,158 @@ class ChessDroneSingle:
             self.logger.warning(f"Timeout waiting for chess move command ({timeout}s)")
             return False
 
-    def _order_index(self, name: str) -> int:
-        try:
-            return self.available_drones.index(name)
-        except ValueError:
-            return len(self.available_drones) + 1
 
-    def _next_active_leader(self, current: str, active: list) -> str:
-        if not active:
-            return None
-        # Ищем следующего по постоянному порядку в active
-        order = self.available_drones
-        if current in order:
-            start = (order.index(current) + 1) % len(order)
+
+    def _tick_leader_election(self):
+        """Упрощенная логика выбора лидера"""
+        if not self.esp:
+            return
+        
+        # Проверяем только перед нашим ходом
+        if not self._check_is_our_turn():
+            return
+        
+        self.logger.info("Our turn detected - checking leader status")
+        
+        # Проверяем живость текущего лидера двумя способами
+        leader_alive_camera = self._check_leader_alive_by_camera()
+        leader_alive_ping = self._check_leader_alive_by_ping()
+        
+        self.logger.debug(f"Leader {self.current_leader} status: camera={leader_alive_camera}, ping={leader_alive_ping}")
+        
+        # Если лидер неактивен по одному из критериев, выбираем нового
+        if not leader_alive_camera or not leader_alive_ping:
+            self.logger.warning(f"Leader {self.current_leader} is inactive, selecting new leader")
+            
+            new_leader = self._select_new_leader()
+            
+            if new_leader != self.current_leader:
+                # Устанавливаем нового лидера
+                self.current_leader = new_leader
+                
+                # Обновляем свою роль
+                is_new_leader = (self.drone_name == new_leader)
+                self.esp.update_role(is_new_leader)
+                
+                if is_new_leader:
+                    self.logger.info(f"Became new leader: {self.drone_name}")
+                else:
+                    self.logger.info(f"New leader selected: {new_leader}")
         else:
-            start = 0
-        for i in range(len(order)):
-            idx = (start + i) % len(order)
-            cand = order[idx]
-            if cand in active:
-                return cand
-        return None
+            self.logger.debug(f"Leader {self.current_leader} is healthy")
 
-    def _estimate_active_drones(self) -> list:
-        # Интеграция детектирования активности по камере
+        # MOCK для тестирования
+        self.current_leader = 'drone15'
+    
+    def _check_is_our_turn(self) -> bool:
+        """Проверяет через камеру, наш ли сейчас ход"""
+        now = time.time()
+        
+        # Кешируем результат на 2 секунды чтобы не спамить камеру
+        if (now - self._last_turn_check) < 2.0:
+            return self._is_our_turn_cache
+        
         try:
-            # Получаем данные с камеры о позициях фигур
+            # Получаем информацию о текущем ходе через камеру
+            camera_turn = None
+            if hasattr(self.camera, 'get_board_positions'):
+                self.camera.get_board_positions()
+            if hasattr(self.camera, 'get_turn'):
+                camera_turn = self.camera.get_turn()
+            
+            if camera_turn:
+                self._is_our_turn_cache = camera_turn.lower() == self.our_team
+                self._last_turn_check = now
+                return self._is_our_turn_cache
+                
+        except Exception as e:
+            self.logger.debug(f"Failed to check turn via camera: {e}")
+        
+        # Fallback: проверяем через алгоритм
+        try:
+            board = get_board_state()
+            current_player = getattr(board, 'turn', 'white').lower()
+            self._is_our_turn_cache = current_player == self.our_team
+            self._last_turn_check = now
+            return self._is_our_turn_cache
+        except Exception as e:
+            self.logger.debug(f"Failed to check turn via board state: {e}")
+        
+        return False
+    
+    def _check_leader_alive_by_camera(self) -> bool:
+        """Проверяет через камеру, виден ли лидер на доске"""
+        if not self.current_leader:
+            return False
+            
+        try:
             positions = self.camera.get_board_positions()
             
-            # Определяем активные дроны на основе видимых фигур
-            # Пешки управляются роверами, остальные фигуры — дронами
-            active_drones = set()
-            
+            # Ищем фигуры на доске - если видим фигуры, значит дроны живые
             for color_data in positions.values():
                 for piece_type, piece_pos in color_data.items():
-                    # Пешки не считаем (они управляются роверами)
-                    # Поддерживаем как старый формат 'pawn', так и новый 'pawn_X'
+                    # Пропускаем пешки (они управляются роверами)
                     if piece_type.lower() == 'pawn' or piece_type.lower().startswith('pawn_'):
                         continue
                     
-                    # Для остальных фигур определяем дрон по позиции/типу
-                    # Простая логика: разные типы фигур = разные дроны
-                    drone_mapping = {
-                        'king': 0, 'queen': 1, 'rook': 2, 'knight': 3, 'bishop': 4
-                    }
-                    
-                    drone_idx = drone_mapping.get(piece_type.lower(), 0)
-                    if drone_idx < len(self.available_drones):
-                        active_drones.add(self.available_drones[drone_idx])
+                    # Если видим фигуру, которая соответствует лидеру
+                    responsible_drone = self._find_drone_for_piece(piece_type)
+                    if responsible_drone == self.current_leader:
+                        self.logger.debug(f"Leader {self.current_leader} is alive (visible piece: {piece_type})")
+                        return True
             
-            if active_drones:
-                # Возвращаем в порядке DRONE_LIST
-                ordered = [d for d in self.available_drones if d in active_drones]
-                self.logger.debug(f"Camera detected active drones: {ordered}")
-                return ordered
-                
+            self.logger.warning(f"Leader {self.current_leader} not visible on camera")
+            return False
+            
         except Exception as e:
-            self.logger.debug(f"Camera-based activity detection failed: {e}")
+            self.logger.debug(f"Camera leader check failed: {e}")
+            return False
+    
+    def _check_leader_alive_by_ping(self) -> bool:
+        """Проверяет живость лидера через ping всех дронов"""
+        if not self.esp or not self.current_leader:
+            return False
         
-        # Fallback: используем heartbeat или весь список
-        last_hb = self.esp.get_last_heartbeat() if self.esp else None
-        if last_hb and isinstance(last_hb.get('active'), list) and last_hb['active']:
-            # Гарантируем порядок согласно DRONE_LIST
-            ordered = [d for d in self.available_drones if d in last_hb['active']]
-            return ordered if ordered else list(self.available_drones)
-        return list(self.available_drones)
-
-    def _tick_leader_election(self):
-        now = time.time()
+        try:
+            alive_drones = self.esp.ping_all_drones(self.available_drones)
+            is_alive = self.current_leader in alive_drones
+            
+            if is_alive:
+                self.logger.debug(f"Leader {self.current_leader} is alive (ping successful)")
+            else:
+                self.logger.warning(f"Leader {self.current_leader} did not respond to ping")
+            
+            return is_alive
+            
+        except Exception as e:
+            self.logger.debug(f"Ping leader check failed: {e}")
+            return False
+    
+    def _select_new_leader(self) -> str:
+        """Выбирает нового лидера из живых дронов (первый в DRONE_LIST)"""
         if not self.esp:
-            return
-        last_hb_ts = self.esp.get_last_heartbeat_ts()
-        last_hb = self.esp.get_last_heartbeat()
-        known_leader, known_term = self.esp.get_known_leader_and_term()
-
-        # Принятие более свежего лидера
-        if last_hb and int(known_term) >= int(getattr(self, 'current_term', 0)):
-            self.current_term = int(known_term)
-            if known_leader:
-                self.current_leader = known_leader
-                self.esp.update_role(self.drone_name == self.current_leader)
-
-        # Лидер считается потерянным, если heartbeat старее таймаута
-        # if (now - last_hb_ts) > self.heartbeat_timeout:
-        #     active = (last_hb.get('active') if last_hb else None) or list(self.available_drones)
-        #     candidate = self._next_active_leader(self.current_leader, active) or (active[0] if active else self.drone_name)
-        #     # Детерминированная задержка по позиции, чтобы снизить коллизии выборов
-        #     delay = 0.05 * self._order_index(self.drone_name)
-        #     if (now - last_hb_ts) > (self.heartbeat_timeout + delay):
-        #         if self.drone_name == candidate:
-        #             new_term = self.esp.bump_term()
-        #             self.current_term = int(new_term)
-        #             self.current_leader = self.drone_name
-        #             self.esp.update_role(True)
-        #             self.active_drones = self._estimate_active_drones()
-        #             self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
-        #             self._last_hb_sent = now
-
-        # MOCK
-        self.current_leader = 'drone15' 
+            return self.available_drones[0] if self.available_drones else self.drone_name
+        
+        try:
+            # Пингуем всех дронов чтобы найти живых
+            alive_drones = self.esp.ping_all_drones(self.available_drones)
+            
+            if not alive_drones:
+                self.logger.warning("No alive drones found, using self as leader")
+                return self.drone_name
+            
+            # Берем первый живой дрон из DRONE_LIST (игнорируем LEADER_DRONE)
+            for drone_name in self.available_drones:
+                if drone_name in alive_drones:
+                    self.logger.info(f"Selected new leader: {drone_name} (first alive in DRONE_LIST)")
+                    return drone_name
+            
+            # Fallback: если что-то пошло не так
+            return alive_drones[0]
+            
+        except Exception as e:
+            self.logger.error(f"Leader selection failed: {e}")
+            return self.drone_name 
 
     def run(self):
         try:
@@ -723,17 +768,11 @@ class ChessDroneSingle:
 
         while not rospy.is_shutdown():
             try:
-                # Обработка лидерства/heartbeat
+                # Проверка лидерства только перед нашим ходом
                 self._tick_leader_election()
 
                 now = time.time()
                 if self.esp and self.esp.is_leader:
-                    # Периодический heartbeat
-                    if (now - self._last_hb_sent) >= self.heartbeat_interval:
-                        self.active_drones = self._estimate_active_drones()
-                        self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
-                        self._last_hb_sent = now
-
                     # Ходы лидера с паузой между ними
                     if turn_count < TURN_LIMIT and (now - last_move_ts) >= move_interval:
                         self.logger.info(f"=== Leader executing turn {turn_count + 1} ===")
@@ -745,10 +784,10 @@ class ChessDroneSingle:
                         else:
                             self.logger.info("Leadership lost before executing turn; skipping")
                     elif turn_count >= TURN_LIMIT:
-                        # После лимита — просто жить как лидер и рассылать heartbeats
+                        # После лимита — просто ждём
                         pass
                 else:
-                    # Ведомый: ждём команды небольшими таймаутами, чтобы не блокировать выборы
+                    # Ведомый: ждём команды небольшими таймаутами
                     self.wait_and_execute_move(timeout=0.3)
 
                 # Небольшая пауза цикла

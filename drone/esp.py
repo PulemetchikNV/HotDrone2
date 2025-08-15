@@ -37,10 +37,9 @@ class EspController:
         # Для лидера - отслеживание подтверждений от ведомых
         self._expected_followers = set()  # будет заполняться при необходимости
         
-        # Heartbeat/лидерство
-        self._hb_lock = threading.Lock()
-        self._last_heartbeat = None  # dict: {leader, term, ts, active}
-        self._leader_term = 0
+        # Ping/Pong для проверки активности дронов
+        self._ping_responses = {}  # {drone_name: timestamp}
+        self._ping_lock = threading.Lock()
         
         self.logger.info(f"EspController initialized: leader={self.is_leader}, drone={self.drone_name}")
 
@@ -98,22 +97,30 @@ class EspController:
             self.logger.info("Received LAND command from leader")
             # Для шахмат пока не используется, но оставляем для совместимости
         
-        # Heartbeat от лидера
-        elif cmd_type == 'hb':
-            leader = obj.get('leader')
-            term = int(obj.get('term', 0))
-            active = obj.get('active', [])
-            with self._hb_lock:
-                self._last_heartbeat = {
-                    'leader': leader,
-                    'term': term,
-                    'ts': time.time(),
-                    'active': active if isinstance(active, list) else []
+        # Ping запрос - отправляем pong в ответ
+        elif cmd_type == 'ping':
+            ping_id = obj.get('ping_id')
+            from_drone = obj.get('from')
+            if ping_id and from_drone:
+                pong_payload = {
+                    'type': 'pong',
+                    'ping_id': ping_id,
+                    'to': from_drone,
+                    'from': self.drone_name
                 }
-                # Сохраняем последний известный term
-                self._leader_term = max(self._leader_term, term)
-            # Никаких действий напрямую по смене роли здесь не делаем;
-            # роль обновляется во внешней логике на основе таймаутов.
+                try:
+                    if self.swarm:
+                        self.swarm.broadcast_custom_message(json.dumps(pong_payload))
+                except Exception as e:
+                    self.logger.warning(f"Failed to send pong: {e}")
+        
+        # Pong ответ - записываем время ответа
+        elif cmd_type == 'pong':
+            ping_id = obj.get('ping_id')
+            from_drone = obj.get('from')
+            if ping_id and from_drone:
+                with self._ping_lock:
+                    self._ping_responses[from_drone] = time.time()
 
     def _broadcast_reliable(self, payload, retries=3, timeout=0.5):
         """Надежная отправка сообщения с ожиданием подтверждения."""
@@ -178,39 +185,63 @@ class EspController:
             self.logger.warning(f"Unreliable broadcast failed: {e}")
             return False
 
-    def broadcast_heartbeat(self, leader_name: str, term: int, active_drones: list):
-        payload = {
-            'type': 'hb',
-            'leader': leader_name,
-            'term': int(term),
-            'active': list(active_drones or [])
-        }
-        self._broadcast_unreliable(payload)
 
-    def get_last_heartbeat(self):
-        with self._hb_lock:
-            # Возвращаем копию, чтобы снаружи не меняли
-            return dict(self._last_heartbeat) if self._last_heartbeat else None
-
-    def get_last_heartbeat_ts(self) -> float:
-        with self._hb_lock:
-            return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
-
-    def get_known_leader_and_term(self):
-        with self._hb_lock:
-            leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
-            term = self._leader_term
-            return leader, term
-
-    def bump_term(self) -> int:
-        with self._hb_lock:
-            self._leader_term += 1
-            return self._leader_term
 
     def update_role(self, is_leader: bool):
         if self.is_leader != is_leader:
             self.is_leader = is_leader
             self.logger.info(f"ESP role updated: is_leader={self.is_leader}")
+    
+    def ping_drone(self, target_drone: str) -> bool:
+        """Пингует конкретный дрон и проверяет ответ"""
+        if not self.swarm:
+            return False
+            
+        ping_id = uuid.uuid4().hex[:8]
+        
+        # Очищаем старые ответы от этого дрона
+        with self._ping_lock:
+            if target_drone in self._ping_responses:
+                del self._ping_responses[target_drone]
+        
+        # Отправляем ping
+        ping_payload = {
+            'type': 'ping',
+            'ping_id': ping_id,
+            'to': target_drone,
+            'from': self.drone_name
+        }
+        
+        try:
+            self.swarm.broadcast_custom_message(json.dumps(ping_payload))
+        except Exception as e:
+            self.logger.warning(f"Failed to send ping to {target_drone}: {e}")
+            return False
+        
+        # Ждем ответ 1 секунду
+        time.sleep(1.0)
+        
+        # Проверяем ответ
+        with self._ping_lock:
+            return target_drone in self._ping_responses
+    
+    def ping_all_drones(self, drone_list: list) -> list:
+        """Пингует всех дронов и возвращает список живых"""
+        alive_drones = []
+        
+        for drone_name in drone_list:
+            if drone_name == self.drone_name:
+                # Себя считаем живым
+                alive_drones.append(drone_name)
+                continue
+                
+            if self.ping_drone(drone_name):
+                alive_drones.append(drone_name)
+                self.logger.debug(f"Drone {drone_name} is alive (ping successful)")
+            else:
+                self.logger.warning(f"Drone {drone_name} is not responding to ping")
+        
+        return alive_drones
 
 
 class WifiEspController:
@@ -229,15 +260,16 @@ class WifiEspController:
         # Роль (лидер/ведомый)
         self.is_leader = (self.drone_name == LEADER_DRONE)
 
-        # Ack/Move/Heartbeat состояния — совместимы с EspController
+        # Ack/Move состояния — совместимы с EspController
         self._ack_lock = threading.Lock()
         self._received_acks = set()
         self._chess_move_event = threading.Event()
         self._received_chess_move = None
         self._expected_followers = set()
-        self._hb_lock = threading.Lock()
-        self._last_heartbeat = None
-        self._leader_term = 0
+        
+        # Ping/Pong для проверки активности дронов
+        self._ping_responses = {}  # {drone_name: timestamp}
+        self._ping_lock = threading.Lock()
 
         # UDP сокет: bind + broadcast
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -304,19 +336,27 @@ class WifiEspController:
 
         elif cmd_type == 'land':
             self.logger.info("[WiFi] Received LAND command from leader")
-
-        elif cmd_type == 'hb':
-            leader = obj.get('leader')
-            term = int(obj.get('term', 0))
-            active = obj.get('active', [])
-            with self._hb_lock:
-                self._last_heartbeat = {
-                    'leader': leader,
-                    'term': term,
-                    'ts': time.time(),
-                    'active': active if isinstance(active, list) else []
+        
+        # Ping запрос - отправляем pong в ответ
+        elif cmd_type == 'ping':
+            ping_id = obj.get('ping_id')
+            from_drone = obj.get('from')
+            if ping_id and from_drone:
+                pong_payload = {
+                    'type': 'pong',
+                    'ping_id': ping_id,
+                    'to': from_drone,
+                    'from': self.drone_name
                 }
-                self._leader_term = max(self._leader_term, term)
+                self._send_json(pong_payload)
+        
+        # Pong ответ - записываем время ответа
+        elif cmd_type == 'pong':
+            ping_id = obj.get('ping_id')
+            from_drone = obj.get('from')
+            if ping_id and from_drone:
+                with self._ping_lock:
+                    self._ping_responses[from_drone] = time.time()
 
     def _recv_loop(self):
         while not self._stop_event.is_set():
@@ -397,44 +437,58 @@ class WifiEspController:
         print(f"BROADCASTING UNRELIABLE: {payload}")
         return self._send_json(payload)
 
-    def broadcast_heartbeat(self, leader_name: str, term: int, active_drones: list):
-        print(f"BROADCASTING HEARTBEAT: {leader_name}, {term}, {active_drones}")
-        payload = {
-            'type': 'hb',
-            'leader': leader_name,
-            'term': int(term),
-            'active': list(active_drones or [])
-        }
-        self._broadcast_unreliable(payload)
 
-    def get_last_heartbeat(self):
-        # print(f"GETTING LAST HEARTBEAT", self._last_heartbeat)
-        with self._hb_lock:
-            return dict(self._last_heartbeat) if self._last_heartbeat else None
-
-    def get_last_heartbeat_ts(self) -> float:
-        # print(f"GETTING LAST HEARTBEAT TS", self._last_heartbeat)
-        with self._hb_lock:
-            return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
-
-    def get_known_leader_and_term(self):
-        with self._hb_lock:
-            leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
-            term = self._leader_term
-            # print(f"LEADER IS {leader} TERM IS {term}")
-            return leader, term
-
-    def bump_term(self) -> int:
-        print(f"BUMPING TERM", self._leader_term)
-        with self._hb_lock:
-            self._leader_term += 1
-            return self._leader_term
 
     def update_role(self, is_leader: bool):
         # print(f"UPDATING ROLE", is_leader)
         if self.is_leader != is_leader:
             self.is_leader = is_leader
             self.logger.info(f"[WiFi] Role updated: is_leader={self.is_leader}")
+    
+    def ping_drone(self, target_drone: str) -> bool:
+        """Пингует конкретный дрон и проверяет ответ"""
+        ping_id = uuid.uuid4().hex[:8]
+        
+        # Очищаем старые ответы от этого дрона
+        with self._ping_lock:
+            if target_drone in self._ping_responses:
+                del self._ping_responses[target_drone]
+        
+        # Отправляем ping
+        ping_payload = {
+            'type': 'ping',
+            'ping_id': ping_id,
+            'to': target_drone,
+            'from': self.drone_name
+        }
+        
+        if not self._send_json(ping_payload):
+            return False
+        
+        # Ждем ответ 1 секунду
+        time.sleep(1.0)
+        
+        # Проверяем ответ
+        with self._ping_lock:
+            return target_drone in self._ping_responses
+    
+    def ping_all_drones(self, drone_list: list) -> list:
+        """Пингует всех дронов и возвращает список живых"""
+        alive_drones = []
+        
+        for drone_name in drone_list:
+            if drone_name == self.drone_name:
+                # Себя считаем живым
+                alive_drones.append(drone_name)
+                continue
+                
+            if self.ping_drone(drone_name):
+                alive_drones.append(drone_name)
+                self.logger.debug(f"[WiFi] Drone {drone_name} is alive (ping successful)")
+            else:
+                self.logger.warning(f"[WiFi] Drone {drone_name} is not responding to ping")
+        
+        return alive_drones
 
 
 def create_comm_controller(swarm, drone_name=None):
