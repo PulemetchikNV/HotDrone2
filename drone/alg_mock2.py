@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
 import httpx
 
-from .const import OUR_TEAM
+from const import OUR_TEAM
 
 # Для Python 3.7 совместимости
 try:
