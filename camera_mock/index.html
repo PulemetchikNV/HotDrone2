@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chess UI (Black)</title>
+    <link rel="stylesheet"
+      href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"
+      integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU"
+      crossorigin="anonymous">
+
+    <style>
+        body { font-family: sans-serif; }
+        .board-container { width: 400px; }
+        .status { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>Chess UI (Playing as Black)</h1>
+<div id="myBoard" class="board-container"></div>
+<div class="status">
+    <p>Status: <span id="status"></span></p>
+    <p>Turn: <span id="turn"></span></p>
+
+    <button id="resetButton">Reset Game</button>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2"
+        crossorigin="anonymous"></script>
+
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"
+        integrity="sha384-8Vi8VHwn3vjQ9eUHUxex3JSN/NFqUg3QbPyX8kWyb93+8AC/pPWTzj+nHtbC5bxD"
+        crossorigin="anonymous"></script>
+
+<script>
+    $(document).ready(function() {
+    var board = null;
+    var game = { turn: 'white' }; // сервер стартует с хода белых
+    var config = {
+        draggable: true,
+        position: 'start',
+        orientation: 'black', // Black's perspective
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onSnapEnd: onSnapEnd
+    };
+
+    board = Chessboard('myBoard', config);
+
+    function onDragStart (source, piece, position, orientation) {
+        // Разрешаем перетаскивать фигуры только стороны, чей ход сейчас
+        var isWhitePiece = piece && piece[0] === 'w';
+        if ((game.turn === 'white' && !isWhitePiece) || (game.turn === 'black' && isWhitePiece)) {
+            return false;
+        }
+    }
+
+    async function onDrop (source, target) {
+        // see if the move is legal (валидацию делает сервер)
+        var move = source + target;
+
+        try {
+            const response = await fetch('http://127.0.0.1:8001/make_move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ move: move })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Invalid move:', error.detail);
+                return 'snapback';
+            }
+            
+            const data = await response.json();
+            updateStatus(data);
+
+        } catch (error) {
+            console.error('Error making move:', error);
+            return 'snapback';
+        }
+    }
+
+    // update the board position after the piece snap
+    // for castling, en passant, pawn promotion
+    function onSnapEnd () {
+      // сервер — источник истины
+    }
+
+    function updateStatus(data) {
+        var status = '';
+        var moveColor = data.turn === 'white' ? 'White' : 'Black';
+
+        // Update game state
+        game.turn = data.turn;
+        board.position(data.board_fen, false); // Update board without animation
+
+        status = moveColor + ' to move';
+
+        $('#status').html(status);
+        $('#turn').html(moveColor);
+    }
+    
+    async function fetchBoardState() {
+        try {
+            const response = await fetch('http://127.0.0.1:8001/board_state');
+            const data = await response.json();
+            updateStatus(data);
+        } catch (error) {
+            console.error('Error fetching board state:', error);
+            $('#status').html('Error connecting to server.');
+        }
+    }
+    
+    $('#resetButton').on('click', async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:8001/reset_board', { method: 'POST' });
+            const data = await response.json();
+            updateStatus(data);
+        } catch (error) {
+            console.error('Error resetting board:', error);
+        }
+    });
+
+    // Fetch state periodically
+    setInterval(fetchBoardState, 5000); // Poll every 5 seconds
+    // And fetch on load
+        fetchBoardState();
+    });
+
+</script>
+
+</body>
+</html>

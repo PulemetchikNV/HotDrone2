@@ -259,56 +259,55 @@ class CameraController:
 
 
 class MockCameraController(CameraController):
-    """Мок-контроллер камеры для тестирования"""
+    """Мок-контроллер камеры, привязанный к camera_mock API"""
     
     def __init__(self, logger=None):
         super().__init__(logger)
-        self.logger.info("Mock camera controller initialized")
-        
-        # Мок данные по умолчанию в новом формате {тип}_{начальная_клетка}
-        self.mock_data = {
-            'white': {
-                'king': {'x': 0.0, 'y': -3.5, 'cell': 'e1'},
-                'queen': {'x': -0.5, 'y': -3.5, 'cell': 'd1'},
-                'rook_a1': {'x': -3.5, 'y': -3.5, 'cell': 'a1'},
-                'rook_h1': {'x': 3.5, 'y': -3.5, 'cell': 'h1'},
-                'knight_b1': {'x': -2.5, 'y': -3.5, 'cell': 'b1'},
-                'knight_g1': {'x': 2.5, 'y': -3.5, 'cell': 'g1'},
-                'bishop_c1': {'x': -1.5, 'y': -3.5, 'cell': 'c1'},
-                'bishop_f1': {'x': 1.5, 'y': -3.5, 'cell': 'f1'},
-                'pawn_a2': {'x': -3.5, 'y': -2.5, 'cell': 'a2'},
-                'pawn_b2': {'x': -2.5, 'y': -2.5, 'cell': 'b2'},
-                'pawn_c2': {'x': -1.5, 'y': -2.5, 'cell': 'c2'},
-                'pawn_d2': {'x': -0.5, 'y': -2.5, 'cell': 'd2'}
-            },
-            'black': {
-                'king': {'x': 0.0, 'y': 3.5, 'cell': 'e8'},
-                'queen': {'x': -0.5, 'y': 3.5, 'cell': 'd8'},
-                'rook_a8': {'x': -3.5, 'y': 3.5, 'cell': 'a8'},
-                'rook_h8': {'x': 3.5, 'y': 3.5, 'cell': 'h8'},
-                'knight_b8': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
-                'knight_g8': {'x': 2.5, 'y': 3.5, 'cell': 'g8'},
-                'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
-                'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
-                'pawn_a7': {'x': -3.5, 'y': 2.5, 'cell': 'a7'},
-                'pawn_b7': {'x': -2.5, 'y': 2.5, 'cell': 'b7'},
-                'pawn_c7': {'x': -1.5, 'y': 2.5, 'cell': 'c7'},
-                'pawn_d7': {'x': -0.5, 'y': 2.5, 'cell': 'd7'}
-            }
-        }
+        # Если URL не задан, используем дефолт локального мок-сервера
+        self.api_url = os.getenv("CAMERA_API_URL", "http://127.0.0.1:8001/api/positions")
+        self.logger.info(f"Mock camera controller bound to {self.api_url}")
+        self._last_turn: Optional[str] = None
     
     def get_board_positions(self) -> Dict[str, Dict[str, PiecePosition]]:
-        """Возвращает мок-данные позиций"""
-        # Имитируем небольшую задержку сети
-        time.sleep(0.1)
+        """Получает позиции фигур из camera_mock"""
+        if not self.api_url:
+            raise CameraPermanentError("Camera API URL not configured for mock")
         
-        # Парсим мок данные через тот же парсер
-        return self._parse_camera_data(self.mock_data)
-    
-    def set_mock_data(self, mock_data: Dict):
-        """Устанавливает новые мок-данные"""
-        self.mock_data = mock_data
-        self.logger.debug("Mock camera data updated")
+        for attempt in range(self.retry_count):
+            try:
+                self.logger.debug(f"Requesting mock camera data (attempt {attempt + 1}/{self.retry_count})")
+                response = requests.get(self.api_url, timeout=self.timeout)
+                response.raise_for_status()
+                raw_data = response.json()
+                # Сохраняем чей ход, если пришло
+                turn = raw_data.get('turn')
+                if isinstance(turn, str):
+                    self._last_turn = turn.lower()
+                # Парсим фигуры тем же парсером
+                return self._parse_camera_data(raw_data)
+            except requests.exceptions.Timeout:
+                self.logger.warning(f"Mock camera request timeout (attempt {attempt + 1})")
+                if attempt == self.retry_count - 1:
+                    raise CameraTemporaryError("Mock camera request timeout after retries")
+                time.sleep(0.3)
+            except requests.exceptions.ConnectionError:
+                self.logger.warning(f"Mock camera connection error (attempt {attempt + 1})")
+                if attempt == self.retry_count - 1:
+                    raise CameraTemporaryError("Mock camera connection failed after retries")
+                time.sleep(0.3)
+            except requests.exceptions.HTTPError as e:
+                self.logger.error(f"Mock camera HTTP error: {e}")
+                raise CameraPermanentError(f"Mock camera HTTP error: {e}")
+            except Exception as e:
+                self.logger.error(f"Unexpected mock camera error: {e}")
+                if attempt == self.retry_count - 1:
+                    raise CameraTemporaryError(f"Unexpected mock camera error: {e}")
+                time.sleep(0.3)
+        raise CameraTemporaryError("Mock camera requests failed after all retries")
+
+    def get_turn(self) -> Optional[str]:
+        """Возвращает чей сейчас ход, если известен (white/black)"""
+        return self._last_turn
 
 
 def create_camera_controller(logger=None) -> CameraController:

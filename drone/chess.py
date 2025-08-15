@@ -122,9 +122,11 @@ class ChessDroneSingle:
 
         # Роль текущего дрона (какую фигуру он представляет)
         self.drone_role = os.getenv("DRONE_ROLE", "").lower()
+        # Цвет фигур, за которые играет дрон ('white' или 'black')
+        self.drone_color = os.getenv("DRONE_COLOR", "white").lower()
         # Начальная буква/клетка для данного дрона
         self.initial_letter = os.getenv("INITIAL_LETTER", "").lower()
-        self.logger.info(f"Drone role: {self.drone_role}, initial_letter: {self.initial_letter}")
+        self.logger.info(f"Drone role: {self.drone_role}, color: {self.drone_color}, initial_letter: {self.initial_letter}")
         
         # Маппинг ролей дронов (строится динамически из доступных дронов и их ролей)
         self.drone_role_mapping = self._build_drone_role_mapping()
@@ -250,6 +252,13 @@ class ChessDroneSingle:
             
         # 1) Получаем состояние доски через alg
         board = self.cam.read_board()
+        
+        # Проверяем, чей ход
+        current_player = getattr(board, 'turn', 'white')
+        if current_player != self.drone_color:
+            self.logger.info(f"Not our turn. Current turn is {current_player}, we are {self.drone_color}. Waiting.")
+            return
+
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
 
