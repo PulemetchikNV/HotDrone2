@@ -241,6 +241,7 @@ class ChessDroneSingle:
             
         # 1) Получаем состояние доски через alg (источник данных — камера внутри alg)
         board = get_board_state()
+        print(f"GOT BOARD: {board}")
         
         # Проверяем, чей ход (предпочитаем камеру)
         camera_turn = None
@@ -257,12 +258,16 @@ class ChessDroneSingle:
         if current_player != self.our_team:
             self.logger.info(f"Not our turn. Current turn is {current_player}, we are {self.our_team}. Waiting.")
             return
+        else:
+            print(f"OUR TURN: {current_turn}")
 
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
+        print(f"GOT MOVE: {move}")
 
         from_cell = getattr(move, 'from_cell', 'e2')
         to_cell = getattr(move, 'to_cell', 'e4')
+        self.logger.info(f"MOVING {from_cell}->{to_cell}")
         
         # 3) Определяем исполнителя по фигуре на from_cell через камеру
         is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(from_cell)
@@ -368,6 +373,7 @@ class ChessDroneSingle:
         
         # Определяем фигуру на исходной клетке через камеру
         piece_type = self._get_piece_on_cell_from_camera(from_cell)
+        print(f"PIECE TYPE: {piece_type}")
         if not piece_type:
             self.logger.warning(f"No piece found on {from_cell} by camera, using fallback")
             piece_type = "king"  # fallback
