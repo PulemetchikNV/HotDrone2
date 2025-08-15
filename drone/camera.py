@@ -421,6 +421,8 @@ def get_board_state_from_camera(camera_controller) -> dict:
             camera_turn = camera_controller.get_turn()
             if camera_turn:
                 turn = camera_turn.lower()
+
+        print(f"GOT TURN: {turn}")
         
         # Генерируем FEN
         fen = positions_to_fen(positions, turn)

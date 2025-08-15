@@ -421,7 +421,7 @@ class WifiEspController:
         with self._hb_lock:
             leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
             term = self._leader_term
-            print(f"LEADER IS {leader} TERM IS {term}")
+            # print(f"LEADER IS {leader} TERM IS {term}")
             return leader, term
 
     def bump_term(self) -> int:
@@ -431,7 +431,7 @@ class WifiEspController:
             return self._leader_term
 
     def update_role(self, is_leader: bool):
-        print(f"UPDATING ROLE", is_leader)
+        # print(f"UPDATING ROLE", is_leader)
         if self.is_leader != is_leader:
             self.is_leader = is_leader
             self.logger.info(f"[WiFi] Role updated: is_leader={self.is_leader}")
