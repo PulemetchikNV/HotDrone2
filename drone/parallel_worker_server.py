@@ -11,16 +11,36 @@ class EvaluationRequest(BaseModel):
 class EvaluationResponse(BaseModel):
     score_cp: int
 
+import os
+
 # --- Stockfish ---
-STOCKFISH_PATH = "./drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2"
+# Вычисляем абсолютный путь к Stockfish
+try:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    STOCKFISH_PATH = os.path.join(script_dir, 'chess', 'stockfish', 'stockfish-ubuntu-x86-64-avx2')
+    STOCKFISH_PATH = os.path.normpath(STOCKFISH_PATH)
+except NameError:
+    STOCKFISH_PATH = "drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2"
+
 
 def get_stockfish_evaluation(fen: str, movetime: int) -> int:
+    if not os.path.exists(STOCKFISH_PATH):
+        raise RuntimeError(f"Stockfish binary not found at the specified path: {STOCKFISH_PATH}")
+    if not os.access(STOCKFISH_PATH, os.X_OK):
+        raise RuntimeError(f"Stockfish binary is not executable. Please run 'chmod +x {STOCKFISH_PATH}'")
+
+    # ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ:
+    # Имя файла 'stockfish-ubuntu-x86-64-avx2' говорит о том, что он скомпилирован для
+    # 64-битных процессоров Intel/AMD. Он НЕ БУДЕТ работать на Raspberry Pi (ARM-архитектура).
+    # Если вы получите ошибку 'cannot execute binary file', вам нужно найти или скомпилировать
+    # Stockfish для ARM.
+
     try:
         process = subprocess.Popen(
             [STOCKFISH_PATH], universal_newlines=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1
         )
-    except FileNotFoundError:
-        raise RuntimeError(f"Stockfish not found at '{STOCKFISH_PATH}'")
+    except (FileNotFoundError, PermissionError):
+        raise RuntimeError(f"Failed to execute Stockfish. Check path and permissions for: {STOCKFISH_PATH}")
 
     def read_line(): return process.stdout.readline().strip()
     def write_line(cmd): process.stdin.write(cmd + "\n"); process.stdin.flush()
