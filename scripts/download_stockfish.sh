@@ -50,33 +50,75 @@ download_stockfish_binary() {
     if curl -L -o stockfish.tar "$url"; then
         echo "Download successful, extracting..."
         tar -xf stockfish.tar
-        if [ -f "$filename" ]; then
+        
+        # Check what was extracted
+        echo "Checking extracted contents..."
+        ls -la
+        
+        # First, check if we have a direct binary file
+        if [ -f "$filename" ] && [ -x "$filename" ]; then
+            echo "Found direct binary file: $filename"
             mv "$filename" stockfish
             chmod +x stockfish
             rm stockfish.tar
             echo "Stockfish binary installed successfully at: $STOCKFISH_DIR/stockfish"
             return 0
-        elif [ -d "$filename" ]; then
-            # Handle case where tar contains a directory
-            if [ -f "$filename/$filename" ]; then
-                mv "$filename/$filename" stockfish
-                chmod +x stockfish
-                rm -rf "$filename"
-                rm stockfish.tar
-                echo "Stockfish binary installed successfully at: $STOCKFISH_DIR/stockfish"
-                return 0
-            else
-                echo "Error: Binary not found in extracted directory"
-                echo "Contents of $filename directory:"
-                ls -la "$filename"
+        fi
+        
+        # Check if we have a directory with the expected name
+        if [ -d "$filename" ]; then
+            echo "Found directory: $filename"
+            echo "Contents of $filename directory:"
+            ls -la "$filename"
+            
+            # Look for executable files in the directory
+            binary_found=false
+            for binary in "$filename"/*; do
+                if [ -f "$binary" ] && [ -x "$binary" ]; then
+                    echo "Found executable binary: $binary"
+                    mv "$binary" stockfish_temp
+                    chmod +x stockfish_temp
+                    rm -rf "$filename"
+                    rm stockfish.tar
+                    mv stockfish_temp stockfish
+                    echo "Stockfish binary installed successfully at: $STOCKFISH_DIR/stockfish"
+                    binary_found=true
+                    break
+                fi
+            done
+            
+            if [ "$binary_found" = false ]; then
+                echo "Error: No executable binary found in $filename directory"
                 return 1
             fi
-        else
-            echo "Error: Extracted file not found"
-            echo "Contents of directory:"
-            ls -la
-            return 1
+            return 0
         fi
+        
+        # Check if we have any directory that might contain the binary
+        echo "Looking for any directory containing binary..."
+        for item in *; do
+            if [ -d "$item" ]; then
+                echo "Checking directory: $item"
+                ls -la "$item"
+                for binary in "$item"/*; do
+                    if [ -f "$binary" ] && [ -x "$binary" ]; then
+                        echo "Found executable binary: $binary"
+                        mv "$binary" stockfish_temp
+                        chmod +x stockfish_temp
+                        rm -rf "$item"
+                        rm stockfish.tar
+                        mv stockfish_temp stockfish
+                        echo "Stockfish binary installed successfully at: $STOCKFISH_DIR/stockfish"
+                        return 0
+                    fi
+                done
+            fi
+        done
+        
+        echo "Error: No executable binary found in extracted contents"
+        echo "Contents of directory:"
+        ls -la
+        return 1
     else
         echo "Error: Failed to download Stockfish"
         return 1
