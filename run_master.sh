@@ -18,7 +18,7 @@ echo "Searching for conflicting chess.py files..."
 find . -name "chess.py"
 
 echo "Downloading and setting up Stockfish..."
-./scripts/download_arm_stockfish.sh
+./scripts/download_stockfish.sh
 
 echo "Starting master drone..."
 python3 drone/parallel_master.py

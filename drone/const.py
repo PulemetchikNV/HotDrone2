@@ -1,15 +1,15 @@
-DRONE_LIST = 'drone15'
+DRONE_LIST = 'drone15,drone21'
 #,drone18,drone21,drone21'
-LEADER_DRONE = 'drone15'
+LEADER_DRONE = 'drone21'
 DRONES_TOTAL=1
 OUR_TEAM = 'black'
 
 rovers = {
-    '2': {
-        'ip': '192.168.1.97',
-        'port': 12345,
-        'initial_letter': 'a'
-    },
+    # '2': {
+    #     'ip': '192.168.1.97',
+    #     'port': 12345,
+    #     'initial_letter': 'a'
+    # },
     # '1': {
     #     'ip': '192.168.1.71',
     #     'port': 12345,

@@ -5,12 +5,8 @@ import os
 import threading
 import socket
 
-try:
-    from .helpers import setup_logging
-    from .const import LEADER_DRONE
-except ImportError:
-    from helpers import setup_logging
-    from const import LEADER_DRONE
+from helpers import setup_logging
+from const import LEADER_DRONE
 
 def drone_name_to_short(drone_name):
     """
@@ -412,12 +408,12 @@ class WifiEspController:
         self._broadcast_unreliable(payload)
 
     def get_last_heartbeat(self):
-        print(f"GETTING LAST HEARTBEAT", self._last_heartbeat)
+        # print(f"GETTING LAST HEARTBEAT", self._last_heartbeat)
         with self._hb_lock:
             return dict(self._last_heartbeat) if self._last_heartbeat else None
 
     def get_last_heartbeat_ts(self) -> float:
-        print(f"GETTING LAST HEARTBEAT TS", self._last_heartbeat.get('ts'))
+        # print(f"GETTING LAST HEARTBEAT TS", self._last_heartbeat)
         with self._hb_lock:
             return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
 
@@ -425,7 +421,7 @@ class WifiEspController:
         with self._hb_lock:
             leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
             term = self._leader_term
-            print(f"GETTING KNOWN LEADER AND TERM", leader, term)
+            print(f"LEADER IS {leader} TERM IS {term}")
             return leader, term
 
     def bump_term(self) -> int:

@@ -4,3 +4,4 @@ httpx
 python-chess
 psutil
 typing-extensions
+stockfish

@@ -16,10 +16,12 @@ except ImportError:
 from flight import FlightController
 from helpers import setup_logging
 from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-from esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
+import esp
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
 from camera import create_camera_controller
+
+print(f"esp: {esp}")
 
 try:
     from skyros.drone import Drone as SkyrosDrone
@@ -72,10 +74,10 @@ class ChessDroneSingle:
         
         # Контроллер связи (ESP по радиоканалу или Wi‑Fi) — выбирается по COMM_IMPL
         try:
-            self.esp = create_comm_controller(self.swarm, self.drone_name)
-        except Exception:
-            # Фолбэк на старую реализацию
-            self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
+            self.esp = esp.create_comm_controller(self.swarm, self.drone_name)
+        except Exception as e:
+            self.logger.warning(f"Comm controller init failed: {e}")
+            self.esp = None
         
         # Регистрируем обработчик сообщений если есть swarm
         if self.swarm and self.esp:
@@ -403,7 +405,12 @@ class ChessDroneSingle:
             # Отправляем команду другому дрону через ESP
             self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
             if self.esp and self.esp.is_leader:
-                payload = create_chess_move_message(target_drone, chess_move)
+                # Формируем сообщение хода самостоятельно (без esp.create_chess_move_message)
+                payload = {
+                    'type': 'move',
+                    'to': target_drone,
+                    'move': chess_move,
+                }
                 success = self.esp._broadcast_reliable(payload)
                 if success:
                     self.logger.info(f"Successfully sent move command to {target_drone}")
@@ -571,7 +578,13 @@ class ChessDroneSingle:
             self.logger.info(f"Received chess move command: {chess_move}")
             
             # Парсим команду
-            from_cell, to_cell = parse_chess_move(chess_move)
+            # Парсим ход формата "c2->d4"
+            try:
+                from_cell, to_cell = chess_move.split('->', 1)
+                from_cell = from_cell.strip()
+                to_cell = to_cell.strip()
+            except Exception:
+                from_cell, to_cell = None, None
             if not to_cell:
                 self.logger.error(f"Invalid chess move format: {chess_move}")
                 return False
@@ -738,7 +751,7 @@ class ChessDroneSingle:
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                self.logger.error(f"main loop error: {e} {e.__traceback__}")
+                self.logger.exception("main loop error")
                 self.fc.wait(0.3)
         self.logger.info("Main loop stopped.")
 

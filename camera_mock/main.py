@@ -54,6 +54,7 @@ def make_initial_positions():
     }
     black = {
         'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
+        'qween': {'x': 0.0,  'y': 3.5, "cell": 'd8'}
     }
     return {'white': white, 'black': black}
 
@@ -142,6 +143,8 @@ def api_positions():
     # Совместимо с ожидаемым форматом в drone/camera.py
     payload = copy.deepcopy(POSITIONS)
     payload['turn'] = TURN
+    fen = positions_to_fen(POSITIONS, TURN)
+    payload['fen'] = fen
     return payload
 
 
