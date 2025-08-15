@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
 import httpx
 
+from drone.const import OUR_TEAM
+
 # Для Python 3.7 совместимости
 try:
     from typing import Literal
@@ -123,7 +125,7 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
         uci_move = (
             (data.get("move") or data.get("lan") or "").strip()
         )
-        our_color = os.getenv("OUR_TEAM", "white")
+        our_color = OUR_TEAM
         stockfish_color = data.get("color", "w")
         if stockfish_color.lower() != our_color[0].lower():
             print(f"NOT OUR TURN: {stockfish_color} != {our_color[0]}")
