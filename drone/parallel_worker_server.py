@@ -17,10 +17,11 @@ import os
 # Вычисляем абсолютный путь к Stockfish
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    STOCKFISH_PATH = os.path.join(script_dir, 'chess', 'stockfish', 'stockfish-ubuntu-x86-64-avx2')
+    # Используем новое, простое имя бинарника
+    STOCKFISH_PATH = os.path.join(script_dir, 'chess', 'stockfish', 'stockfish')
     STOCKFISH_PATH = os.path.normpath(STOCKFISH_PATH)
 except NameError:
-    STOCKFISH_PATH = "drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2"
+    STOCKFISH_PATH = "drone/chess/stockfish/stockfish"
 
 
 def get_stockfish_evaluation(fen: str, movetime: int) -> int:
@@ -29,11 +30,6 @@ def get_stockfish_evaluation(fen: str, movetime: int) -> int:
     if not os.access(STOCKFISH_PATH, os.X_OK):
         raise RuntimeError(f"Stockfish binary is not executable. Please run 'chmod +x {STOCKFISH_PATH}'")
 
-    # ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ:
-    # Имя файла 'stockfish-ubuntu-x86-64-avx2' говорит о том, что он скомпилирован для
-    # 64-битных процессоров Intel/AMD. Он НЕ БУДЕТ работать на Raspberry Pi (ARM-архитектура).
-    # Если вы получите ошибку 'cannot execute binary file', вам нужно найти или скомпилировать
-    # Stockfish для ARM.
 
     try:
         process = subprocess.Popen(
