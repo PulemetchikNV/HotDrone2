@@ -310,85 +310,53 @@ class MockCameraController(CameraController):
         return self._last_turn
 
 
-def positions_to_fen(positions: dict, turn: str = 'white') -> str:
-    """
-    Преобразует структуру позиций в FEN нотацию
-    
-    Args:
-        positions: Dict с позициями {'white': {...}, 'black': {...}}
-        turn: Чей ход ('white' или 'black')
-    
-    Returns:
-        FEN строка
-    """
-    # Создаем пустую доску 8x8
+def positions_to_fen(positions: dict, turn: str) -> str:
+    # Построим 8x8 сетку пустых клеток
     board = [[None for _ in range(8)] for _ in range(8)]
-    
-    # Маппинг типов фигур в символы FEN
-    piece_symbols = {
-        'king': 'k', 'queen': 'q', 'rook': 'r', 
-        'knight': 'n', 'bishop': 'b', 'pawn': 'p'
-    }
-    
-    # Заполняем доску фигурами
-    for color, pieces in positions.items():
-        if not isinstance(pieces, dict):
-            continue
-            
-        for piece_key, piece_data in pieces.items():
-            if not isinstance(piece_data, dict):
-                continue
-                
-            cell = piece_data.get('cell', '')
-            if not isinstance(cell, str) or len(cell) != 2:
-                continue
-                
-            try:
-                file_char, rank_char = cell[0].lower(), cell[1]
-                if file_char not in 'abcdefgh' or rank_char not in '12345678':
-                    continue
-                    
-                file_idx = ord(file_char) - ord('a')  # 0-7
-                rank_idx = 8 - int(rank_char)  # 0-7 (8-я горизонталь = индекс 0)
-                
-                # Определяем базовый тип фигуры
-                base_type = piece_key.split('_')[0].lower()
-                symbol = piece_symbols.get(base_type, 'p')
-                
-                # Белые фигуры - заглавные буквы
-                if color.lower() == 'white':
-                    symbol = symbol.upper()
-                    
-                board[rank_idx][file_idx] = symbol
-                
-            except (ValueError, IndexError):
-                continue
-    
-    # Конвертируем доску в FEN piece placement
-    fen_ranks = []
-    for rank in board:
-        empty_count = 0
-        rank_str = ''
-        
-        for square in rank:
-            if square is None:
-                empty_count += 1
+
+    def base_to_symbol(base: str, color: str) -> str:
+        m = {
+            'king': 'k', 'queen': 'q', 'rook': 'r', 'knight': 'n', 'bishop': 'b', 'pawn': 'p'
+        }
+        s = m.get(base, 'p')
+        return s.upper() if color == 'white' else s
+
+    def put(color: str, piece_key: str, cell: str):
+        if not (isinstance(cell, str) and len(cell) == 2 and cell[0] in FILES and cell[1] in RANKS):
+            return
+        file_idx = FILES.index(cell[0])
+        rank_idx = RANKS.index(cell[1])
+        row = 8 - int(cell[1])  # 0..7, где 0 = 8-я горизонталь
+        col = file_idx          # 0..7, где 0 = столбец 'a'
+        base = piece_key.split('_')[0]
+        board[row][col] = base_to_symbol(base, color)
+
+    for color, color_data in positions.items():
+        for piece_key, info in color_data.items():
+            put(color, piece_key, info.get('cell', ''))
+
+    # Конвертируем в FEN piece placement
+    ranks = []
+    for row in range(8):
+        empty = 0
+        fen_row = ''
+        for col in range(8):
+            sym = board[row][col]
+            if sym is None:
+                empty += 1
             else:
-                if empty_count > 0:
-                    rank_str += str(empty_count)
-                    empty_count = 0
-                rank_str += square
-                
-        if empty_count > 0:
-            rank_str += str(empty_count)
-            
-        fen_ranks.append(rank_str)
-    
-    piece_placement = '/'.join(fen_ranks)
-    active_color = 'w' if turn.lower().startswith('w') else 'b'
-    
-    # Упрощенный FEN без рокировок, en passant и счетчиков
-    return f"{piece_placement} {active_color} - - 0 1"
+                if empty > 0:
+                    fen_row += str(empty)
+                    empty = 0
+                fen_row += sym
+        if empty > 0:
+            fen_row += str(empty)
+        ranks.append(fen_row)
+
+    placement = '/'.join(ranks)
+    active = 'w' if turn == 'white' else 'b'
+    # Без рокировок, en passant, счетчиков — чтобы chessboard.js просто показал позицию
+    return f"{placement} {active} - - 0 1"
 
 
 def get_board_state_from_camera(camera_controller) -> dict:
