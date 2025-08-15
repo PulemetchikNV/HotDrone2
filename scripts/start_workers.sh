@@ -1,42 +1,37 @@
 #!/usr/bin/env bash
 
-# Переходим в корневую директорию проекта
+# Move to the project's root directory
 cd "$(dirname "$0")/.."
 
-# Скрипт для ЗАПУСКА FastAPI воркеров на всех дронах в фоновом режиме.
-
-# Конфигурация
+# --- Configuration ---
 SSH_USER="pi"
 SSH_PASS="raspberry"
 DRONE_DIR="/home/pi/HotDrone2"
-DRONES_FILE="./workers.txt"
+WORKERS_FILE="./workers.txt"
 WORKER_PORT=3000
 
-# Цвета
+# --- Colors ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}=== Запуск воркеров на всех дронах ===${NC}"
+echo -e "${YELLOW}=== Starting workers on all drones ===${NC}"
 
-if [ ! -f "$DRONES_FILE" ]; then
-    echo -e "${RED}Error: Drones file not found: $DRONES_FILE${NC}"
+if [ ! -f "$WORKERS_FILE" ]; then
+    echo -e "${RED}Error: Workers file not found: $WORKERS_FILE${NC}"
     exit 1
 fi
 
-# Функция для запуска воркера на дроне
+# --- Function to start a worker on a drone ---
 start_worker_on_drone() {
     local drone_name=$1
     local drone_ip=$2
     
-    echo -e "${YELLOW}--- Запуск воркера на $drone_name ($drone_ip) ---${NC}"
+    echo -e "${YELLOW}--- Starting worker on $drone_name ($drone_ip) ---${NC}"
     
-    # Команды для выполнения на дроне
-    # 1. Убиваем любой старый процесс воркера, чтобы избежать конфликта портов.
-    # 2. Запускаем новый воркер с помощью nohup, чтобы он продолжал работать после закрытия SSH.
-    # 3. Перенаправляем вывод в /dev/null, чтобы не создавать nohup.out файлы.
-    commands="
+    # Commands to execute on the remote drone
+    local remote_commands="
         echo 'Connecting to $drone_name...';
         cd $DRONE_DIR || { echo 'Directory not found: $DRONE_DIR'; exit 1; };
         
@@ -61,19 +56,19 @@ start_worker_on_drone() {
         fi
     "
     
-    # Выполняем команды через SSH
+    # Execute commands via SSH
     if command -v sshpass &> /dev/null; then
-        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$drone_ip" "$commands"
+        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$drone_ip" "$remote_commands"
     else
-        echo -e "${YELLOW}Внимание: sshpass не найден. Возможно, потребуется ввести пароль вручную.${NC}"
-        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$drone_ip" "$commands"
+        echo -e "${YELLOW}Warning: sshpass not found. You may need to enter the password manually.${NC}"
+        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$SSH_USER@$drone_ip" "$remote_commands"
     fi
     echo ""
 }
 
-# Читаем дронов из файла и запускаем воркеры
+# --- Main loop ---
 while IFS=':' read -r drone_name drone_ip || [[ -n "$drone_name" ]]; do
-    # Убираем лишние пробелы и символы возврата каретки
+    # Trim whitespace and semicolons
     drone_name=$(echo "$drone_name" | xargs)
     drone_ip=$(echo "$drone_ip" | sed 's/;//' | xargs)
     
@@ -82,9 +77,9 @@ while IFS=':' read -r drone_name drone_ip || [[ -n "$drone_name" ]]; do
     fi
     
     start_worker_on_drone "$drone_name" "$drone_ip" &
-done < <(tr -d '\r' < "$DRONES_FILE")
+done < <(tr -d '\r' < "$WORKERS_FILE")
 
-echo "Ожидание завершения всех SSH сессий..."
+echo "Waiting for all SSH sessions to complete..."
 wait
 
-echo -e "${GREEN}=== Все воркеры запущены. Теперь вы можете запустить ./check.sh для проверки. ===${NC}"
+echo -e "${GREEN}=== All workers have been launched. You can now run ./check.sh to verify. ===${NC}"
