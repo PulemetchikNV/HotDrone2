@@ -311,6 +311,8 @@ class MockCameraController(CameraController):
 
 
 def positions_to_fen(positions: dict, turn: str) -> str:
+    FILES = "abcdefgh"
+    RANKS = "12345678"
     # Построим 8x8 сетку пустых клеток
     board = [[None for _ in range(8)] for _ in range(8)]
 
