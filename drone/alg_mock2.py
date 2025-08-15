@@ -57,12 +57,10 @@ class MoveDecision:
 FILES = "abcdefgh"
 RANKS = "12345678"
 
-# Глобальный экземпляр камеры (создается при первом обращении)
 _camera_controller = None
 
 
 def _get_camera_controller():
-    """Получает экземпляр контроллера камеры (singleton)"""
     global _camera_controller
     if _camera_controller is None:
         _camera_controller = create_camera_controller()
@@ -79,128 +77,73 @@ def _normalize_cell(cell: str) -> str:
 
 
 def _camera_read_board() -> Dict[str, Any]:
-    """Читает данные с камеры и возвращает структурированную информацию о доске"""
     try:
         camera = _get_camera_controller()
         positions = camera.get_board_positions()
-        
-        # Преобразуем в более удобный формат для алгоритма
         board_info = {
             'positions': positions,
-            'timestamp': time.time()
+            'timestamp': time.time(),
         }
-        
-        # Определяем "текущую клетку" для совместимости с существующим кодом
-        # Берем первую найденную фигуру или дефолтную клетку
+        # current_cell: выбираем первую фигуру для детерминизма
         current_cell = os.getenv("START_CELL", "e2")
-        
-        for color_data in positions.values():
-            for piece in color_data.values():
-                current_cell = piece.cell
-                break
-            if current_cell != os.getenv("START_CELL", "e2"):
-                break
-        
-        board_info['current_cell'] = current_cell
+        for color in ("white", "black"):
+            if color in positions and isinstance(positions[color], dict):
+                for piece in positions[color].values():
+                    current_cell = piece.cell
+                    break
+                if current_cell != os.getenv("START_CELL", "e2"):
+                    break
+        board_info['current_cell'] = _normalize_cell(current_cell)
+        # чей ход — если контроллер умеет, заберём; иначе white
+        turn = getattr(camera, 'get_turn', lambda: None)() or 'white'
+        board_info['turn'] = 'w' if turn.lower().startswith('w') else 'b'
         return board_info
-        
     except CameraTemporaryError as e:
-        # Временные ошибки камеры прокидываем как AlgTemporaryError
         raise AlgTemporaryError(f"Camera temporary error: {e}")
-        
     except CameraPermanentError as e:
-        # Постоянные ошибки камеры прокидываем как AlgPermanentError
         raise AlgPermanentError(f"Camera permanent error: {e}")
-        
     except Exception as e:
-        # Неожиданные ошибки считаем временными
         raise AlgTemporaryError(f"Unexpected camera error: {e}")
 
 
-def _camera_mock_read_cell() -> str:
-    """Fallback метод для совместимости - читает текущую клетку"""
-    try:
-        board_info = _camera_read_board()
-        return _normalize_cell(board_info['current_cell'])
-    except (AlgTemporaryError, AlgPermanentError):
-        # При ошибках камеры возвращаем дефолтную клетку
-        cell = os.getenv("START_CELL", "e2")
-        return _normalize_cell(cell)
-
-
-def _next_cell_simple(current: str) -> str:
-    # Идём по рангам вверх, затем вправо и снова снизу
-    current = _normalize_cell(current)
-    f_idx = FILES.index(current[0])
-    r_idx = RANKS.index(current[1])
-    if r_idx < 7:
-        return f"{current[0]}{RANKS[r_idx+1]}"
-    if f_idx < 7:
-        return f"{FILES[f_idx+1]}1"
-    return "a1"
-
-
-# -----------------------------
-# Публичный контракт API
-# -----------------------------
 def get_board_state() -> BoardState:
-    """Считывает текущее состояние с камеры и возвращает BoardState.
-
-    Использует камеру для получения позиций фигур и построения FEN.
-    """
-    try:
-        board_info = _camera_read_board()
-        current_cell = board_info['current_cell']
-        positions = board_info['positions']
-        
-        # TODO: Построить реальный FEN на основе позиций фигур
-        # Пока используем дефолтный FEN для совместимости
-        default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        
-        # Расширяем meta информацией о позициях фигур
-        meta = {
-            "current_cell": current_cell,
-            "positions": positions,
-            "camera_timestamp": board_info['timestamp']
-        }
-        
-        ts = time.time()
-        return BoardState(
-            fen=default_fen,
-            turn="w",
-            move_number=1,
-            timestamp=ts,
-            meta=meta,
-        )
-        
-    except AlgPermanentError:
-        # Прокидываем дальше как фатальную ошибку
-        raise
-    except AlgTemporaryError:
-        # Прокидываем временные ошибки
-        raise
-    except Exception as e:
-        # Любые иные сбои считаем временными
-        raise AlgTemporaryError(str(e))
+    """Считывает текущее состояние с камеры и возвращает BoardState."""
+    board_info = _camera_read_board()
+    # Пока fen упрощённый — берём из позиций через мок-сервер, либо дефолт
+    fen = os.getenv("DEFAULT_FEN", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1")
+    meta = {
+        "current_cell": board_info['current_cell'],
+        "positions": board_info['positions'],
+        "camera_timestamp": board_info['timestamp']
+    }
+    return BoardState(
+        fen=fen,
+        turn=board_info['turn'],
+        move_number=1,
+        timestamp=time.time(),
+        meta=meta,
+    )
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
-    """Вычисляет следующий ход для данной позиции.
-
-    В мок-реализации: двигаемся в "следующую" клетку по детерминированному правилу.
-    """
+    """Возвращает следующий ход (мок-логика детерминированна)."""
     if board is None or not isinstance(board, BoardState):
         raise AlgPermanentError("board must be BoardState")
-
     meta = board.meta or {}
     cur = meta.get("current_cell")
     if not cur:
         raise AlgPermanentError("board.meta.current_cell is required")
-
     cur = _normalize_cell(cur)
-    to_cell = _next_cell_simple(cur)
+    # Простая последовательность
+    f_idx = FILES.index(cur[0])
+    r_idx = RANKS.index(cur[1])
+    if r_idx < 7:
+        to_cell = f"{cur[0]}{RANKS[r_idx+1]}"
+    elif f_idx < 7:
+        to_cell = f"{FILES[f_idx+1]}1"
+    else:
+        to_cell = "a1"
     uci = f"{cur}{to_cell}"
-
     return MoveDecision(
         uci=uci,
         from_cell=cur,
@@ -216,9 +159,7 @@ def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) 
     """Обновляет предсказанное состояние после попытки исполнения хода."""
     if prev is None or move is None:
         raise AlgPermanentError("prev and move are required")
-
     if not success:
-        # Ничего не меняем, только отметим время
         return BoardState(
             fen=prev.fen,
             turn=prev.turn,
@@ -226,16 +167,11 @@ def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) 
             timestamp=time.time(),
             meta=prev.meta,
         )
-
-    # Успешный ход: обновим текущую клетку и счётчики
     meta = dict(prev.meta or {})
     meta["current_cell"] = _normalize_cell(move.to_cell)
-
-    # Переключим очередь хода (для валидности модели данных)
     next_turn: Literal["w", "b"] = "b" if prev.turn == "w" else "w"
-
     return BoardState(
-        fen=prev.fen,  # В мок-версии fen не пересчитываем
+        fen=prev.fen,
         turn=next_turn,
         move_number=max(1, prev.move_number) + 1,
         timestamp=time.time(),
