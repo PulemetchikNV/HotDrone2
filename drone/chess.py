@@ -231,7 +231,7 @@ class ChessDroneSingle:
             
         # 1) Получаем состояние доски через alg (источник данных — камера внутри alg)
         board = get_board_state()
-        print(f"GOT BOARD: {board}")
+        print(f"GOT BOARD: {board.fen}")
         
         # Проверяем, чей ход (предпочитаем камеру)
         camera_turn = None
