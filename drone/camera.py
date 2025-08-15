@@ -20,6 +20,9 @@ class PiecePosition:
     piece_type: str
     color: str
 
+    def get(self, key: str):
+        return getattr(self, key)
+
 
 class CameraError(Exception):
     """Базовая ошибка камеры"""
