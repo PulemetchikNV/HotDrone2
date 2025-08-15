@@ -84,9 +84,21 @@ class Progon:
     
     def run(self, to_cell):
         print(f"Moving to {to_cell}")
-        x, y = self.get_cell_coordinates(to_cell)
+
+        waypoints = [
+            get_random_cell(),
+            get_random_cell(),
+            get_random_cell(),
+            get_random_cell(),
+        ]
+
+        for waypoint in waypoints:
+            x, y = self.get_cell_coordinates(waypoint)
+            self.move_to_xy(x, y, 1.2)
+
+        #x, y = self.get_cell_coordinates(to_cell)
         # Выполняем движение локально
-        self.move_to_xy(x, y, 1.2)
+        #self.move_to_xy(x, y, 1.2)
 
 if __name__ == "__main__":
     Progon().run(argv[1] if len(argv) > 1 else get_random_cell())
