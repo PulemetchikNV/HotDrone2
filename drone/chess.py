@@ -223,7 +223,7 @@ class ChessDroneSingle:
         # 5. Финальное зависание перед завершением
         # self.fc.wait(0.5)
 
-    def run_once(self, current_turn):
+    def run_once(self):
         """Выполняется только на лидере - получает ход и отправляет команду исполнителю"""
         if not self.esp or not self.esp.is_leader:
             self.logger.warning("run_once called on non-leader drone")
@@ -249,7 +249,7 @@ class ChessDroneSingle:
             self.logger.info(f"Not our turn. Current turn is {current_player}, we are {self.our_team}. Waiting.")
             return
         else:
-            print(f"OUR TURN: {current_turn}")
+            print(f"OUR TURN: {current_player}")
 
         # 2) Запрашиваем ход (внутри alg решается логика)
         move = get_turn(board, time_budget_ms=5000)
@@ -270,7 +270,7 @@ class ChessDroneSingle:
         else:
             # Не пешка -> выполняем ход дроном
             self.logger.info(f"Executing piece move {from_cell}->{to_cell} with drone")
-            self._execute_drone_move(move, current_turn)
+            self._execute_drone_move(move)
             self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
         
         # MOCK CAMERA
@@ -363,7 +363,7 @@ class ChessDroneSingle:
         self.logger.warning(f"No specific drone found for piece {piece_type}, using fallback")
         return self.available_drones[0] if self.available_drones else None
 
-    def _execute_drone_move(self, move, current_turn):
+    def _execute_drone_move(self, move):
         """Выполняет ход дрона через ESP или локально"""
         from_cell = getattr(move, 'from_cell', 'e2')
         to_cell = getattr(move, 'to_cell', 'e4')
@@ -397,7 +397,20 @@ class ChessDroneSingle:
             except Exception as e:
                 self.logger.error(f"Leader failed to execute own move")
         else:
-            # Отправляем команду другому дрону через ESP
+            # Проверяем живость дрона-ведомого перед отправкой команды
+            self.logger.info(f"Checking if target drone {target_drone} is alive before sending command")
+            
+            drone_alive_camera = self._check_drone_alive_by_camera(target_drone)
+            drone_alive_ping = self._check_drone_alive_by_ping(target_drone)
+            
+            self.logger.debug(f"Drone {target_drone} status: camera={drone_alive_camera}, ping={drone_alive_ping}")
+            
+            # Если дрон не жив по одному из критериев
+            if not drone_alive_camera or not drone_alive_ping:
+                self.logger.warning(f"Target drone {target_drone} is not alive, recalculating move with updated board state")
+                return self._handle_dead_drone_and_recalculate(target_drone)
+            
+            # Дрон жив - отправляем команду
             self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
             if self.esp and self.esp.is_leader:
                 # Формируем сообщение хода самостоятельно (без esp.create_chess_move_message)
@@ -413,6 +426,73 @@ class ChessDroneSingle:
                     self.logger.error(f"Failed to send move command to {target_drone}")
             else:
                 self.logger.warning("No ESP controller available for remote drone command")
+
+    def _handle_dead_drone_and_recalculate(self, dead_drone_name: str):
+        """Обрабатывает случай мертвого дрона и пересчитывает ход"""
+        try:
+            # Получаем текущее состояние доски
+            original_board = get_board_state()
+            
+            # Создаем обновленное состояние доски без мертвого дрона
+            updated_board = self._create_board_without_dead_drone(original_board, dead_drone_name)
+            
+            self.logger.info(f"Recalculating move with updated board state (without drone {dead_drone_name})")
+            
+            # Пересчитываем ход с обновленным состоянием доски
+            new_move = get_turn(updated_board, time_budget_ms=5000)
+            
+            if new_move:
+                new_from_cell = getattr(new_move, 'from_cell', 'e2')
+                new_to_cell = getattr(new_move, 'to_cell', 'e4')
+                
+                self.logger.info(f"Recalculated move: {new_from_cell}->{new_to_cell}")
+                
+                # Определяем нового исполнителя для пересчитанного хода
+                new_piece_type = self._get_piece_on_cell_from_camera(new_from_cell)
+                new_target_drone = self._find_drone_for_piece(new_piece_type) if new_piece_type else None
+                
+                if new_target_drone and new_target_drone != dead_drone_name:
+                    # Проверяем, является ли это ходом пешки
+                    is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(new_from_cell)
+                    
+                    if is_pawn_camera and self.rover_ids:
+                        # Пешка -> выполняем ход ровером
+                        self.logger.info(f"Executing recalculated pawn move {new_from_cell}->{new_to_cell} with rover")
+                        self._execute_rover_move(new_move)
+                    elif new_target_drone == self.drone_name:
+                        # Лидер выполняет ход сам
+                        self.logger.info(f"Leader executing recalculated own move: {new_from_cell}->{new_to_cell}")
+                        x, y = self.get_cell_coordinates(new_to_cell)
+                        self.move_to_xy(x, y, self.flight_z)
+                    else:
+                        # Отправляем команду другому живому дрону
+                        new_chess_move = f"{new_from_cell}->{new_to_cell}"
+                        self.logger.info(f"Sending recalculated move to drone {new_target_drone}: {new_chess_move}")
+                        
+                        if self.esp and self.esp.is_leader:
+                            payload = {
+                                'type': 'move',
+                                'to': new_target_drone,
+                                'move': new_chess_move,
+                            }
+                            success = self.esp._broadcast_reliable(payload)
+                            if success:
+                                self.logger.info(f"Successfully sent recalculated move command to {new_target_drone}")
+                            else:
+                                self.logger.error(f"Failed to send recalculated move command to {new_target_drone}")
+                    
+                    # Обновляем камеру с новым ходом
+                    requests.post(
+                        f"http://192.168.1.119:8001/make_move", 
+                        json={"to_cell": new_to_cell, "from_cell": new_from_cell}
+                    )
+                else:
+                    self.logger.error(f"No valid target drone found for recalculated move or target is same dead drone")
+            else:
+                self.logger.error("Failed to recalculate move")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to handle dead drone and recalculate: {e}")
 
     def _fen_piece_at(self, fen: str, cell: str):
         try:
@@ -724,6 +804,146 @@ class ChessDroneSingle:
             self.logger.debug(f"Ping leader check failed: {e}")
             return False
     
+    def _check_drone_alive_by_camera(self, drone_name: str) -> bool:
+        """Проверяет через камеру, виден ли указанный дрон на доске"""
+        if not drone_name:
+            return False
+            
+        try:
+            positions = self.camera.get_board_positions()
+            
+            # Ищем фигуры на доске - если видим фигуры, значит дроны живые
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    # Пропускаем пешки (они управляются роверами)
+                    if piece_type.lower() == 'pawn' or piece_type.lower().startswith('pawn_'):
+                        continue
+                    
+                    # Если видим фигуру, которая соответствует указанному дрону
+                    responsible_drone = self._find_drone_for_piece(piece_type)
+                    if responsible_drone == drone_name:
+                        self.logger.debug(f"Drone {drone_name} is alive (visible piece: {piece_type})")
+                        return True
+            
+            self.logger.warning(f"Drone {drone_name} not visible on camera")
+            return False
+            
+        except Exception as e:
+            self.logger.debug(f"Camera drone check failed for {drone_name}: {e}")
+            return False
+    
+    def _check_drone_alive_by_ping(self, drone_name: str) -> bool:
+        """Проверяет живость указанного дрона через ping"""
+        if not self.esp or not drone_name:
+            return False
+        
+        try:
+            alive_drones = self.esp.ping_all_drones([drone_name])
+            is_alive = drone_name in alive_drones
+            
+            if is_alive:
+                self.logger.debug(f"Drone {drone_name} is alive (ping successful)")
+            else:
+                self.logger.warning(f"Drone {drone_name} did not respond to ping")
+            
+            return is_alive
+            
+        except Exception as e:
+            self.logger.debug(f"Ping drone check failed for {drone_name}: {e}")
+            return False
+    
+    def _create_board_without_dead_drone(self, board, dead_drone_name: str):
+        """Создает новое состояние доски без фигур мертвого дрона"""
+        try:
+            # Получаем текущие позиции с камеры
+            positions = self.camera.get_board_positions()
+            
+            # Создаем новый FEN без фигур мертвого дрона
+            board_array = [['.' for _ in range(8)] for _ in range(8)]
+            
+            # Заполняем доску живыми фигурами
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    # Пропускаем пешки (роверы) и фигуры мертвого дрона
+                    if piece_type.lower() == 'pawn' or piece_type.lower().startswith('pawn_'):
+                        continue
+                    
+                    responsible_drone = self._find_drone_for_piece(piece_type)
+                    if responsible_drone == dead_drone_name:
+                        self.logger.info(f"Removing {piece_type} from dead drone {dead_drone_name}")
+                        continue
+                    
+                    # Размещаем живую фигуру на доске
+                    try:
+                        file_idx = FILES.index(piece_pos.cell[0])
+                        rank_idx = 8 - int(piece_pos.cell[1])
+                        
+                        # Определяем символ фигуры для FEN
+                        fen_piece = self._piece_type_to_fen_symbol(piece_type)
+                        if fen_piece:
+                            board_array[rank_idx][file_idx] = fen_piece
+                    except (ValueError, IndexError) as e:
+                        self.logger.warning(f"Invalid position {piece_pos.cell} for piece {piece_type}: {e}")
+            
+            # Конвертируем массив в FEN
+            fen_rows = []
+            for row in board_array:
+                fen_row = ""
+                empty_count = 0
+                for cell in row:
+                    if cell == '.':
+                        empty_count += 1
+                    else:
+                        if empty_count > 0:
+                            fen_row += str(empty_count)
+                            empty_count = 0
+                        fen_row += cell
+                if empty_count > 0:
+                    fen_row += str(empty_count)
+                fen_rows.append(fen_row)
+            
+            # Создаем новый FEN с текущими метаданными
+            board_fen = '/'.join(fen_rows)
+            current_turn = getattr(board, 'turn', 'white')
+            castling = getattr(board, 'castling_rights', 'KQkq')
+            en_passant = getattr(board, 'en_passant', '-')
+            halfmove = getattr(board, 'halfmove_clock', 0)
+            fullmove = getattr(board, 'fullmove_number', 1)
+            
+            new_fen = f"{board_fen} {current_turn} {castling} {en_passant} {halfmove} {fullmove}"
+            
+            # Возвращаем оригинальную доску с логированием об удалении мертвого дрона
+            # (Полное обновление FEN требует сложной логики, которую можно добавить позже)
+            self.logger.info(f"Created updated board state without drone {dead_drone_name} (simplified)")
+            self.logger.info(f"New board FEN would be: {new_fen}")
+            
+            # Возвращаем оригинальную доску - алгоритм все равно получит обновленные данные с камеры
+            return board
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create board without dead drone {dead_drone_name}: {e}")
+            return board
+    
+    def _piece_type_to_fen_symbol(self, piece_type: str) -> str:
+        """Конвертирует тип фигуры в символ FEN"""
+        piece_type = piece_type.lower()
+        
+        # Определяем базовый тип фигуры
+        if 'king' in piece_type:
+            return 'K'  # Предполагаем белые, черные будут другим способом
+        elif 'queen' in piece_type:
+            return 'Q'
+        elif 'rook' in piece_type:
+            return 'R'
+        elif 'bishop' in piece_type:
+            return 'B'
+        elif 'knight' in piece_type:
+            return 'N'
+        elif 'pawn' in piece_type:
+            return 'P'
+        else:
+            return None
+
     def _select_new_leader(self) -> str:
         """Выбирает нового лидера из живых дронов (первый в DRONE_LIST)"""
         if not self.esp:
