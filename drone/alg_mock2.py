@@ -97,11 +97,11 @@ def get_board_state() -> BoardState:
             meta=meta,
         )
     except CameraTemporaryError as e:
-        raise AlgTemporaryError(f"Camera temporary error")
+        raise AlgTemporaryError(f"Camera temporary error {e}")
     except CameraPermanentError as e:
-        raise AlgPermanentError(f"Camera permanent error")
+        raise AlgPermanentError(f"Camera permanent error {e}")
     except Exception as e:
-        raise AlgTemporaryError(f"Unexpected camera error")
+        raise AlgTemporaryError(f"Unexpected camera error {e}")
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
