@@ -15,7 +15,7 @@ except ImportError:
         def Literal(*args):
             return str
 
-from .camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
+from camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
 
 
 # -----------------------------
