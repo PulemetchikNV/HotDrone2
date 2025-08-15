@@ -65,15 +65,20 @@ async def run_test():
         print(f"\n❌ Произошла непредвиденная ошибка: {e}")
 
 if __name__ == "__main__":
-    print("--- ИНСТРУКЦИЯ ПО ЗАПУСКУ ТЕСТА ---")
-    print("\n1. На дроне-воркере (drone3):")
+    print("--- ИНСТРУКЦИЯ ПО ЗАПУСКУ ТЕСТА (без venv) ---")
+    print("\n1. На КАЖДОМ дроне (drone3 и drone18):")
     print("   - Зайдите в директорию проекта: cd ~/HotDrone2")
-    print("   - Активируйте виртуальное окружение: source myvenv/bin/activate")
+    print("   - Обновите код: git pull")
+    print("   - Запустите скрипт глобальной установки зависимостей:")
+    print("     ./scripts/install_globally.sh")
+    
+    print("\n2. На дроне-воркере (drone3):")
     print("   - Установите переменные окружения: export DRONE_NAME=drone3")
     print("   - Запустите воркер напрямую. Вы должны увидеть вывод uvicorn:")
     print("     python3 -m drone.run_worker --host 0.0.0.0 --port 3000")
     print("   - Если при запуске возникнут ошибки, пришлите их мне.")
-    print("\n2. На главном дроне (drone18):")
+
+    print("\n3. На главном дроне (drone18):")
     print("   - Убедитесь, что воркер на drone3 запущен и работает.")
     print("   - Запустите этот скрипт:")
     print("     python3 mintik.py\n")

@@ -44,9 +44,7 @@ start_worker_on_drone() {
         echo 'Starting new worker in background on port $WORKER_PORT...';
         export DRONE_NAME='$drone_name';
         
-        source myvenv/bin/activate;
         nohup python3 -m drone.run_worker --host 0.0.0.0 --port $WORKER_PORT > /dev/null 2>&1 &
-        deactivate;
         
         sleep 2; # Give it time to start
         
