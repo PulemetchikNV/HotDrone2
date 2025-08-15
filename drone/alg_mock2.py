@@ -132,6 +132,7 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
         raise AlgPermanentError("board must be BoardState")
 
     fen = board.fen
+    print(f"SENDING FEN TO SF: {fen}")
     # Попытка получить ход от chess-api.com (Stockfish)
     try:
         timeout_s = max(1.0, float(time_budget_ms) / 1000.0)
@@ -144,6 +145,14 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
         uci_move = (
             (data.get("move") or data.get("lan") or "").strip()
         )
+        our_color = os.getenv("OUR_TEAM", "white")
+        if(data.get("color") != our_color[0]):
+            print(f"NOT OUR TURN: {data.get('color')} != {our_color[0]}")
+            return MoveDecision(
+                uci="",
+                from_cell="",
+                to_cell="",
+            )
 
         from_cell = data.get("from")
         to_cell = data.get("to")
