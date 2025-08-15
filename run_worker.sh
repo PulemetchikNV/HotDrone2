@@ -9,8 +9,12 @@ chmod +x scripts/*.sh
 echo "Cleaning Python cache..."
 ./scripts/clean_pycache.sh
 
-echo "Installing/updating Python packages..."
+echo "Force-reinstalling Python packages..."
+pip3 uninstall -y python-chess chess
 pip3 install -r requirements.txt
+
+echo "Searching for conflicting chess.py files..."
+find . -name "chess.py"
 
 echo "Downloading and setting up Stockfish..."
 ./scripts/download_arm_stockfish.sh
