@@ -3,6 +3,11 @@ import time
 import json
 import math
 from dataclasses import replace
+import threading
+import uvicorn
+import httpx
+from .fast_api_server import app as fast_api_app, set_drone_instance
+
 
 # rospy fallback
 try:
@@ -72,6 +77,10 @@ class ChessDroneSingle:
         self.drone_name = os.environ.get("DRONE_NAME", "drone")
         self.is_leader = self.drone_name == LEADER_DRONE
         self.logger = setup_logging(self.drone_name)
+
+        # Запуск FastAPI сервера в фоновом потоке
+        self._run_fastapi_server()
+        set_drone_instance(self)
 
         self.swarm = None
         if SkyrosDrone is not None:
@@ -165,6 +174,17 @@ class ChessDroneSingle:
                     self.logger.warning(f"Unexpected JSON structure in {self.map_path}")
         except Exception as e:
             self.logger.warning(f"Failed to load ArUco map from {self.map_path}: {e}")
+
+    def _run_fastapi_server(self):
+        """Запускает FastAPI сервер в отдельном потоке."""
+        port = 8000 + int(self.drone_name.replace('drone', ''))
+        config = uvicorn.Config(fast_api_app, host="0.0.0.0", port=port, log_level="info")
+        server = uvicorn.Server(config)
+        
+        thread = threading.Thread(target=server.run)
+        thread.daemon = True
+        thread.start()
+        self.logger.info(f"FastAPI server started on port {port}")
 
     def get_cell_coordinates(self, cell):
         """Получает координаты клетки из карты или вычисляет их"""
@@ -411,17 +431,22 @@ class ChessDroneSingle:
             except Exception as e:
                 self.logger.error(f"Leader failed to execute own move: {e}")
         else:
-            # Отправляем команду другому дрону через ESP
+            # Отправляем команду другому дрону через FastAPI
             self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
-            if self.esp and self.esp.is_leader:
-                payload = create_chess_move_message(target_drone, chess_move)
-                success = self.esp._broadcast_reliable(payload)
-                if success:
-                    self.logger.info(f"Successfully sent move command to {target_drone}")
-                else:
-                    self.logger.error(f"Failed to send move command to {target_drone}")
-            else:
-                self.logger.warning("No ESP controller available for remote drone command")
+            try:
+                drone_id = int(target_drone.replace('drone', ''))
+                port = 8000 + drone_id
+                # IP дронов должны быть доступны. Здесь мы предполагаем, что они находятся в одной сети
+                # и их можно найти по имени хоста. В реальной системе может потребоваться DNS или статические IP.
+                url = f"http://{target_drone}:{port}/move"
+                with httpx.Client() as client:
+                    response = client.post(url, json={"to_cell": to_cell}, timeout=10.0)
+                    response.raise_for_status()
+                    self.logger.info(f"Successfully sent move command to {target_drone}. Response: {response.json()}")
+            except httpx.RequestError as e:
+                self.logger.error(f"Failed to send move command to {target_drone}: {e}")
+            except Exception as e:
+                self.logger.error(f"An unexpected error occurred while sending move command: {e}")
 
     def _fen_piece_at(self, fen: str, cell: str):
         try:
@@ -561,49 +586,6 @@ class ChessDroneSingle:
         except Exception as e:
             self.logger.error(f"Failed to send rover navigate: {e}")
 
-    def wait_and_execute_move(self, timeout=0.5):
-        """Выполняется на ведомых дронах - ждет команду от лидера и выполняет её"""
-        if self.esp and self.esp.is_leader:
-            self.logger.warning("wait_and_execute_move called on leader drone")
-            return False
-            
-        if not self.esp:
-            self.logger.error("No ESP controller available for follower")
-            return False
-            
-        self.logger.info(f"Follower {self.drone_name} waiting for chess move command...")
-        
-        # Ждем команду от лидера
-        if self.esp._chess_move_event.wait(timeout):
-            # Получили команду
-            chess_move = self.esp._received_chess_move
-            self.esp._chess_move_event.clear()  # Сбрасываем событие
-            self.esp._received_chess_move = None
-            
-            self.logger.info(f"Received chess move command: {chess_move}")
-            
-            # Парсим команду
-            from_cell, to_cell = parse_chess_move(chess_move)
-            if not to_cell:
-                self.logger.error(f"Invalid chess move format: {chess_move}")
-                return False
-                
-            # Получаем координаты целевой клетки
-            x, y = self.get_cell_coordinates(to_cell)
-            
-            # Выполняем движение
-            try:
-                self.logger.info(f"Flying to {to_cell} at coordinates ({x:.3f}, {y:.3f})")
-                self.move_to_xy(x, y, self.flight_z)
-                self.logger.info(f"Successfully completed move to {to_cell}")
-                return True
-            except Exception as e:
-                self.logger.error(f"Failed to execute move: {e}")
-                return False
-        else:
-            self.logger.warning(f"Timeout waiting for chess move command ({timeout}s)")
-            return False
-
     def _order_index(self, name: str) -> int:
         try:
             return self.available_drones.index(name)
@@ -742,8 +724,8 @@ class ChessDroneSingle:
                         # После лимита — просто жить как лидер и рассылать heartbeats
                         pass
                 else:
-                    # Ведомый: ждём команды небольшими таймаутами, чтобы не блокировать выборы
-                    self.wait_and_execute_move(timeout=0.3)
+                    # Ведомый: просто ждет команд через FastAPI
+                    self.fc.wait(0.1)
 
                 # Небольшая пауза цикла
                 self.fc.wait(0.05)
@@ -788,16 +770,11 @@ class ChessDroneSingle:
 
     def run_follower(self):
         """Основной цикл для дрона-ведомого"""
+        self.logger.info("Follower started. Waiting for commands via FastAPI...")
         while not rospy.is_shutdown():
             try:
-                # Ждем команду от лидера и выполняем её
-                success = self.wait_and_execute_move(timeout=30.0)
-                if success:
-                    self.logger.info("Move executed successfully, waiting for next command...")
-                else:
-                    self.logger.warning("Failed to execute move or timeout, continuing...")
-                    
-                # Короткая пауза перед следующим ожиданием
+                # Основная логика теперь в FastAPI сервере,
+                # поэтому здесь просто поддерживаем цикл живым.
                 self.fc.wait(1.0)
 
             except KeyboardInterrupt:
