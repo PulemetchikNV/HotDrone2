@@ -702,6 +702,9 @@ class ChessDroneSingle:
                     self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
                     self._last_hb_sent = now
 
+        # MOCK
+        self.current_leader = 'drone15' 
+
     def run(self):
         try:
             rospy.init_node("chess_drone_single")
