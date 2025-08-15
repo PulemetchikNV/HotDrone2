@@ -264,6 +264,8 @@ class WifiEspController:
 
     # Совместимый обработчик входящих сообщений
     def _on_custom_message(self, message: str):
+        print(f"RECEIVED MESSAGE: {message}")
+
         try:
             obj = json.loads(message)
         except Exception:
@@ -334,6 +336,7 @@ class WifiEspController:
                 time.sleep(0.01)
 
     def _send_json(self, payload: dict):
+        print(f"SENDING JSON: {payload}")
         try:
             msg = json.dumps(payload)
         except Exception as e:
@@ -357,6 +360,7 @@ class WifiEspController:
         return sent_any
 
     def _broadcast_reliable(self, payload, retries=3, timeout=0.5):
+        print(f"BROADCASTING RELIABLE: {payload}")  
         msg_id = uuid.uuid4().hex[:4]
         payload['msg_id'] = msg_id
         is_move_command = payload.get('type') == 'move'
@@ -394,9 +398,11 @@ class WifiEspController:
         return False
 
     def _broadcast_unreliable(self, payload: dict):
+        print(f"BROADCASTING UNRELIABLE: {payload}")
         return self._send_json(payload)
 
     def broadcast_heartbeat(self, leader_name: str, term: int, active_drones: list):
+        print(f"BROADCASTING HEARTBEAT: {leader_name}, {term}, {active_drones}")
         payload = {
             'type': 'hb',
             'leader': leader_name,
@@ -406,25 +412,30 @@ class WifiEspController:
         self._broadcast_unreliable(payload)
 
     def get_last_heartbeat(self):
+        print(f"GETTING LAST HEARTBEAT", self._last_heartbeat)
         with self._hb_lock:
             return dict(self._last_heartbeat) if self._last_heartbeat else None
 
     def get_last_heartbeat_ts(self) -> float:
+        print(f"GETTING LAST HEARTBEAT TS", self._last_heartbeat.get('ts'))
         with self._hb_lock:
             return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
 
     def get_known_leader_and_term(self):
+        print(f"GETTING KNOWN LEADER AND TERM", leader, term)
         with self._hb_lock:
             leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
             term = self._leader_term
             return leader, term
 
     def bump_term(self) -> int:
+        print(f"BUMPING TERM", self._leader_term)
         with self._hb_lock:
             self._leader_term += 1
             return self._leader_term
 
     def update_role(self, is_leader: bool):
+        print(f"UPDATING ROLE", is_leader)
         if self.is_leader != is_leader:
             self.is_leader = is_leader
             self.logger.info(f"[WiFi] Role updated: is_leader={self.is_leader}")
@@ -432,6 +443,8 @@ class WifiEspController:
 
 def create_comm_controller(swarm, drone_name=None):
     impl = os.environ.get('COMM_IMPL', 'esp').lower()
+    print(f"INITIALIZING COMM_IMPL: {impl}")
+
     if impl == 'wifi':
         return WifiEspController(swarm=swarm, drone_name=drone_name)
     return EspController(swarm=swarm, drone_name=drone_name)
