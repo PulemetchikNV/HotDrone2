@@ -61,7 +61,7 @@ class EspController:
                     ack_id = obj.get('ack_id')
                     with self._ack_lock:
                         self._received_acks.add(ack_id)
-                        self.logger.debug(f"Received ACK {ack_id} from {obj.get('from', 'unknown')}")
+                        self.logger.info(f"Received ACK {ack_id} from {obj.get('from', 'unknown')}")
             return
 
         # --- Command handling (for followers) ---
@@ -71,8 +71,8 @@ class EspController:
         if target != '*' and target != self.drone_name and target != drone_name_to_short(self.drone_name):
             return
             
-        # Отправляем ack, если есть msg_id
-        if 'msg_id' in obj and not self.is_leader and self.swarm:
+        # Отправляем ack если команда адресована нам (независимо от роли лидера)
+        if 'msg_id' in obj and self.swarm:
             # Получаем отправителя команды
             original_sender = obj.get('from', 'unknown')
             ack_payload = {
@@ -83,7 +83,7 @@ class EspController:
             }
             try:
                 self.swarm.broadcast_custom_message(json.dumps(ack_payload))
-                self.logger.debug(f"Sent ACK {obj['msg_id']} to {original_sender}")
+                self.logger.info(f"Sent ACK {obj['msg_id']} to {original_sender}")
             except Exception as e:
                 self.logger.warning(f"Failed to send ack via broadcast: {e}")
 
@@ -319,7 +319,7 @@ class WifiEspController:
                     ack_id = obj.get('ack_id')
                     with self._ack_lock:
                         self._received_acks.add(ack_id)
-                        self.logger.debug(f"[WiFi] Received ACK {ack_id} from {obj.get('from', 'unknown')}")
+                        self.logger.info(f"[WiFi] Received ACK {ack_id} from {obj.get('from', 'unknown')}")
             return
 
         # Фильтр адресата для остальных команд
@@ -327,8 +327,8 @@ class WifiEspController:
         if target != '*' and target != self.drone_name and target != drone_name_to_short(self.drone_name):
             return
 
-        # Отправляем ack (не лидер) с указанием отправителя команды
-        if 'msg_id' in obj and not self.is_leader:
+        # Отправляем ack если команда адресована нам (независимо от роли лидера)
+        if 'msg_id' in obj:
             # Получаем отправителя команды из поля 'from' или определяем по контексту
             original_sender = obj.get('from', 'unknown')
             ack_payload = {
@@ -338,7 +338,7 @@ class WifiEspController:
                 'from': self.drone_name
             }
             self._send_json(ack_payload)
-            self.logger.debug(f"[WiFi] Sent ACK {obj['msg_id']} to {original_sender}")
+            self.logger.info(f"[WiFi] Sent ACK {obj['msg_id']} to {original_sender}")
 
         # Шахматный ход
         target_matches = (target == self.drone_name or target == drone_name_to_short(self.drone_name))
