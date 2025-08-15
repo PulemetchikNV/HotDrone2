@@ -2,7 +2,14 @@ import sys
 import os
 import logging
 
-from .env_loader import load_env_file
+try:
+    # Относительные импорты (когда запускается как пакет)
+    from .env_loader import load_env_file
+    from .chess import ChessDroneSingle as Drone
+except ImportError:
+    # Абсолютные импорты (когда запускается напрямую)
+    from env_loader import load_env_file
+    from chess import ChessDroneSingle as Drone
 
 def parse_args():
     drone_name = None
@@ -15,8 +22,6 @@ def parse_args():
 
 load_env_file()
 
-
-from .chess import ChessDroneSingle as Drone
 
 try:
     import rospy
