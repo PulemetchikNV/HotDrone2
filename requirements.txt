@@ -1,5 +1,4 @@
-fastapi
-uvicorn
-httpx
 python-chess
 psutil
+PyYAML
+requests
