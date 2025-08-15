@@ -2,6 +2,7 @@ import os
 import time
 import json
 import math
+import requests
 
 # rospy fallback
 try:
@@ -20,8 +21,6 @@ import esp
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
 from camera import create_camera_controller
-
-print(f"esp: {esp}")
 
 try:
     from skyros.drone import Drone as SkyrosDrone
@@ -284,7 +283,14 @@ class ChessDroneSingle:
             self.logger.info(f"Executing piece move {from_cell}->{to_cell} with drone")
             self._execute_drone_move(move, current_turn)
             self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
-    
+        
+        # MOCK CAMERA
+        requests.post(
+            f"http://localhost:8000/make_move", 
+            json={"move": f"{from_cell}->{to_cell}"}
+        )
+
+
     def _build_drone_role_mapping(self):
         """Строит маппинг ролей дронов из переменных окружения"""
         mapping = {}
