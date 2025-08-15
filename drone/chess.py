@@ -16,7 +16,7 @@ except ImportError:
 
 from flight import FlightController
 from helpers import setup_logging
-from alg_mock2 import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+from alg_mock2 import get_board_state, get_turn
 import esp
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
@@ -49,9 +49,6 @@ def next_cell_simple(current: str) -> str:
     if f_idx < 7:
         return f"{FILES[f_idx+1]}1"
     return "a1"
-
-
- 
 
 
 class ChessDroneSingle:

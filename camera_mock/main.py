@@ -54,6 +54,7 @@ def make_initial_positions():
     }
     black = {
         #'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
+        'queen': {'x': 0.0,  'y': 3.5, "cell": 'd8'},
         'king': {'x': 0.0,  'y': 3.5, "cell": 'e8'}
     }
     return {'white': white, 'black': black}

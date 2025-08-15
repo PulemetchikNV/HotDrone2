@@ -20,7 +20,6 @@ except ImportError:
 
 from camera import create_camera_controller, get_board_state_from_camera, CameraTemporaryError, CameraPermanentError
 
-
 # -----------------------------
 # Исключения уровня алгоритма
 # -----------------------------
@@ -192,27 +191,3 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
             reason="fallback-simple-sequence",
             meta={"policy": "simple_sequence"},
         )
-
-
-def update_after_execution(prev: BoardState, move: MoveDecision, success: bool) -> BoardState:
-    """Обновляет предсказанное состояние после попытки исполнения хода."""
-    if prev is None or move is None:
-        raise AlgPermanentError("prev and move are required")
-    if not success:
-        return BoardState(
-            fen=prev.fen,
-            turn=prev.turn,
-            move_number=prev.move_number,
-            timestamp=time.time(),
-            meta=prev.meta,
-        )
-    meta = dict(prev.meta or {})
-    meta["current_cell"] = _normalize_cell(move.to_cell)
-    next_turn: Literal["w", "b"] = "b" if prev.turn == "w" else "w"
-    return BoardState(
-        fen=prev.fen,
-        turn=next_turn,
-        move_number=max(1, prev.move_number) + 1,
-        timestamp=time.time(),
-        meta=meta,
-    )

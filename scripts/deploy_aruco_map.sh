@@ -9,7 +9,7 @@ SSH_PASS="raspberry"  # Или ваш пароль
 DRONES_FILE="./drones.txt"
 ARUCO_MAPS_DIR="./aruco_maps"
 TARGET_MAP_PATH="~/catkin_ws/src/clover/aruco_pose/map/aruco_map_chess_v2.txt"
-
+#catkin_ws/src/clover/clover/launch/aruco.launch
 # Цвета для вывода
 RED='\033[0;31m'
 GREEN='\033[0;32m'
