@@ -16,10 +16,12 @@ except ImportError:
 from flight import FlightController
 from helpers import setup_logging
 from alg2_stockfish import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-from esp import EspController, WifiEspController
+import esp
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
 from camera import create_camera_controller
+
+print(f"esp: {esp}")
 
 try:
     from skyros.drone import Drone as SkyrosDrone
@@ -72,11 +74,7 @@ class ChessDroneSingle:
         
         # Контроллер связи (ESP по радиоканалу или Wi‑Fi) — выбирается по COMM_IMPL
         try:
-            comm_impl = os.environ.get('COMM_IMPL', 'esp').lower()
-            if comm_impl == 'wifi':
-                self.esp = WifiEspController(swarm=self.swarm, drone_name=self.drone_name)
-            else:
-                self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
+            self.esp = esp.create_comm_controller(self.swarm, self.drone_name)
         except Exception as e:
             self.logger.warning(f"Comm controller init failed: {e}")
             self.esp = None
