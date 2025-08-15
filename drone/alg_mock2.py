@@ -16,7 +16,7 @@ except ImportError:
         def Literal(*args):
             return str
 
-from camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
+from camera import create_camera_controller, get_board_state_from_camera, CameraTemporaryError, CameraPermanentError
 
 
 # -----------------------------
@@ -77,53 +77,31 @@ def _normalize_cell(cell: str) -> str:
     return f + r
 
 
-def _camera_read_board() -> Dict[str, Any]:
+def get_board_state() -> BoardState:
+    """Считывает текущее состояние с камеры и возвращает BoardState."""
     try:
         camera = _get_camera_controller()
-        positions = camera.get_board_positions()
-        board_info = {
-            'positions': positions,
-            'timestamp': time.time(),
+        board_info = get_board_state_from_camera(camera)
+        
+        meta = {
+            "current_cell": board_info['current_cell'],
+            "positions": board_info['positions'],
+            "camera_timestamp": board_info['timestamp']
         }
-        # current_cell: выбираем первую фигуру для детерминизма
-        current_cell = os.getenv("START_CELL", "e2")
-        for color in ("white", "black"):
-            if color in positions and isinstance(positions[color], dict):
-                for piece in positions[color].values():
-                    current_cell = piece.cell
-                    break
-                if current_cell != os.getenv("START_CELL", "e2"):
-                    break
-        board_info['current_cell'] = _normalize_cell(current_cell)
-        # чей ход — если контроллер умеет, заберём; иначе white
-        turn = getattr(camera, 'get_turn', lambda: None)() or 'white'
-        board_info['turn'] = 'w' if turn.lower().startswith('w') else 'b'
-        return board_info
+        
+        return BoardState(
+            fen=board_info['fen'],
+            turn=board_info['turn'],
+            move_number=1,
+            timestamp=time.time(),
+            meta=meta,
+        )
     except CameraTemporaryError as e:
         raise AlgTemporaryError(f"Camera temporary error: {e}")
     except CameraPermanentError as e:
         raise AlgPermanentError(f"Camera permanent error: {e}")
     except Exception as e:
         raise AlgTemporaryError(f"Unexpected camera error: {e}")
-
-
-def get_board_state() -> BoardState:
-    """Считывает текущее состояние с камеры и возвращает BoardState."""
-    board_info = _camera_read_board()
-    # Пока fen упрощённый — берём из позиций через мок-сервер, либо дефолт
-    fen = os.getenv("DEFAULT_FEN", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1")
-    meta = {
-        "current_cell": board_info['current_cell'],
-        "positions": board_info['positions'],
-        "camera_timestamp": board_info['timestamp']
-    }
-    return BoardState(
-        fen=fen,
-        turn=board_info['turn'],
-        move_number=1,
-        timestamp=time.time(),
-        meta=meta,
-    )
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
@@ -146,8 +124,9 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
             (data.get("move") or data.get("lan") or "").strip()
         )
         our_color = os.getenv("OUR_TEAM", "white")
-        if(data.get("color").lower() != our_color[0].lower()):
-            print(f"NOT OUR TURN: {data.get('color')} != {our_color[0]}")
+        stockfish_color = data.get("color", "w")
+        if stockfish_color.lower() != our_color[0].lower():
+            print(f"NOT OUR TURN: {stockfish_color} != {our_color[0]}")
             return MoveDecision(
                 uci="",
                 from_cell="",

@@ -310,6 +310,140 @@ class MockCameraController(CameraController):
         return self._last_turn
 
 
+def positions_to_fen(positions: dict, turn: str = 'white') -> str:
+    """
+    Преобразует структуру позиций в FEN нотацию
+    
+    Args:
+        positions: Dict с позициями {'white': {...}, 'black': {...}}
+        turn: Чей ход ('white' или 'black')
+    
+    Returns:
+        FEN строка
+    """
+    # Создаем пустую доску 8x8
+    board = [[None for _ in range(8)] for _ in range(8)]
+    
+    # Маппинг типов фигур в символы FEN
+    piece_symbols = {
+        'king': 'k', 'queen': 'q', 'rook': 'r', 
+        'knight': 'n', 'bishop': 'b', 'pawn': 'p'
+    }
+    
+    # Заполняем доску фигурами
+    for color, pieces in positions.items():
+        if not isinstance(pieces, dict):
+            continue
+            
+        for piece_key, piece_data in pieces.items():
+            if not isinstance(piece_data, dict):
+                continue
+                
+            cell = piece_data.get('cell', '')
+            if not isinstance(cell, str) or len(cell) != 2:
+                continue
+                
+            try:
+                file_char, rank_char = cell[0].lower(), cell[1]
+                if file_char not in 'abcdefgh' or rank_char not in '12345678':
+                    continue
+                    
+                file_idx = ord(file_char) - ord('a')  # 0-7
+                rank_idx = 8 - int(rank_char)  # 0-7 (8-я горизонталь = индекс 0)
+                
+                # Определяем базовый тип фигуры
+                base_type = piece_key.split('_')[0].lower()
+                symbol = piece_symbols.get(base_type, 'p')
+                
+                # Белые фигуры - заглавные буквы
+                if color.lower() == 'white':
+                    symbol = symbol.upper()
+                    
+                board[rank_idx][file_idx] = symbol
+                
+            except (ValueError, IndexError):
+                continue
+    
+    # Конвертируем доску в FEN piece placement
+    fen_ranks = []
+    for rank in board:
+        empty_count = 0
+        rank_str = ''
+        
+        for square in rank:
+            if square is None:
+                empty_count += 1
+            else:
+                if empty_count > 0:
+                    rank_str += str(empty_count)
+                    empty_count = 0
+                rank_str += square
+                
+        if empty_count > 0:
+            rank_str += str(empty_count)
+            
+        fen_ranks.append(rank_str)
+    
+    piece_placement = '/'.join(fen_ranks)
+    active_color = 'w' if turn.lower().startswith('w') else 'b'
+    
+    # Упрощенный FEN без рокировок, en passant и счетчиков
+    return f"{piece_placement} {active_color} - - 0 1"
+
+
+def get_board_state_from_camera(camera_controller) -> dict:
+    """
+    Получает состояние доски с камеры и формирует структуру для alg
+    
+    Args:
+        camera_controller: Экземпляр CameraController/MockCameraController
+        
+    Returns:
+        Dict с информацией о доске
+    """
+    try:
+        positions = camera_controller.get_board_positions()
+        
+        # Определяем текущую клетку (первая найденная фигура)
+        current_cell = os.getenv("START_CELL", "e2")
+        for color in ("white", "black"):
+            if color in positions and isinstance(positions[color], dict):
+                for piece in positions[color].values():
+                    if hasattr(piece, 'cell'):
+                        current_cell = piece.cell
+                        break
+                if current_cell != os.getenv("START_CELL", "e2"):
+                    break
+        
+        # Чей ход
+        turn = 'white'
+        if hasattr(camera_controller, 'get_turn'):
+            camera_turn = camera_controller.get_turn()
+            if camera_turn:
+                turn = camera_turn.lower()
+        
+        # Генерируем FEN
+        fen = positions_to_fen(positions, turn)
+        
+        return {
+            'positions': positions,
+            'current_cell': current_cell,
+            'turn': 'w' if turn.startswith('w') else 'b',
+            'fen': fen,
+            'timestamp': time.time()
+        }
+        
+    except Exception as e:
+        # При ошибках возвращаем минимальную структуру
+        return {
+            'positions': {},
+            'current_cell': os.getenv("START_CELL", "e2"),
+            'turn': 'w',
+            'fen': "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            'timestamp': time.time()
+        }
+
+
 def create_camera_controller(logger=None) -> CameraController:
     """
     Фабрика для создания контроллера камеры
