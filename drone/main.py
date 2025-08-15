@@ -2,8 +2,14 @@ import sys
 import os
 import logging
 
-from env_loader import load_env_file
-from chess import ChessDroneSingle as Drone
+try:
+    # Относительные импорты (когда запускается как пакет)
+    from . import env_loader
+    from .chess import ChessDroneSingle as Drone
+except ImportError:
+    # Абсолютные импорты (когда запускается напрямую)
+    import env_loader
+    from chess import ChessDroneSingle as Drone
 
 def parse_args():
     drone_name = None
@@ -14,13 +20,13 @@ def parse_args():
             drone_name = sys.argv[i + 1]
     return drone_name
 
-# Загружаем переменные окружения из .env файла
-load_env_file()
+env_loader.load_env_file()
 
-# Мок rospy для локального тестирования, если он недоступен
+
 try:
     import rospy
 except ImportError:
+    # Mock rospy for local testing
     class MockRospy:
         def init_node(self, name):
             logging.warning(f"[MOCK] rospy.init_node('{name}')")
