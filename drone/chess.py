@@ -16,10 +16,7 @@ except ImportError:
 from flight import FlightController
 from helpers import setup_logging
 from alg2_stockfish import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-try:
-    from .esp import EspController, WifiEspController
-except Exception:
-    from esp import EspController, WifiEspController
+from esp import EspController, WifiEspController
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
 from camera import create_camera_controller

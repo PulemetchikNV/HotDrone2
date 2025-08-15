@@ -5,12 +5,8 @@ import os
 import threading
 import socket
 
-try:
-    from .helpers import setup_logging
-    from .const import LEADER_DRONE
-except ImportError:
-    from helpers import setup_logging
-    from const import LEADER_DRONE
+from helpers import setup_logging
+from const import LEADER_DRONE
 
 def drone_name_to_short(drone_name):
     """
