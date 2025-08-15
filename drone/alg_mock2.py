@@ -146,7 +146,7 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
             (data.get("move") or data.get("lan") or "").strip()
         )
         our_color = os.getenv("OUR_TEAM", "white")
-        if(data.get("color") != our_color[0]):
+        if(data.get("color").lower() != our_color[0].lower()):
             print(f"NOT OUR TURN: {data.get('color')} != {our_color[0]}")
             return MoveDecision(
                 uci="",
