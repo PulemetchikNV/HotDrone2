@@ -53,7 +53,7 @@ def make_initial_positions():
         'pawn_h2':   {'x': 3.5, 'y': -2.5, 'cell': 'h2'},
     }
     black = {
-        'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
+        #'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
         'queen': {'x': 0.0,  'y': 3.5, "cell": 'd8'}
     }
     return {'white': white, 'black': black}
