@@ -16,7 +16,7 @@ except ImportError:
 from flight import FlightController
 from helpers import setup_logging
 from alg2_stockfish import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
-from esp import create_chess_move_message, parse_chess_move, create_comm_controller
+import esp
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
 from camera import create_camera_controller
@@ -71,7 +71,7 @@ class ChessDroneSingle:
         self.fc = FlightController(drone_name=self.drone_name, logger=self.logger)
         
         # Контроллер связи (ESP по радиоканалу или Wi‑Fi) — выбирается по COMM_IMPL
-        self.esp = create_comm_controller(self.swarm, self.drone_name)
+        self.esp = esp.create_comm_controller(self.swarm, self.drone_name)
         
         # Регистрируем обработчик сообщений если есть swarm
         if self.swarm and self.esp:
@@ -399,7 +399,7 @@ class ChessDroneSingle:
             # Отправляем команду другому дрону через ESP
             self.logger.info(f"Leader sending chess move: {chess_move} to drone {target_drone}")
             if self.esp and self.esp.is_leader:
-                payload = create_chess_move_message(target_drone, chess_move)
+                payload = esp.create_chess_move_message(target_drone, chess_move)
                 success = self.esp._broadcast_reliable(payload)
                 if success:
                     self.logger.info(f"Successfully sent move command to {target_drone}")
@@ -567,7 +567,7 @@ class ChessDroneSingle:
             self.logger.info(f"Received chess move command: {chess_move}")
             
             # Парсим команду
-            from_cell, to_cell = parse_chess_move(chess_move)
+            from_cell, to_cell = esp.parse_chess_move(chess_move)
             if not to_cell:
                 self.logger.error(f"Invalid chess move format: {chess_move}")
                 return False
