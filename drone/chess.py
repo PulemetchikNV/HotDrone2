@@ -275,7 +275,7 @@ class ChessDroneSingle:
         
         # MOCK CAMERA
         requests.post(
-            f"http://localhost:8000/make_move", 
+            f"http://192.168.1.119:8000/make_move", 
             json={"move": f"{from_cell}->{to_cell}"}
         )
 
