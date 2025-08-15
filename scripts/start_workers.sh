@@ -56,10 +56,10 @@ start_worker_on_drone() {
     
     # Execute commands via SSH
     if command -v sshpass &> /dev/null; then
-        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$SSH_USER@$drone_ip" "$remote_commands"
+        sshpass -p "$SSH_PASS" ssh -t -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$SSH_USER@$drone_ip" "$remote_commands"
     else
         echo -e "${YELLOW}Warning: sshpass not found. You may need to enter the password manually.${NC}"
-        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$SSH_USER@$drone_ip" "$remote_commands"
+        ssh -t -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$SSH_USER@$drone_ip" "$remote_commands"
     fi
     echo ""
 }
