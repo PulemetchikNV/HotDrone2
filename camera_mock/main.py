@@ -167,6 +167,7 @@ def make_move(move: Move):
 
     # Найти фигуру на исходной клетке
     color, piece_key = find_piece_at_cell(from_cell)
+    print(f"{color} {piece_key} Making move {from_cell}->{to_cell}")
     if not piece_key:
         raise HTTPException(status_code=400, detail=f"No piece at {from_cell}")
 
