@@ -83,16 +83,16 @@ class Progon:
             return x, y
     
     def run(self, to_cell):
-        print(f"Moving to {to_cell}")
 
         waypoints = [
-            get_random_cell(),
+            to_cell if to_cell else get_random_cell(),
             get_random_cell(),
             get_random_cell(),
             get_random_cell(),
         ]
 
         for waypoint in waypoints:
+            print(f"Moving to {waypoint}")
             x, y = self.get_cell_coordinates(waypoint)
             self.move_to_xy(x, y, 1.2)
 
