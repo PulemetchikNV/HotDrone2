@@ -292,8 +292,6 @@ class WifiEspController:
 
     # Совместимый обработчик входящих сообщений
     def _on_custom_message(self, message: str):
-        print(f"RECEIVED MESSAGE: {message}")
-
         try:
             obj = json.loads(message)
         except Exception:
@@ -372,7 +370,7 @@ class WifiEspController:
                 time.sleep(0.01)
 
     def _send_json(self, payload: dict):
-        print(f"SENDING JSON: {payload}")
+        # print(f"SENDING JSON: {payload}")
         try:
             msg = json.dumps(payload)
         except Exception as e:

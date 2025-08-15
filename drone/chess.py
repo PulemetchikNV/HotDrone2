@@ -275,7 +275,7 @@ class ChessDroneSingle:
         
         # MOCK CAMERA
         requests.post(
-            f"http://192.168.1.119:8000/make_move", 
+            f"http://192.168.1.119:8001/make_move", 
             json={"move": f"{from_cell}->{to_cell}"}
         )
 
@@ -561,7 +561,7 @@ class ChessDroneSingle:
             self.logger.error("No ESP controller available for follower")
             return False
             
-        self.logger.info(f"Follower {self.drone_name} waiting for chess move command...")
+        self.logger.debug(f"Follower {self.drone_name} waiting for chess move command...")
         
         # Ждем команду от лидера
         if self.esp._chess_move_event.wait(timeout):
@@ -570,8 +570,8 @@ class ChessDroneSingle:
             self.esp._chess_move_event.clear()  # Сбрасываем событие
             self.esp._received_chess_move = None
             
-            self.logger.info(f"Received chess move command: {chess_move}")
-            
+            self.logger.debug(f"Received chess move command: {chess_move}")
+                
             # Парсим команду
             # Парсим ход формата "c2->d4"
             try:
