@@ -687,20 +687,20 @@ class ChessDroneSingle:
                 self.esp.update_role(self.drone_name == self.current_leader)
 
         # Лидер считается потерянным, если heartbeat старее таймаута
-        if (now - last_hb_ts) > self.heartbeat_timeout:
-            active = (last_hb.get('active') if last_hb else None) or list(self.available_drones)
-            candidate = self._next_active_leader(self.current_leader, active) or (active[0] if active else self.drone_name)
-            # Детерминированная задержка по позиции, чтобы снизить коллизии выборов
-            delay = 0.05 * self._order_index(self.drone_name)
-            if (now - last_hb_ts) > (self.heartbeat_timeout + delay):
-                if self.drone_name == candidate:
-                    new_term = self.esp.bump_term()
-                    self.current_term = int(new_term)
-                    self.current_leader = self.drone_name
-                    self.esp.update_role(True)
-                    self.active_drones = self._estimate_active_drones()
-                    self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
-                    self._last_hb_sent = now
+        # if (now - last_hb_ts) > self.heartbeat_timeout:
+        #     active = (last_hb.get('active') if last_hb else None) or list(self.available_drones)
+        #     candidate = self._next_active_leader(self.current_leader, active) or (active[0] if active else self.drone_name)
+        #     # Детерминированная задержка по позиции, чтобы снизить коллизии выборов
+        #     delay = 0.05 * self._order_index(self.drone_name)
+        #     if (now - last_hb_ts) > (self.heartbeat_timeout + delay):
+        #         if self.drone_name == candidate:
+        #             new_term = self.esp.bump_term()
+        #             self.current_term = int(new_term)
+        #             self.current_leader = self.drone_name
+        #             self.esp.update_role(True)
+        #             self.active_drones = self._estimate_active_drones()
+        #             self.esp.broadcast_heartbeat(self.drone_name, self.current_term, self.active_drones)
+        #             self._last_hb_sent = now
 
         # MOCK
         self.current_leader = 'drone15' 
