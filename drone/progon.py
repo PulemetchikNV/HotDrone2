@@ -65,7 +65,6 @@ class Progon:
             auto_arm=False,
         )
 
-
         self.fc.wait(0.8)
 
         self.fc.force_disarm()
@@ -86,9 +85,6 @@ class Progon:
 
         waypoints = [
             to_cell if to_cell else get_random_cell(),
-            get_random_cell(),
-            get_random_cell(),
-            get_random_cell(),
         ]
 
         for waypoint in waypoints:
