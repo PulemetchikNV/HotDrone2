@@ -5,11 +5,11 @@ DRONES_TOTAL=1
 OUR_TEAM = 'black'
 
 rovers = {
-    # '2': {
-    #     'ip': '192.168.1.97',
-    #     'port': 12345,
-    #     'initial_letter': 'a'
-    # },
+    '2': {
+        'ip': '192.168.1.97',
+        'port': 12345,
+        'initial_letter': 'a'
+    },
     # '1': {
     #     'ip': '192.168.1.71',
     #     'port': 12345,

@@ -422,10 +422,10 @@ class WifiEspController:
             return self._last_heartbeat.get('ts') if self._last_heartbeat else 0.0
 
     def get_known_leader_and_term(self):
-        print(f"GETTING KNOWN LEADER AND TERM", leader, term)
         with self._hb_lock:
             leader = self._last_heartbeat.get('leader') if self._last_heartbeat else None
             term = self._leader_term
+            print(f"GETTING KNOWN LEADER AND TERM", leader, term)
             return leader, term
 
     def bump_term(self) -> int:

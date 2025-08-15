@@ -262,41 +262,7 @@ class FlightControllerMock:
         self.logger.info("⏰ Waiting 6 seconds - manually land the drone now!")
         self.wait(6.0)
         self.logger.info("✅ Mock landing completed")
-    
-    def land_vertical(self, fall_speed=0.5, fall_time=3.0, final_z=-0.5):
-        """Имитация вертикальной посадки"""
-        self.logger.info("🛬 MOCK VERTICAL LANDING")
-        self.logger.info("⏰ Waiting 6 seconds - manually land the drone vertically!")
-        self.wait(6.0)
-        self.logger.info("✅ Mock vertical landing completed")
-    
-    def navigate_and_land(self, x=0.0, y=0.0, z=1.0, takeoff_z=1.5, speed=0.5, 
-                         frame_id="aruco_map", tolerance=0.2, hover_time=2.0, 
-                         fall_speed=0.5, fall_time=3.0, final_z=-0.5):
-        """Имитация полного цикла: взлет -> полет -> посадка"""
-        self.logger.info(f"🚁 MOCK NAVIGATE_AND_LAND sequence to x={x:.2f} y={y:.2f} z={z:.2f}")
-        
-        # 1. Взлет
-        self.logger.info(f"🚁 MOCK: Taking off to {takeoff_z}m")
-        self.logger.info("⏰ Step 1/4: Manually lift the drone (6 seconds)")
-        self.wait(6.0)
-        
-        # 2. Полет к цели
-        self.logger.info(f"🎯 MOCK: Flying to target ({x:.2f}, {y:.2f}, {z:.2f})")
-        self.logger.info("⏰ Step 2/4: Manually move drone to target position (6 seconds)")
-        self.wait(6.0)
-        
-        # 3. Зависание
-        self.logger.info(f"⏸️  MOCK: Hovering for {hover_time}s")
-        self.wait(hover_time)
-        
-        # 4. Вертикальная посадка
-        self.logger.info("🛬 MOCK: Vertical landing")
-        self.logger.info("⏰ Step 3/4: Manually land the drone (6 seconds)")
-        self.wait(6.0)
-        
-        self.logger.info("✅ Mock navigate_and_land sequence completed")
-    
+  
     def scan_qr_code(self, timeout=5.0):
         """Имитация сканирования QR кода"""
         self.logger.info("📱 MOCK QR SCAN")
