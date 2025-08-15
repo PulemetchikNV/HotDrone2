@@ -21,7 +21,7 @@ class MoveDecision:
     reason: Optional[str] = None
 
 # --- Локальный Stockfish ---
-STOCKFISH_PATH = "stockfish"
+STOCKFISH_PATH = "./drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2"
 
 def _get_stockfish_evaluation_local(fen: str, movetime: int) -> int:
     try:

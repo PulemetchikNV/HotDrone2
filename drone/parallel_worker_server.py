@@ -12,7 +12,7 @@ class EvaluationResponse(BaseModel):
     score_cp: int
 
 # --- Stockfish ---
-STOCKFISH_PATH = "stockfish"
+STOCKFISH_PATH = "./drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2"
 
 def get_stockfish_evaluation(fen: str, movetime: int) -> int:
     try:

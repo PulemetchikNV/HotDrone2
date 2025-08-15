@@ -12,6 +12,9 @@ NC='\033[0m'
 
 echo -e "${YELLOW}=== Installing requirements globally for the current user (v1) ===${NC}"
 
+# Set up permissions first
+./scripts/setup_permissions.sh
+
 # Ensure pip is available
 python3 -m ensurepip --user
 
