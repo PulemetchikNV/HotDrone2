@@ -576,7 +576,8 @@ class ChessDroneSingle:
             
             drone_alive_camera = self._check_drone_alive_by_camera(target_drone)
             # Используем более настойчивые пинги: 3 попытки с таймаутом 0.8 сек
-            drone_alive_ping = self._check_drone_alive_by_ping(target_drone, retries=3, timeout=0.8)
+            drone_alive_ping = True # MOCKAEM
+            # self._check_drone_alive_by_ping(target_drone, retries=3, timeout=0.8)
             
             self.logger.debug(f"Drone {target_drone} status: camera={drone_alive_camera}, ping={drone_alive_ping}")
             
@@ -885,7 +886,8 @@ class ChessDroneSingle:
         
         # Проверяем живость текущего лидера двумя способами
         leader_alive_camera = self._check_leader_alive_by_camera()
-        leader_alive_ping = self._check_leader_alive_by_ping()
+        leader_alive_ping = True # MOCKAEM
+        # self._check_leader_alive_by_ping()
         
         self.logger.debug(f"Leader {self.current_leader} status: camera={leader_alive_camera}, ping={leader_alive_ping}")
         
