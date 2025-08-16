@@ -1,138 +1,201 @@
-[drone21] 20:29:43 - INFO - 🎯 MOCK NAVIGATE to x=1.09 y=1.09 z=0.15 in 
-[drone21] 20:29:43 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
-[drone21] 20:29:49 - INFO - ✅ Mock navigation completed
-[drone21] 20:29:50 - INFO - 🔒 MOCK FORCE DISARM
-[drone21] 20:29:50 - INFO - Leader completed own move to g7
-[drone21] 20:29:50 - INFO - Leader completed drone move: g8->g7
-[drone21] 20:29:50 - INFO - Our turn detected - checking leader status
-[drone21] 20:29:51 - INFO - Leader drone21 is healthy
-[drone21] 20:29:51 - INFO - Our turn detected - checking leader status
-[drone21] 20:29:52 - INFO - Leader drone21 is healthy
-[drone21] 20:29:52 - INFO - Our turn detected - checking leader status
-[drone21] 20:29:53 - INFO - Leader drone21 is healthy
-[drone21] 20:29:53 - INFO - Our turn detected - checking leader status
-[drone21] 20:29:54 - INFO - Leader drone21 is healthy
-[drone21] 20:29:54 - INFO - Our turn detected - checking leader status
-[drone21] 20:29:55 - INFO - Leader drone21 is healthy
-[drone21] 20:29:55 - INFO - === Leader run_once call ===
+[drone21] 20:51:10 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:11 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:12 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:12 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:13 - INFO - Leader drone15 is healthy
+[drone21] 20:51:13 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:13 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:14 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:51:14 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:51:14 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:15 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:26 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:26 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:26 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:26 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:27 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:51:27 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:51:27 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:28 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:29 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:29 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:30 - INFO - Leader drone15 is healthy
+[drone21] 20:51:30 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:30 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:31 - INFO - Leader drone15 is healthy
+[drone21] 20:51:32 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:32 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:33 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:51:33 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:51:33 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:34 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:34 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:34 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:35 - INFO - Leader drone15 is healthy
+[drone21] 20:51:35 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:35 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:36 - INFO - Leader drone15 is healthy
+[drone21] 20:51:37 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:37 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:38 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:51:38 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:51:38 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:39 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:39 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:39 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:40 - INFO - Leader drone15 is healthy
+[drone21] 20:51:41 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:41 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:42 - INFO - Leader drone15 is healthy
+[drone21] 20:51:42 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:42 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:43 - INFO - Leader drone15 is healthy
+[drone21] 20:51:43 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:43 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:44 - INFO - Leader drone15 is healthy
+[drone21] 20:51:45 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:45 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:46 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:51:46 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:51:46 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:47 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:47 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:47 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:48 - INFO - Leader drone15 is healthy
+[drone21] 20:51:49 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:49 - INFO - Our turn detected - checking leader status
+[drone21] 20:51:50 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:51:50 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:51:50 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:51:51 - INFO - Selected new leader: drone15 (first alive in DRONE_LIST)
+[drone21] 20:51:51 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:51 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:52 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:52 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:53 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:53 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:53 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:54 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:54 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:54 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:55 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:55 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:55 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:56 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:56 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:56 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:57 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:57 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:58 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:58 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:58 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:59 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:59 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:51:59 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:00 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:00 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:00 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:01 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:01 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:01 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:02 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:02 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:03 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:03 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:03 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:04 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:04 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:04 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:05 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:05 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:05 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:06 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:06 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:06 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:07 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:07 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:08 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:08 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:08 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:09 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:09 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:09 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:10 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:10 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:10 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:11 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:11 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:11 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:12 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:12 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:12 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:13 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:13 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:14 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:14 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:14 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:15 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone21] 20:52:15 - INFO - Our turn detected - checking leader status
+[drone21] 20:52:16 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:52:16 - WARNING - Leader drone15 did not respond to ping
+[drone21] 20:52:16 - WARNING - Leader drone15 is inactive, selecting new leader
+[drone21] 20:52:17 - WARNING - [WiFi] Drone drone15 is not responding to ping
+[drone21] 20:52:17 - INFO - Selected new le`ader: drone21 (first alive in DRONE_LIST)
+[drone21] 20:52:17 - INFO - [WiFi] Role updated: is_leader=True
+[drone21] 20:52:17 - INFO - Became new leader: drone21
+[drone21] 20:52:17 - INFO - === Leader run_once call ===
+[camera] 20:52:17 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
+[camera] 20:52:17 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
 GOT TURN: black
-GOT FEN: 7R/R1q3k1/6N1/8/8/8/PPPPPPPP/2B1KB2 b - - 0 1
-GOT BOARD: 7R/R1q3k1/6N1/8/8/8/PPPPPPPP/2B1KB2 b - - 0 1
+GOT FEN: 4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1
+GOT BOARD: 4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1
 OUR TURN: black
-SENDING FEN TO SF: 7R/R1q3k1/6N1/8/8/8/PPPPPPPP/2B1KB2 b - - 0 1
-GOT MOVE: MoveDecision(uci='c7a7', from_cell='c7', to_cell='a7', score_cp=845, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 8.45, 'text': 'Move c7 → a7 (Qxa7): [8.45]. White is winning. Depth 12.', 'flags': 'c'})
-[drone21] 20:29:56 - INFO - MOVING c7->a7
-[drone21] 20:29:56 - INFO - Executing piece move c7->a7 with drone
-PIECE TYPE: queen
-[drone21] 20:29:56 - INFO - Piece queen on c7 -> drone drone15
-[drone21] 20:29:56 - INFO - Checking if target drone drone15 is alive before sending command
-[drone21] 20:29:57 - INFO - Leader sending chess move: c7->a7 to drone drone15
-BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone15', 'move': 'c7->a7'}
-[drone21] 20:29:57 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:29:57 - WARNING - [WiFi] No ACK for CHESS MOVE 9ec6 (attempt 1/6)
-[drone21] 20:29:57 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 2/6): {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:29:58 - WARNING - [WiFi] No ACK for CHESS MOVE 9ec6 (attempt 2/6)
-[drone21] 20:29:58 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 3/6): {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:29:58 - WARNING - [WiFi] No ACK for CHESS MOVE 9ec6 (attempt 3/6)
-[drone21] 20:29:58 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 4/6): {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:29:59 - WARNING - [WiFi] No ACK for CHESS MOVE 9ec6 (attempt 4/6)
-[drone21] 20:29:59 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 5/6): {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:29:59 - WARNING - [WiFi] No ACK for CHESS MOVE 9ec6 (attempt 5/6)
-[drone21] 20:29:59 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 6/6): {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:30:00 - WARNING - [WiFi] No ACK for CHESS MOVE 9ec6 (attempt 6/6)
-[drone21] 20:30:00 - ERROR - [WiFi] Broadcast failed after 6 retries for payload: {'type': 'move', 'to': 'drone15', 'move': 'c7->a7', 'msg_id': '9ec6'}
-[drone21] 20:30:00 - ERROR - Failed to send move command to drone15
-[drone21] 20:30:00 - INFO - Leader completed drone move: c7->a7
-[drone21] 20:30:05 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:05 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:10 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:10 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:15 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:15 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:20 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:20 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:25 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:25 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:30 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:31 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:36 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:36 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:41 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:41 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:46 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:46 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:51 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/8/8/PPPPPPPP/2B1KB2 w - - 0 1
-[drone21] 20:30:51 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 20:30:53 - INFO - Our turn detected - checking leader status
-[drone21] 20:30:54 - INFO - Leader drone21 is healthy
-[drone21] 20:30:54 - INFO - Our turn detected - checking leader status
-[drone21] 20:30:55 - INFO - Leader drone21 is healthy
-[drone21] 20:30:56 - INFO - Our turn detected - checking leader status
-[drone21] 20:30:57 - WARNING - [WiFi] Drone drone15 is not responding to ping
-[drone21] 20:30:57 - INFO - Leader drone21 is healthy
-[drone21] 20:30:57 - INFO - === Leader run_once call ===
-GOT TURN: black
-GOT FEN: 7R/q5k1/6N1/8/4B3/8/PPPPPPPP/4KB2 b - - 0 1
-GOT BOARD: 7R/q5k1/6N1/8/4B3/8/PPPPPPPP/4KB2 b - - 0 1
-OUR TURN: black
-SENDING FEN TO SF: 7R/q5k1/6N1/8/4B3/8/PPPPPPPP/4KB2 b - - 0 1
-GOT MOVE: MoveDecision(uci='a7a2', from_cell='a7', to_cell='a2', score_cp=1004, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 10.04, 'text': 'Move a7 → a2 (Qxa2): [10.04]. White is winning. Depth 12.', 'flags': 'c'})
-[drone21] 20:30:58 - INFO - MOVING a7->a2
-[drone21] 20:30:58 - INFO - Executing piece move a7->a2 with drone
-PIECE TYPE: queen
-[drone21] 20:30:58 - INFO - Piece queen on a7 -> drone drone15
-[drone21] 20:30:58 - INFO - Checking if target drone drone15 is alive before sending command
-[drone21] 20:30:59 - INFO - Leader sending chess move: a7->a2 to drone drone15
-BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone15', 'move': 'a7->a2'}
-[drone21] 20:30:59 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:30:59 - WARNING - [WiFi] No ACK for CHESS MOVE bbee (attempt 1/6)
-[drone21] 20:30:59 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 2/6): {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:31:00 - WARNING - [WiFi] No ACK for CHESS MOVE bbee (attempt 2/6)
-[drone21] 20:31:00 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 3/6): {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:31:00 - WARNING - [WiFi] No ACK for CHESS MOVE bbee (attempt 3/6)
-[drone21] 20:31:00 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 4/6): {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:31:01 - WARNING - [WiFi] No ACK for CHESS MOVE bbee (attempt 4/6)
-[drone21] 20:31:01 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 5/6): {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:31:01 - WARNING - [WiFi] No ACK for CHESS MOVE bbee (attempt 5/6)
-[drone21] 20:31:01 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 6/6): {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:31:02 - WARNING - [WiFi] No ACK for CHESS MOVE bbee (attempt 6/6)
-[drone21] 20:31:02 - ERROR - [WiFi] Broadcast failed after 6 retries for payload: {'type': 'move', 'to': 'drone15', 'move': 'a7->a2', 'msg_id': 'bbee'}
-[drone21] 20:31:02 - ERROR - Failed to send move command to drone15
-[drone21] 20:31:02 - INFO - Leader completed drone move: a7->a2
-[drone21] 20:31:07 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 7R/6k1/6N1/8/4B3/8/qPPPPPPP/4KB2 w - - 0 1
-GOT BOARD: 7R/6k1/6N1/8/4B3/8/qPPPPPPP/4KB2 w - - 0 1
-[drone21] 20:31:07 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-^Z
-[12]+  Stopped                 python3 ./drone/main.py
+SENDING FEN TO SF: 4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1
+==== RAW STOCKFISH DATA: {'text': 'Move e8 → e7 (Ke7): [15.16]. White is winning. Depth 12.', 'captured': False, 'promotion': False, 'isCapture': False, 'isPromotion': False, 'isCastling': False, 'fen': '4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1', 'type': 'bestmove', 'depth': 12, 'move': 'e8e7', 'eval': 15.16, 'centipawns': 1516, 'mate': None, 'continuationArr': ['f6d5', 'e7d8', 'd1d3', 'a7c5', 'b1c3', 'c5f8', 'c3d1'], 'debug': 'info depth 12 seldepth 18 multipv 1 score cp -1516 nodes 292665 nps 48777500 hashfull 16 tbhits 0 time 6 pv e8e7 f6d5 e7d8 d1d3 a7c5 b1c3 c5f8 c3d1', 'winChance': 99.62492186965795, 'taskId': 'fbvw7cze8', 'turn': 'b', 'color': 'b', 'piece': 'k', 'from': 'e8', 'to': 'e7', 'san': 'Ke7', 'flags': 'n', 'lan': 'e8e7', 'fromNumeric': '58', 'toNumeric': '57', 'continuation': [{'from': 'f6', 'to': 'd5', 'fromNumeric': '66', 'toNumeric': '45'}, {'from': 'e7', 'to': 'd8', 'fromNumeric': '57', 'toNumeric': '48'}]}
+GOT MOVE: MoveDecision(uci='e8e7', from_cell='e8', to_cell='e7', score_cp=1516, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 15.16, 'text': 'Move e8 → e7 (Ke7): [15.16]. White is winning. Depth 12.', 'flags': 'n'})
+[drone21] 20:52:17 - INFO - MOVING e8->e7
+[drone21] 20:52:17 - INFO - Executing piece move e8->e7 with drone
+PIECE TYPE: king
+[drone21] 20:52:17 - INFO - Piece king on e8 -> drone drone21
+[drone21] 20:52:17 - INFO - Leader executing own move: e8->e7
+[drone21] 20:52:17 - INFO - Using map coords for e7: x=0.218, y=1.090
+[drone21] 20:52:17 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
+[drone21] 20:52:17 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
+[drone21] 20:52:18 - INFO - [WiFi] Received CHESS MOVE command: e8->f7
+[drone21] 20:52:18 - INFO - [WiFi] Received CHESS MOVE command: e8->f7
+[drone21] 20:52:19 - INFO - [WiFi] Received CHESS MOVE command: e8->f7
+[drone21] 20:52:19 - INFO - [WiFi] Received CHESS MOVE command: e8->f7
+[drone21] 20:52:20 - INFO - [WiFi] Received CHESS MOVE command: e8->f7
+[drone21] 20:52:23 - INFO - ✅ Mock takeoff completed
+[drone21] 20:52:26 - INFO - 🎯 MOCK NAVIGATE to x=0.22 y=1.09 z=1.00 in 
+[drone21] 20:52:26 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
+^X^C^X^Z
+[14]+  Stopped                 python3 ./drone/main.py
