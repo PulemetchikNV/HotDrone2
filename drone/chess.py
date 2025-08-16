@@ -33,6 +33,25 @@ except Exception:
 FILES = "abcdefgh"
 RANKS = "12345678"
 
+
+def get_turn_final(board, time_budget_ms: int = 5000):
+    """
+    Универсальная функция выбора алгоритма для получения хода.
+    
+    Args:
+        board: BoardState объект с текущим состоянием доски
+        time_budget_ms: время на расчёт хода в миллисекундах
+        
+    Returns:
+        MoveDecision объект с выбранным ходом
+    """
+    alg_mode = os.getenv("ALG_MODE", "api").lower()
+    if alg_mode == "cluster":
+        return get_turn_sf(board, time_budget_ms=time_budget_ms)
+    else:
+        # api и llm пока одинаково — используем мок-алгоритм
+        return get_turn_mock(board, time_budget_ms=time_budget_ms)
+
 def cell_to_xy(cell: str, cell_size: float, origin_x: float, origin_y: float):
     f, r = cell[0], cell[1]
     fi = FILES.index(f)
@@ -254,7 +273,7 @@ class ChessDroneSingle:
             print(f"OUR TURN: {current_player}")
 
         # 2) Запрашиваем ход (внутри alg решается логика)
-        move = get_turn(board, time_budget_ms=5000)
+        move = get_turn_final(board, time_budget_ms=5000)
         print(f"GOT MOVE: {move}")
 
         from_cell = getattr(move, 'from_cell', 'e2')
@@ -441,7 +460,7 @@ class ChessDroneSingle:
             self.logger.info(f"Recalculating move with updated board state (without drone {dead_drone_name})")
             
             # Пересчитываем ход с обновленным состоянием доски
-            new_move = get_turn(updated_board, time_budget_ms=5000)
+            new_move = get_turn_final(updated_board, time_budget_ms=5000)
             
             if new_move:
                 new_from_cell = getattr(new_move, 'from_cell', 'e2')
