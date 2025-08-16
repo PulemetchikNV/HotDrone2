@@ -6,12 +6,13 @@ OUR_TEAM = 'black'
 
 # Централизованная конфигурация дронов
 DRONES_CONFIG = {
-    # 'drone15': {
-    #     'role': 'queen',
-    #     'color': 'black',
-    #     'initial_letter': 'd',
-    #     'team': 'black'
-    # },
+    'drone15': {
+        'role': 'queen',
+        'color': 'black',
+        'initial_letter': 'd',
+        'team': 'black',
+        'raw_ip': '192.168.1.62'
+    },
     'drone21': {
         'role': 'king', 
         'color': 'black',
