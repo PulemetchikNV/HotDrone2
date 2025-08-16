@@ -377,11 +377,13 @@ class ChessDroneSingle:
         if os.getenv("ALG_MODE", "api").lower() == "cluster":
             alive_drones = self.esp.ping_all_drones(self.available_drones) if self.esp else []
             os.environ["CLUSTER_ALIVE_DRONES"] = ",".join(alive_drones)
+            print(f"==== DEBUG chess.py: available_drones={self.available_drones}, alive_drones={alive_drones}")
+            print(f"==== DEBUG chess.py: CLUSTER_NP before={os.getenv('CLUSTER_NP', 'not_set')}")
             self.logger.debug(f"Updated cluster alive drones: {alive_drones}")
 
         # 2) Запрашиваем ход (внутри alg решается логика)
         try:
-            move = get_turn_final(board, time_budget_ms=TIME_BUDGET_MS)
+            move = get_turn_final(board, time_budget_ms=5000)
             print(f"GOT MOVE: {move}")
         except AlgTemporaryError as e:
             if "restart required" in str(e).lower():

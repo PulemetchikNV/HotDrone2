@@ -1,7 +1,7 @@
-DRONE_LIST = 'drone21'
+DRONE_LIST = 'drone15,drone21'
 #,drone18,drone21,drone21'
 LEADER_DRONE = 'drone21'
-DRONES_TOTAL = 1
+DRONES_TOTAL = 2
 OUR_TEAM = 'black'
 
 # Централизованная конфигурация дронов

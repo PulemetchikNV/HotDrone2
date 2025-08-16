@@ -328,11 +328,28 @@ def _find_stockfish_binary_for_cluster() -> bool:
 
 def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional[Dict[str, Any]]:
     hostfile = os.getenv("CLUSTER_HOSTFILE", "cluster_hosts")
+    # Делаем путь абсолютным если он относительный
+    if not os.path.isabs(hostfile):
+        hostfile = os.path.abspath(hostfile)
     hosts = _read_cluster_hosts(hostfile)
+    
+    # Debug информация
+    cluster_np_env = os.getenv("CLUSTER_NP", "0")
+    print(f"==== DEBUG: hostfile={hostfile}, hosts={hosts}, CLUSTER_NP={cluster_np_env}")
+    
+    # ВАЖНО: всегда используем количество реальных хостов, игнорируем CLUSTER_NP
+    # CLUSTER_NP может быть устаревшей или неправильной
+    np = len(hosts)
+    
+    # Оставляем старую логику только для отладки
     try:
-        np = int(os.getenv("CLUSTER_NP", "0")) or len(hosts)
+        old_np = int(cluster_np_env) or len(hosts)
+        if old_np != np:
+            print(f"==== DEBUG: CLUSTER_NP={old_np} != len(hosts)={np}, using len(hosts)")
     except Exception:
-        np = len(hosts)
+        pass
+    
+    print(f"==== DEBUG: final np={np}, len(hosts)={len(hosts)}")
 
     if np <= 0 or not hosts:
         return None
