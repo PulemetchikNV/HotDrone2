@@ -107,7 +107,7 @@ class StockfishManager:
                     "Threads": min(2, os.cpu_count() or 1),
                     "Hash": 128,  # 128MB hash table
                     "Skill Level": self.skill_level,
-                    "Minimum Thinking Time": 50,
+                    "Minimum Thinking Time": 5000,
                     "UCI_LimitStrength": "false"
                 }
             )
