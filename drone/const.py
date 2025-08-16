@@ -1,17 +1,17 @@
-DRONE_LIST = 'drone15,drone21'
+DRONE_LIST = 'drone21'
 #,drone18,drone21,drone21'
-LEADER_DRONE = 'drone15'
+LEADER_DRONE = 'drone21'
 DRONES_TOTAL = 1
 OUR_TEAM = 'black'
 
 # Централизованная конфигурация дронов
 DRONES_CONFIG = {
-    'drone15': {
-        'role': 'queen',
-        'color': 'black',
-        'initial_letter': 'd',
-        'team': 'black'
-    },
+    # 'drone15': {
+    #     'role': 'queen',
+    #     'color': 'black',
+    #     'initial_letter': 'd',
+    #     'team': 'black'
+    # },
     'drone21': {
         'role': 'king', 
         'color': 'black',
@@ -51,11 +51,18 @@ def get_current_drone_config() -> dict:
     return get_drone_config()
 
 rovers = {
-    'rover_a': {
-        'ip': '192.168.1.97',
+    # 'rover_a': {
+    #     'ip': '192.168.1.97',
+    #     'port': 12345,
+    #     'initial_letter': 'a',
+    #     'number': 2,
+    # },
+    'rover_b': {
+        'ip': '192.168.1.98',
         'port': 12345,
-        'initial_letter': 'a'
-    },
+        'initial_letter': 'b',
+        'number': 11,
+    }
     # '2': {
     #     'ip': '192.168.1.97',
     #     'port': 12345,
