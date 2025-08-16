@@ -63,6 +63,7 @@ def make_initial_positions():
 # Глобальное состояние игры (максимально простое)
 POSITIONS = make_initial_positions()
 TURN = 'white'  # white начинает
+IS_PAUSED = False  # Состояние паузы
 
 
 def positions_to_fen(positions: dict, turn: str) -> str:
@@ -198,6 +199,20 @@ def reset_board():
     POSITIONS = make_initial_positions()
     TURN = 'white'
     return get_board_state()
+
+
+@app.get("/api/pause_status")
+def get_pause_status():
+    """Возвращает текущее состояние паузы"""
+    return {"is_paused": IS_PAUSED}
+
+
+@app.post("/api/toggle_pause")
+def toggle_pause():
+    """Переключает состояние паузы"""
+    global IS_PAUSED
+    IS_PAUSED = not IS_PAUSED
+    return {"is_paused": IS_PAUSED, "message": f"Game {'paused' if IS_PAUSED else 'resumed'}"}
 
 
 if __name__ == "__main__":

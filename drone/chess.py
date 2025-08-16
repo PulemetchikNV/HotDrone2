@@ -259,6 +259,15 @@ class ChessDroneSingle:
         if not self.esp or not self.esp.is_leader:
             self.logger.warning("run_once called on non-leader drone")
             return
+        
+        # 0) Проверяем, не стоит ли игра на паузе
+        try:
+            if self.camera and hasattr(self.camera, 'is_game_paused') and self.camera.is_game_paused():
+                self.logger.debug("Game is paused, skipping move")
+                return
+        except Exception as e:
+            self.logger.debug(f"Failed to check pause status: {e}")
+            # Продолжаем если не можем проверить паузу
             
         # 1) Получаем состояние доски через alg (источник данных — камера внутри alg)
         board = get_board_state()

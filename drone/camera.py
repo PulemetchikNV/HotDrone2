@@ -259,6 +259,29 @@ class CameraController:
             
         except CameraError:
             return None
+    
+    def is_game_paused(self) -> bool:
+        """
+        Проверяет, стоит ли игра на паузе
+        
+        Returns:
+            bool: True если игра на паузе, False если игра продолжается
+        """
+        try:
+            # Используем тот же URL что и для позиций, но другой endpoint
+            base_url = self.api_url.replace('/api/positions', '')
+            pause_url = f"{base_url}/api/pause_status"
+            
+            response = requests.get(pause_url, timeout=self.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            return data.get('is_paused', False)
+            
+        except Exception as e:
+            self.logger.debug(f"Failed to check pause status: {e}")
+            # При ошибке считаем что игра НЕ на паузе (безопасный fallback)
+            return False
 
 
 class MockCameraController(CameraController):
@@ -311,6 +334,36 @@ class MockCameraController(CameraController):
     def get_turn(self) -> Optional[str]:
         """Возвращает чей сейчас ход, если известен (white/black)"""
         return self._last_turn
+    
+    def is_game_paused(self) -> bool:
+        """
+        Проверяет, стоит ли игра на паузе (переопределяем для mock контроллера)
+        
+        Returns:
+            bool: True если игра на паузе, False если игра продолжается
+        """
+        try:
+            # Используем base URL из api_url
+            base_url = self.api_url.replace('/api/positions', '')
+            pause_url = f"{base_url}/api/pause_status"
+            
+            response = requests.get(pause_url, timeout=self.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            is_paused = data.get('is_paused', False)
+            
+            if is_paused:
+                self.logger.info("Game is paused")
+            else:
+                self.logger.debug("Game is running")
+                
+            return is_paused
+            
+        except Exception as e:
+            self.logger.debug(f"Failed to check pause status: {e}")
+            # При ошибке считаем что игра НЕ на паузе (безопасный fallback)
+            return False
 
 
 def positions_to_fen(positions: dict, turn: str) -> str:

@@ -20,8 +20,10 @@
 <div class="status">
     <p>Status: <span id="status"></span></p>
     <p>Turn: <span id="turn"></span></p>
+    <p>Game State: <span id="pauseStatus">Running</span></p>
 
     <button id="resetButton">Reset Game</button>
+    <button id="pauseButton">Pause Game</button>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"
@@ -101,6 +103,16 @@
         $('#turn').html(moveColor);
     }
     
+    function updatePauseStatus(isPaused) {
+        if (isPaused) {
+            $('#pauseStatus').html('<span style="color: red;">PAUSED</span>');
+            $('#pauseButton').text('Resume Game');
+        } else {
+            $('#pauseStatus').html('<span style="color: green;">Running</span>');
+            $('#pauseButton').text('Pause Game');
+        }
+    }
+    
     async function fetchBoardState() {
         try {
             const response = await fetch('http://127.0.0.1:8001/board_state');
@@ -109,6 +121,16 @@
         } catch (error) {
             console.error('Error fetching board state:', error);
             $('#status').html('Error connecting to server.');
+        }
+    }
+    
+    async function fetchPauseStatus() {
+        try {
+            const response = await fetch('http://127.0.0.1:8001/api/pause_status');
+            const data = await response.json();
+            updatePauseStatus(data.is_paused);
+        } catch (error) {
+            console.error('Error fetching pause status:', error);
         }
     }
     
@@ -121,11 +143,25 @@
             console.error('Error resetting board:', error);
         }
     });
+    
+    $('#pauseButton').on('click', async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:8001/api/toggle_pause', { method: 'POST' });
+            const data = await response.json();
+            updatePauseStatus(data.is_paused);
+            console.log(data.message);
+        } catch (error) {
+            console.error('Error toggling pause:', error);
+        }
+    });
 
     // Fetch state periodically
     setInterval(fetchBoardState, 5000); // Poll every 5 seconds
+    setInterval(fetchPauseStatus, 2000); // Poll pause status every 2 seconds
+    
     // And fetch on load
-        fetchBoardState();
+    fetchBoardState();
+    fetchPauseStatus();
     });
 
 </script>
