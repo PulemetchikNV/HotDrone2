@@ -380,63 +380,61 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
 
     print(f"==== HOSTFILE: {open(hostfile, 'r').read()}")
 
-    # Кластерный Stockfish не поддерживает UCI через stdin в MPI режиме
-    # Используем approach с go depth вместо go movetime для совместимости
-    
-    # Конвертируем movetime в depth (примерно)
-    depth = min(max(5, movetime_ms // 1000), 15)  # 5-15 глубина в зависимости от времени
-    
-    print(f"==== DEBUG: Using depth {depth} instead of movetime {movetime_ms}")
-    
-    # Создаем команду без временных файлов - используем echo и pipe
-    # Это работает на всех узлах без синхронизации файлов
-    
-    # Формируем команду через echo и pipe - работает на всех узлах
-    cmd = f"mpirun --hostfile cluster_hosts -map-by node -np {np} bash -c 'echo -e \"uci\\nisready\\nposition fen {fen}\\ngo depth {depth}\\nquit\" | stockfish'"
-    
-    timeout_s = max(10, depth * 2 + 5)  # timeout на основе глубины
-    print(f"==== DEBUG: Running command: {cmd}")
-    print(f"==== DEBUG: Timeout: {timeout_s}s")
-    
-    try:
-        res = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout_s,
-            shell=True
-        )
-        
-        out = res.stdout or ""
-        err = res.stderr or ""
-        print(f"==== DEBUG: Return code: {res.returncode}")
-        print(f"==== DEBUG: stdout: {out}")
-        print(f"==== DEBUG: stderr: {err}")
-        
-        if res.returncode != 0:
-            print(f"==== DEBUG: MPI echo command failed with return code {res.returncode}, trying SSH fallback")
-            
-            # SSH fallback - используем только один узел
-            simple_cmd = f"ssh {hosts[0]} 'echo -e \"uci\\nisready\\nposition fen {fen}\\ngo depth {depth}\\nquit\" | stockfish'"
-            print(f"==== DEBUG: Trying SSH command: {simple_cmd}")
-            
-            res_simple = subprocess.run(
-                simple_cmd,
+    # Новый подход: запускаем Stockfish по SSH на каждом хосте параллельно без MPI
+    # Это надёжней, так как bench работает, а stdin под MPI нестабилен
+    depth = min(max(5, movetime_ms // 1000), 15)
+    timeout_s = max(10, depth * 2 + 5)
+    print(f"==== DEBUG: SSH multi-host mode, depth={depth}, timeout={timeout_s}s")
+
+    uci_script = "uci\nisready\nposition fen {fen}\ngo depth {depth}\nquit\n".format(fen=fen, depth=depth)
+    ssh_results: List[Dict[str, Any]] = []
+
+    for host in hosts:
+        cmd = f"ssh -o BatchMode=yes -o ConnectTimeout=5 {host} 'stockfish'"
+        print(f"==== DEBUG: Running SSH stockfish on {host}: {cmd}")
+        try:
+            res = subprocess.run(
+                cmd,
+                input=uci_script,
                 capture_output=True,
                 text=True,
                 timeout=timeout_s,
                 shell=True
             )
-            
-            if res_simple.returncode == 0:
-                out = res_simple.stdout or ""
-                print(f"==== DEBUG: SSH command succeeded")
-            else:
-                print(f"==== DEBUG: SSH command also failed, returning None")
-                return None
-                
-    except Exception as e:
-        print(f"==== DEBUG: Exception during echo-based execution: {e}")
+            out_h = res.stdout or ""
+            err_h = res.stderr or ""
+            print(f"==== DEBUG: {host} rc={res.returncode}")
+            print(f"==== DEBUG: {host} stdout:\n{out_h}")
+            print(f"==== DEBUG: {host} stderr:\n{err_h}")
+
+            if res.returncode != 0:
+                print(f"==== DEBUG: {host} returned non-zero code, skipping host")
+                continue
+
+            # Парсим вывод узла и добавляем результаты
+            info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
+            bestmove_re = re.compile(r"bestmove\s+([a-h][1-8][a-h][1-8][qrbn]?)")
+            last_score: Optional[Dict[str, Any]] = None
+            for line in out_h.splitlines():
+                m1 = info_score_re.search(line)
+                if m1:
+                    score_type, score_val = m1.group(1), int(m1.group(2))
+                    last_score = {"type": score_type, "value": score_val}
+                    continue
+                m2 = bestmove_re.search(line)
+                if m2:
+                    mv = m2.group(1)
+                    ssh_results.append({"move": mv, "score": last_score, "host": host})
+                    last_score = None
+        except Exception as e:
+            print(f"==== DEBUG: SSH call failed for {host}: {e}")
+            continue
+
+    # Если получили результаты с узлов — используем их
+    if ssh_results:
+        results = ssh_results
+    else:
+        print("==== DEBUG: No SSH results collected, returning None")
         return None
 
     info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
