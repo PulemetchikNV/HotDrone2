@@ -10,15 +10,10 @@ except ImportError:
     from const import rovers
 
 class RoverControllerMain:
-    def __init__(self, initial_x=0, initial_y=0, initial_yaw=0, logger=None):
+    def __init__(self, logger=None):
         self.logger = logger or setup_logging('rover')
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        
-        # Словарь для хранения текущих позиций каждого ровера
-        self.rover_positions = {}
-        for rover_id in rovers.keys():
-            self.rover_positions[rover_id] = {'x': 0, 'y': 0, 'yaw': 0}
 
     def send_command(self, rover_id, command_str):
         if rover_id not in rovers:
@@ -45,47 +40,40 @@ class RoverControllerMain:
         self.logger.info(f"Запрос позиции ровера {rover_id}")
         return self.send_command(rover_id, "POSE")
 
-    def navigate(self, rover_id, current_x=0, current_y=0, current_yaw=0, x=0, y=0):
+    def navigate(self, rover_id, current_x, current_y, current_yaw, target_x, target_y):
+        """
+        Навигация ровера согласно API документации.
+        
+        Args:
+            rover_id: ID ровера
+            current_x, current_y: Текущая позиция в метрах
+            current_yaw: Текущий угол в градусах (-180 до 180)
+            target_x, target_y: Целевая позиция в метрах
+        """
         if rover_id not in rovers:
             self.logger.error(f"Неизвестный ID ровера: {rover_id}")
             return False
             
-        self.logger.info(f"Начало отправки команды роверу {rover_id} -> ({x}, {y}, {current_yaw})")
+        self.logger.info(f"Навигация ровера {rover_id}: ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°) -> ({target_x:.3f}, {target_y:.3f})")
         
-        # Отправляем цель
-        if not self.send_command(rover_id, f"TARGET:{x},{y}"):
+        # 1. Отправляем цель (TARGET)
+        if not self.send_command(rover_id, f"TARGET:{target_x:.3f},{target_y:.3f}"):
             return False
         
-        # Отправляем текущую позицию ровера для начала движения
-        current_pos = self.rover_positions[rover_id]
-        if not self.send_command(rover_id, f"POSE:{current_x},{current_y},{current_yaw}"):
+        # 2. Отправляем текущую позицию для начала движения (POSE)
+        if not self.send_command(rover_id, f"POSE:{current_x:.3f},{current_y:.3f},{current_yaw:.1f}"):
             return False
             
         self.logger.info(f"Команды отправлены роверу {rover_id}. Робот должен начать движение")
-
-        # Обновляем сохраненную позицию ровера
         return True
     
-    def set_rover_position(self, rover_id, x, y, yaw):
-        """Устанавливает текущую позицию ровера (для обновления из внешних источников)"""
-        if rover_id not in rovers:
-            self.logger.error(f"Неизвестный ID ровера: {rover_id}")
-            return False
-            
-        self.rover_positions[rover_id] = {'x': x, 'y': y, 'yaw': yaw}
-        self.logger.info(f"Обновлена позиция ровера {rover_id}: ({x}, {y}, {yaw})")
-        return True
+
 
 
 class RoverControllerMock:
     def __init__(self, drone_name=None, logger=None):
         self.drone_name = drone_name or os.environ.get('DRONE_NAME', 'unknown_drone')
         self.logger = logger or setup_logging(self.drone_name)
-
-        # Словарь для хранения текущих позиций каждого ровера
-        self.rover_positions = {}
-        for rover_id in rovers.keys():
-            self.rover_positions[rover_id] = {'x': 0, 'y': 0, 'yaw': 0}
 
     def send_command(self, rover_id, command_str):
         if rover_id not in rovers:
@@ -104,32 +92,32 @@ class RoverControllerMock:
         self.logger.info(f"🤖 MOCK: Запрос позиции ровера {rover_id}")
         return True
 
-    def navigate(self, rover_id, x=0, y=0, yaw=0):
+    def navigate(self, rover_id, current_x, current_y, current_yaw, target_x, target_y):
+        """
+        Навигация ровера согласно API документации (MOCK версия).
+        
+        Args:
+            rover_id: ID ровера
+            current_x, current_y: Текущая позиция в метрах
+            current_yaw: Текущий угол в градусах (-180 до 180)
+            target_x, target_y: Целевая позиция в метрах
+        """
         if rover_id not in rovers:
             self.logger.error(f"🤖 MOCK: Неизвестный ID ровера: {rover_id}")
             return False
             
-        self.logger.info(f"🤖 MOCK: Начало навигации ровера {rover_id} -> ({x}, {y}, {yaw})")
+        self.logger.info(f"🤖 MOCK: Навигация ровера {rover_id}: ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°) -> ({target_x:.3f}, {target_y:.3f})")
         
-        self.send_command(rover_id, f"TARGET:{x},{y}")
-        current_pos = self.rover_positions[rover_id]
-        self.send_command(rover_id, f"POSE:{current_pos['x']},{current_pos['y']},{current_pos['yaw']}")
+        # 1. Отправляем цель (TARGET)
+        self.send_command(rover_id, f"TARGET:{target_x:.3f},{target_y:.3f}")
+        
+        # 2. Отправляем текущую позицию для начала движения (POSE)
+        self.send_command(rover_id, f"POSE:{current_x:.3f},{current_y:.3f},{current_yaw:.1f}")
         
         self.logger.info(f"🤖 MOCK: Навигация ровера {rover_id} завершена")
-
-        # Обновляем сохраненную позицию ровера
-        self.rover_positions[rover_id] = {'x': x, 'y': y, 'yaw': yaw}
         return True
     
-    def set_rover_position(self, rover_id, x, y, yaw):
-        """Устанавливает текущую позицию ровера (для обновления из внешних источников)"""
-        if rover_id not in rovers:
-            self.logger.error(f"🤖 MOCK: Неизвестный ID ровера: {rover_id}")
-            return False
-            
-        self.rover_positions[rover_id] = {'x': x, 'y': y, 'yaw': yaw}
-        self.logger.info(f"🤖 MOCK: Обновлена позиция ровера {rover_id}: ({x}, {y}, {yaw})")
-        return True
+
 
 
 # Выбор реализации по переменной окружения

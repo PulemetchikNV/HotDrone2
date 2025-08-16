@@ -34,6 +34,45 @@ except Exception:
 FILES = "abcdefgh"
 RANKS = "12345678"
 
+# Константы для конвертации координат
+CELL_SIZE_METERS = 0.30  # 30 см = 1 клетка
+ARUCO_MIN = -1.5  # Минимальная координата ArUco
+ARUCO_MAX = 1.5   # Максимальная координата ArUco
+ARUCO_RANGE = ARUCO_MAX - ARUCO_MIN  # 3.0 метра = 10 клеток
+
+def aruco_to_rover_meters(aruco_x, aruco_y):
+    """
+    Конвертирует координаты из ArUco формата (-1.5 до 1.5) в метры для роверов.
+    ArUco система: центр (0,0), края ±1.5 метра
+    Rover система: начинается с (0,0), в метрах относительно начальной позиции
+    
+    Args:
+        aruco_x, aruco_y: Координаты в ArUco формате
+        
+    Returns:
+        tuple: (rover_x, rover_y) в метрах
+    """
+    # Сдвигаем начало координат: ArUco (-1.5, -1.5) становится rover (0, 0)
+    rover_x = aruco_x - ARUCO_MIN  # -1.5 -> 0, 0 -> 1.5, 1.5 -> 3.0
+    rover_y = aruco_y - ARUCO_MIN  # -1.5 -> 0, 0 -> 1.5, 1.5 -> 3.0
+    
+    return rover_x, rover_y
+
+def rover_meters_to_aruco(rover_x, rover_y):
+    """
+    Конвертирует координаты из метров роверов обратно в ArUco формат.
+    
+    Args:
+        rover_x, rover_y: Координаты в метрах ровера
+        
+    Returns:
+        tuple: (aruco_x, aruco_y) в ArUco формате
+    """
+    aruco_x = rover_x + ARUCO_MIN  # 0 -> -1.5, 1.5 -> 0, 3.0 -> 1.5
+    aruco_y = rover_y + ARUCO_MIN  # 0 -> -1.5, 1.5 -> 0, 3.0 -> 1.5
+    
+    return aruco_x, aruco_y
+
 
 def get_turn_final(board, time_budget_ms: int = 5000):
     """
@@ -153,8 +192,7 @@ class ChessDroneSingle:
         self.rover = RoverController(logger=self.logger)
         self.rover_ids = list(rovers.keys()) if isinstance(rovers, dict) else []
         
-        # Инициализируем позиции роверов из их начальных клеток
-        self._initialize_rover_positions()
+        # Роверы теперь получают позиции динамически с камеры
 
         # Загрузка карты ArUco для клеток (по умолчанию aruco_maps/aruco_map2.json)
         default_map_path = os.path.join(
@@ -190,36 +228,49 @@ class ChessDroneSingle:
             self.logger.warning(f"No map coords for {cell}. Using computed coords: x={x:.3f}, y={y:.3f}")
             return x, y
     
-    def _initialize_rover_positions(self):
-        """Инициализирует позиции роверов на основе их начальных клеток"""
-        for rover_id, rover_config in rovers.items():
-            initial_letter = rover_config.get('initial_letter', '')
-            if initial_letter:
-                # Определяем начальную клетку для белых пешек (2-я линия)
-                initial_cell = f"{initial_letter}2"
-                try:
-                    x, y = self.get_cell_coordinates(initial_cell)
-                    # Обновляем позицию ровера в контроллере
-                    if hasattr(self.rover, 'set_rover_position'):
-                        self.rover.set_rover_position(rover_id, x, y, 0)
-                    self.logger.info(f"Rover {rover_id} initialized at {initial_cell} -> ({x:.3f}, {y:.3f})")
-                except Exception as e:
-                    self.logger.warning(f"Failed to initialize rover {rover_id} position: {e}")
-            else:
-                self.logger.warning(f"No initial_letter defined for rover {rover_id}")
-    
-    def _get_rover_current_position(self, rover_id: str) -> tuple:
-        """Получает текущую позицию ровера"""
-        if hasattr(self.rover, 'rover_positions') and rover_id in self.rover.rover_positions:
-            pos = self.rover.rover_positions[rover_id]
-            return pos.get('x', 0), pos.get('y', 0), pos.get('yaw', 0)
-        return 0, 0, 0
-    
-    def _update_rover_position(self, rover_id: str, x: float, y: float, yaw: float = 0):
-        """Обновляет позицию ровера после движения"""
-        if hasattr(self.rover, 'set_rover_position'):
-            self.rover.set_rover_position(rover_id, x, y, yaw)
-            self.logger.info(f"Updated rover {rover_id} position to ({x:.3f}, {y:.3f}, {yaw:.1f}°)")
+    def _get_rover_position_from_camera(self, rover_id: str, from_cell: str) -> tuple:
+        """
+        Получает текущую позицию ровера с камеры по его ID и начальной клетке.
+        
+        Args:
+            rover_id: ID ровера
+            from_cell: Клетка, на которой сейчас находится пешка
+            
+        Returns:
+            tuple: (rover_x, rover_y, rover_yaw) в метрах для rover API
+        """
+        try:
+            # Получаем позиции всех фигур с камеры
+            positions = self.camera.get_board_positions()
+            
+            # Ищем пешку на указанной клетке
+            for color_data in positions.values():
+                for piece_type, piece_pos in color_data.items():
+                    if piece_pos.cell == from_cell and piece_type.startswith('pawn_'):
+                        # Получаем ArUco координаты из камеры
+                        aruco_x, aruco_y = piece_pos.x, piece_pos.y
+                        
+                        # Конвертируем в метры для rover API
+                        rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
+                        
+                        # Пока что используем yaw = 0 (можно расширить позже)
+                        rover_yaw = 0.0
+                        
+                        self.logger.info(f"Rover {rover_id} at {from_cell}: ArUco({aruco_x:.3f}, {aruco_y:.3f}) -> Rover({rover_x:.3f}, {rover_y:.3f}, {rover_yaw:.1f}°)")
+                        return rover_x, rover_y, rover_yaw
+            
+            # Если не нашли пешку на камере, возвращаем координаты клетки
+            self.logger.warning(f"Pawn not found on camera at {from_cell}, using calculated coordinates")
+            aruco_x, aruco_y = self.get_cell_coordinates(from_cell)
+            rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
+            return rover_x, rover_y, 0.0
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get rover position from camera: {e}")
+            # Fallback: используем рассчитанные координаты клетки
+            aruco_x, aruco_y = self.get_cell_coordinates(from_cell)
+            rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
+            return rover_x, rover_y, 0.0
 
     def move_to_xy(self, x: float, y: float, z: float):
         
@@ -663,30 +714,29 @@ class ChessDroneSingle:
             self.logger.error("No rover available to execute pawn move")
             return
         
-        # Получаем текущую позицию ровера
-        current_x, current_y, current_yaw = self._get_rover_current_position(rover_id)
+        # Получаем текущую позицию ровера с камеры в метрах
+        current_x, current_y, current_yaw = self._get_rover_position_from_camera(rover_id, move.from_cell)
         
-        # Получаем координаты целевой клетки (абсолютные в метрах)
-        target_x, target_y = self.get_cell_coordinates(move.to_cell)
+        # Получаем координаты целевой клетки и конвертируем в метры для rover API
+        target_aruco_x, target_aruco_y = self.get_cell_coordinates(move.to_cell)
+        target_x, target_y = aruco_to_rover_meters(target_aruco_x, target_aruco_y)
         
         self.logger.info(f"Rover {rover_id} move: {move.from_cell}->{move.to_cell}")
-        self.logger.info(f"  From position: ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°)")
-        self.logger.info(f"  To position: ({target_x:.3f}, {target_y:.3f})")
+        self.logger.info(f"  From position (meters): ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°)")
+        self.logger.info(f"  To position (meters): ({target_x:.3f}, {target_y:.3f})")
         
         try:
-            # Отправляем команду с текущей и целевой позицией
+            # Отправляем команду с текущей и целевой позицией в метрах
             success = self.rover.navigate(
                 rover_id, 
                 current_x=current_x, 
                 current_y=current_y, 
                 current_yaw=current_yaw,
-                x=target_x, 
-                y=target_y
+                target_x=target_x, 
+                target_y=target_y
             )
             
             if success:
-                # Обновляем сохранённую позицию ровера
-                self._update_rover_position(rover_id, target_x, target_y, 0)
                 self.logger.info(f"Rover {rover_id} command sent successfully")
             else:
                 self.logger.error(f"Failed to send command to rover {rover_id}")
