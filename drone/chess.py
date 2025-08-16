@@ -383,7 +383,7 @@ class ChessDroneSingle:
 
         # 2) Запрашиваем ход (внутри alg решается логика)
         try:
-            move = get_turn_final(board, time_budget_ms=5000)
+            move = get_turn_final(board, time_budget_ms=TIME_BUDGET_MS)
             print(f"GOT MOVE: {move}")
         except AlgTemporaryError as e:
             if "restart required" in str(e).lower():
