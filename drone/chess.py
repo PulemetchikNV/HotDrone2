@@ -21,7 +21,7 @@ from board_utils import get_board_state
 from alg2_stockfish import get_turn as get_turn_sf
 from alg_mock2 import get_turn as get_turn_mock
 from esp import EspController, create_comm_controller
-from const import DRONE_LIST, LEADER_DRONE, rovers
+from const import DRONE_LIST, LEADER_DRONE, rovers, get_current_drone_config, get_drone_config
 from rover import RoverController
 from camera import create_camera_controller
 
@@ -114,13 +114,22 @@ class ChessDroneSingle:
         if self.esp:
             self.esp.update_role(self.drone_name == self.current_leader)
 
-        # Роль текущего дрона (какую фигуру он представляет)
-        self.drone_role = os.getenv("DRONE_ROLE", "").lower()
-        # Цвет фигур, за которые играет дрон ('white' или 'black')
-        self.drone_color = os.getenv("DRONE_COLOR", "white").lower()
-        # Начальная буква/клетка для данного дрона
-        self.initial_letter = os.getenv("INITIAL_LETTER", "").lower()
-        self.logger.info(f"Drone role: {self.drone_role}, color: {self.drone_color}, initial_letter: {self.initial_letter}")
+        # Получаем конфигурацию дрона из централизованного словаря
+        try:
+            drone_config = get_current_drone_config()
+            self.drone_role = drone_config['role'].lower()
+            self.drone_color = drone_config['color'].lower()
+            self.initial_letter = drone_config['initial_letter'].lower()
+            self.drone_team = drone_config['team'].lower()
+        except (ValueError, KeyError) as e:
+            self.logger.warning(f"Failed to get drone config: {e}. Using defaults.")
+            # Фолбэк на старые переменные окружения
+            self.drone_role = os.getenv("DRONE_ROLE", "").lower()
+            self.drone_color = os.getenv("DRONE_COLOR", "white").lower()
+            self.initial_letter = os.getenv("INITIAL_LETTER", "").lower()
+            self.drone_team = self.drone_color
+        
+        self.logger.info(f"Drone role: {self.drone_role}, color: {self.drone_color}, initial_letter: {self.initial_letter}, team: {self.drone_team}")
         
         # Маппинг ролей дронов (строится динамически из доступных дронов и их ролей)
         self.drone_role_mapping = self._build_drone_role_mapping()
@@ -137,7 +146,7 @@ class ChessDroneSingle:
 
         # CameraAdapter removed; use unified camera controller as single source of truth
         self.camera = create_camera_controller(self.logger)
-        self.our_team = os.getenv("OUR_TEAM", os.getenv("DRONE_COLOR", "white")).lower()
+        self.our_team = self.drone_team
         self.logger.info(f"Our team: {self.our_team}")
 
         # Контроллер роверов (пешки)
@@ -307,12 +316,17 @@ class ChessDroneSingle:
         mapping = {}
         
         for drone_name in self.available_drones:
-            # Получаем роль и начальную букву/клетку для каждого дрона
-            role_var = f"DRONE_ROLE_{drone_name.upper()}"
-            initial_var = f"INITIAL_LETTER_{drone_name.upper()}"
-            
-            role = os.getenv(role_var, "").lower()
-            initial = os.getenv(initial_var, "").lower()
+            # Получаем роль и начальную букву/клетку для каждого дрона из конфигурации
+            try:
+                drone_config = get_drone_config(drone_name)
+                role = drone_config['role'].lower()
+                initial = drone_config['initial_letter'].lower()
+            except (ValueError, KeyError):
+                # Фолбэк на старые переменные окружения
+                role_var = f"DRONE_ROLE_{drone_name.upper()}"
+                initial_var = f"INITIAL_LETTER_{drone_name.upper()}"
+                role = os.getenv(role_var, "").lower()
+                initial = os.getenv(initial_var, "").lower()
             
             if role:
                 # Для уникальных фигур (король, ферзь) используем только роль

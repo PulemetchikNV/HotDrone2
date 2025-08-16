@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, Union
 import httpx
 
-from const import OUR_TEAM
+from const import OUR_TEAM, get_current_drone_config
 
 # Для Python 3.7 совместимости
 try:
@@ -64,7 +64,13 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
         uci_move = (
             (data.get("move") or data.get("lan") or "").strip()
         )
-        our_color = OUR_TEAM
+        # Получаем цвет команды из конфигурации дрона
+        try:
+            drone_config = get_current_drone_config()
+            our_color = drone_config['team']
+        except (ValueError, KeyError):
+            # Фолбэк на константу
+            our_color = OUR_TEAM
         stockfish_color = data.get("color", "w")
         if stockfish_color.lower() != our_color[0].lower():
             print(f"NOT OUR TURN: {stockfish_color} != {our_color[0]}")
