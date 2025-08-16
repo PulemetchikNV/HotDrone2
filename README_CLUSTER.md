@@ -215,6 +215,11 @@ mpirun --hostfile cluster_hosts -np 2 hostname
    - Проверить пути в `_find_stockfish_binary_for_cluster()`
    - Убедиться что файл исполняемый: `chmod +x stockfish`
 
+3. **Ошибка версии Stockfish dev (invalid literal for int)**
+   - Возникает с dev-версиями типа `dev20240410b4ac3d6b`
+   - Система автоматически создает UCI wrapper для обхода проблемы
+   - Проверить работу: `python3 test_stockfish_dev.py`
+
 3. **IP дронов недоступны**
    - Проверить `raw_ip` в `DRONES_CONFIG`
    - Проверить сетевое соединение

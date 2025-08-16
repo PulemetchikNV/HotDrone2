@@ -76,6 +76,14 @@ ls -la drone/chess/stockfish/
 chmod +x drone/chess/stockfish/*
 ```
 
+**Проблема**: Ошибка версии Stockfish dev (invalid literal for int)
+```bash
+# Это происходит с dev-версиями типа "dev20240410b4ac3d6b"
+# Наш код автоматически создает UCI wrapper для таких версий
+# Если проблема остается:
+python3 test_stockfish_dev.py  # проверить работу
+```
+
 **Проблема**: Дроны не пингуются
 ```bash
 # Проверить IP в const.py

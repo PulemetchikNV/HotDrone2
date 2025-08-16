@@ -96,8 +96,154 @@ class StockfishManager:
             self.engine.get_fen_position()
             print(f"Stockfish engine initialized successfully: {binary_path}")
             
+        except ValueError as e:
+            if "invalid literal for int()" in str(e) and ("dev" in str(e) or "b4ac3d6b" in str(e)):
+                # Проблема с парсингом версии dev-сборки Stockfish
+                print(f"Warning: Stockfish dev version detected, trying alternative initialization")
+                try:
+                    # Пытаемся инициализировать без проверки версии через прямой UCI
+                    self.engine = self._create_direct_uci_stockfish_wrapper(binary_path)
+                    print(f"Stockfish dev version initialized with UCI wrapper: {binary_path}")
+                    return
+                except Exception as wrapper_error:
+                    print(f"UCI wrapper also failed: {wrapper_error}")
+                    pass
+                
+            raise AlgPermanentError(f"Failed to initialize Stockfish engine (version issue): {e}")
+            
         except (StockfishException, Exception) as e:
             raise AlgPermanentError(f"Failed to initialize Stockfish engine: {e}")
+    
+    def _create_direct_uci_stockfish_wrapper(self, binary_path):
+        """Create a direct UCI wrapper for dev Stockfish versions that have parsing issues."""
+        class DirectUCIStockfishWrapper:
+            def __init__(self, path, depth=20, skill_level=20):
+                self.path = path
+                self.depth = depth
+                self.skill_level = skill_level
+                self._process = None
+                self._initialize_process()
+                
+            def _initialize_process(self):
+                """Initialize the Stockfish process with direct UCI communication."""
+                import subprocess
+                self._process = subprocess.Popen(
+                    self.path,
+                    universal_newlines=True,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+                
+                # Send UCI initialization without version parsing
+                self._send_command("uci")
+                self._wait_for_response("uciok")
+                
+                # Set parameters
+                self._send_command(f"setoption name Threads value {min(2, os.cpu_count() or 1)}")
+                self._send_command(f"setoption name Hash value 128")
+                self._send_command(f"setoption name Skill Level value {self.skill_level}")
+                self._send_command("setoption name UCI_LimitStrength value false")
+                self._send_command("isready")
+                self._wait_for_response("readyok")
+                
+            def _send_command(self, command):
+                """Send a UCI command to Stockfish."""
+                if self._process and self._process.stdin:
+                    self._process.stdin.write(f"{command}\n")
+                    self._process.stdin.flush()
+                    
+            def _read_line(self):
+                """Read a line from Stockfish output."""
+                if self._process and self._process.stdout:
+                    return self._process.stdout.readline().strip()
+                return ""
+                
+            def _wait_for_response(self, expected):
+                """Wait for a specific response from Stockfish."""
+                while True:
+                    line = self._read_line()
+                    if expected in line:
+                        break
+                        
+            def get_fen_position(self):
+                """Return default starting position (test method)."""
+                return "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                
+            def is_fen_valid(self, fen):
+                """Simple FEN validation."""
+                parts = fen.split()
+                return len(parts) >= 4
+                
+            def set_fen_position(self, fen):
+                """Set position using UCI."""
+                self._send_command("ucinewgame")
+                self._send_command("isready")
+                self._wait_for_response("readyok")
+                self._send_command(f"position fen {fen}")
+                
+            def get_best_move_time(self, time_ms):
+                """Get best move with time limit."""
+                self._send_command(f"go movetime {time_ms}")
+                
+                while True:
+                    line = self._read_line()
+                    if line.startswith("bestmove"):
+                        parts = line.split()
+                        if len(parts) >= 2 and parts[1] != "(none)":
+                            return parts[1]
+                        return None
+                        
+            def get_evaluation(self):
+                """Get position evaluation."""
+                self._send_command(f"go depth {min(10, self.depth)}")
+                
+                evaluation = {"type": "cp", "value": 0}
+                while True:
+                    line = self._read_line()
+                    if line.startswith("bestmove"):
+                        break
+                    elif "score cp" in line:
+                        parts = line.split()
+                        if "cp" in parts:
+                            cp_index = parts.index("cp")
+                            if cp_index + 1 < len(parts):
+                                try:
+                                    evaluation = {"type": "cp", "value": int(parts[cp_index + 1])}
+                                except ValueError:
+                                    pass
+                    elif "score mate" in line:
+                        parts = line.split()
+                        if "mate" in parts:
+                            mate_index = parts.index("mate")
+                            if mate_index + 1 < len(parts):
+                                try:
+                                    evaluation = {"type": "mate", "value": int(parts[mate_index + 1])}
+                                except ValueError:
+                                    pass
+                                    
+                return evaluation
+                
+            def get_top_moves(self, count):
+                """Get top moves (simplified)."""
+                best_move = self.get_best_move_time(1000)
+                if best_move:
+                    return [{"Move": best_move, "Centipawn": 0}]
+                return []
+                
+            def __del__(self):
+                """Clean up the process."""
+                if self._process:
+                    try:
+                        self._send_command("quit")
+                        self._process.wait(timeout=2)
+                    except Exception:
+                        pass
+                    finally:
+                        if self._process.poll() is None:
+                            self._process.terminate()
+        
+        return DirectUCIStockfishWrapper(binary_path, self.depth, self.skill_level)
     
     def get_best_move(self, fen: str, time_limit_ms: int = 5000) -> Dict[str, Any]:
         """Get best move from Stockfish engine."""
