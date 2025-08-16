@@ -16,8 +16,10 @@ except ImportError:
 
 from flight import FlightController
 from helpers import setup_logging
-from alg_mock2 import get_board_state, get_turn
-import esp
+from alg2_stockfish import get_board_state, update_after_execution, AlgTemporaryError, AlgPermanentError
+from alg_mock2 import get_turn as get_turn_mock
+from alg2_stockfish import get_turn as get_turn_sf
+from esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
 from camera import create_camera_controller
@@ -70,10 +72,10 @@ class ChessDroneSingle:
         
         # Контроллер связи (ESP по радиоканалу или Wi‑Fi) — выбирается по COMM_IMPL
         try:
-            self.esp = esp.create_comm_controller(self.swarm, self.drone_name)
-        except Exception as e:
-            self.logger.warning(f"Comm controller init failed: {e}")
-            self.esp = None
+            self.esp = create_comm_controller(self.swarm, self.drone_name)
+        except Exception:
+            # Фолбэк на старую реализацию
+            self.esp = EspController(swarm=self.swarm, drone_name=self.drone_name) if self.swarm else None
         
         # Регистрируем обработчик сообщений если есть swarm
         if self.swarm and self.esp:
