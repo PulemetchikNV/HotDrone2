@@ -52,16 +52,10 @@ def _camera_read_board():
         turn = getattr(camera, 'get_turn', lambda: None)() or 'white'
         board_info['turn'] = 'w' if turn.lower().startswith('w') else 'b'
         
-        # Получаем FEN (приоритет: камера -> переменная окружения -> дефолт)
-        fen = None
-        if hasattr(camera, 'get_fen'):
-            try:
-                fen = camera.get_fen()
-            except Exception:
-                pass
-        
-        if not fen:
-            fen = os.getenv("DEFAULT_FEN", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        # Получаем FEN: используем функцию конвертации из camera.py
+        from camera import positions_to_fen
+        turn_word = 'white' if board_info['turn'] == 'w' else 'black'
+        fen = positions_to_fen(positions, turn_word)
         
         board_info['fen'] = fen
         return board_info
@@ -121,16 +115,10 @@ def get_board_state_from_camera(camera):
         turn = getattr(camera, 'get_turn', lambda: None)() or 'white'
         board_info['turn'] = 'w' if turn.lower().startswith('w') else 'b'
         
-        # Получаем FEN
-        fen = None
-        if hasattr(camera, 'get_fen'):
-            try:
-                fen = camera.get_fen()
-            except Exception:
-                pass
-        
-        if not fen:
-            fen = os.getenv("DEFAULT_FEN", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        # Получаем FEN: используем функцию конвертации из camera.py
+        from camera import positions_to_fen
+        turn_word = 'white' if board_info['turn'] == 'w' else 'black'
+        fen = positions_to_fen(positions, turn_word)
         
         board_info['fen'] = fen
         return board_info

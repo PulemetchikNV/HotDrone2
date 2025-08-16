@@ -360,7 +360,7 @@ def positions_to_fen(positions: dict, turn: str) -> str:
 
     placement = '/'.join(ranks)
     active = 'w' if turn == 'white' else 'b'
-    # Без рокировок, en passant, счетчиков — чтобы chessboard.js просто показал позицию
+    # Убираем рокировки, en passant, счетчики — простая позиция без возможности рокировки
     return f"{placement} {active} - - 0 1"
 
 
