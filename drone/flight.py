@@ -308,12 +308,10 @@ class FlightControllerMock:
 
 
 # Выбор реализации по переменной окружения
-# _impl = os.getenv('FLIGHT_IMPL', 'main').lower()
-# if _impl == 'mock':
-#     print('USING MOCK IMPL')
-#     FlightController = FlightControllerMock
-# else:
-#     print('USING MAIN IMPL')
-#     FlightController = FlightControllerMain 
-
-FlightController = FlightControllerMock
+_impl = os.getenv('FLIGHT_IMPL', 'main').lower()
+if _impl.startswith('mock'):
+    print('USING MOCK IMPL')
+    FlightController = FlightControllerMock
+else:
+    print('USING MAIN IMPL')
+    FlightController = FlightControllerMain 
