@@ -15,7 +15,9 @@ except ImportError:
 
 from flight import FlightController
 from helpers import setup_logging
-from alg2_stockfish import get_board_state, get_turn, update_after_execution, AlgTemporaryError, AlgPermanentError
+from alg2_stockfish import get_board_state, update_after_execution, AlgTemporaryError, AlgPermanentError
+from alg_mock2 import get_turn as get_turn_mock
+from alg2_stockfish import get_turn as get_turn_sf
 from esp import EspController, create_chess_move_message, parse_chess_move, create_comm_controller
 from const import DRONE_LIST, LEADER_DRONE, rovers
 from rover import RoverController
@@ -262,7 +264,12 @@ class ChessDroneSingle:
             print(f"OUR TURN: {current_turn}")
 
         # 2) Запрашиваем ход (внутри alg решается логика)
-        move = get_turn(board, time_budget_ms=5000)
+        alg_mode = os.getenv("ALG_MODE", "api").lower()
+        if alg_mode == "cluster":
+            move = get_turn_sf(board, time_budget_ms=5000)
+        else:
+            # api и llm пока одинаково — используем мок-алгоритм
+            move = get_turn_mock(board, time_budget_ms=5000)
         print(f"GOT MOVE: {move}")
 
         from_cell = getattr(move, 'from_cell', 'e2')
