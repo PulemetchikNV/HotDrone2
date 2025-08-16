@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат дронов</title>
+    <link rel="stylesheet" href="style_v2.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="chat-wrapper">
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h2>Обсуждение ходов дронами</h2>
+                </div>
+                <button @click="runScript" :disabled="isLoading" class="run-button">
+                    {{ isLoading ? 'Выполняется...' : 'Запустить новый расчет' }}
+                </button>
+            </div>
+            <div class="chat-messages" ref="messageBox">
+                <div v-for="(msg, index) in messages" :key="index" class="message-bubble" :class="msg.type">
+                    <div v-if="msg.agentId" class="agent-id">{{ msg.agentId }}</div>
+                    <p class="message-content">{{ msg.content }}</p>
+                </div>
+                 <div v-if="messages.length === 0 && !isLoading" class="system-message">
+                    Нажмите "Запустить новый расчет", чтобы начать.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app_v2.js"></script>
+</body>
+</html>
