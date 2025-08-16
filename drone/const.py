@@ -59,12 +59,12 @@ rovers = {
     #     'initial_letter': 'a',
     #     'number': 2,
     # },
-    'rover_b': {
-        'ip': '192.168.1.97',
-        'port': 12345,
-        'initial_letter': 'd',
-        'number': 11,
-    }
+    # 'rover_b': {
+    #     'ip': '192.168.1.97',
+    #     'port': 12345,
+    #     'initial_letter': 'd',
+    #     'number': 11,
+    # }
     # '2': {
     #     'ip': '192.168.1.97',
     #     'port': 12345,
