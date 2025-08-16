@@ -41,6 +41,15 @@ class EspController:
         self._ping_responses = {}  # {drone_name: timestamp}
         self._ping_lock = threading.Lock()
         
+        # Состояние хода лидера
+        self._leader_move_state = {
+            'is_moving': False,
+            'move_start_time': 0,
+            'move_timeout': 60.0,  # Таймаут хода в секундах
+            'current_move': None
+        }
+        self._move_state_lock = threading.Lock()
+        
         self.logger.info(f"EspController initialized: leader={self.is_leader}, drone={self.drone_name}")
 
     def _on_custom_message(self, message: str):
@@ -129,6 +138,28 @@ class EspController:
             if ping_id and from_drone:
                 with self._ping_lock:
                     self._ping_responses[from_drone] = time.time()
+        
+        # Уведомление о начале хода лидера
+        elif cmd_type == 'move_start':
+            from_drone = obj.get('from')
+            move_info = obj.get('move')
+            if from_drone:
+                with self._move_state_lock:
+                    self._leader_move_state['is_moving'] = True
+                    self._leader_move_state['move_start_time'] = time.time()
+                    self._leader_move_state['current_move'] = move_info
+                self.logger.info(f"Leader {from_drone} started move: {move_info}")
+        
+        # Уведомление о завершении хода лидера
+        elif cmd_type == 'move_complete':
+            from_drone = obj.get('from')
+            move_info = obj.get('move')
+            if from_drone:
+                with self._move_state_lock:
+                    self._leader_move_state['is_moving'] = False
+                    self._leader_move_state['move_start_time'] = 0
+                    self._leader_move_state['current_move'] = None
+                self.logger.info(f"Leader {from_drone} completed move: {move_info}")
 
     def _broadcast_reliable(self, payload, retries=3, timeout=0.5):
         """Надежная отправка сообщения с ожиданием подтверждения."""
@@ -253,6 +284,64 @@ class EspController:
                 self.logger.warning(f"Drone {drone_name} is not responding to ping")
         
         return alive_drones
+    
+    def broadcast_move_start(self, move_info: str):
+        """Уведомляет всех дронов о начале хода лидера"""
+        if not self.is_leader:
+            return False
+        
+        payload = {
+            'type': 'move_start',
+            'move': move_info,
+            'from': self.drone_name,
+            'timestamp': time.time()
+        }
+        
+        self.logger.info(f"Broadcasting move start: {move_info}")
+        return self._broadcast_unreliable(payload)
+    
+    def broadcast_move_complete(self, move_info: str, success: bool = True):
+        """Уведомляет всех дронов о завершении хода лидера"""
+        if not self.is_leader:
+            return False
+        
+        payload = {
+            'type': 'move_complete',
+            'move': move_info,
+            'success': success,
+            'from': self.drone_name,
+            'timestamp': time.time()
+        }
+        
+        self.logger.info(f"Broadcasting move complete: {move_info} (success={success})")
+        return self._broadcast_unreliable(payload)
+    
+    def is_leader_moving(self) -> bool:
+        """Проверяет, выполняет ли лидер сейчас ход"""
+        with self._move_state_lock:
+            if not self._leader_move_state['is_moving']:
+                return False
+            
+            # Проверяем таймаут
+            elapsed = time.time() - self._leader_move_state['move_start_time']
+            if elapsed > self._leader_move_state['move_timeout']:
+                self.logger.warning(f"Leader move timeout exceeded ({elapsed:.1f}s > {self._leader_move_state['move_timeout']:.1f}s)")
+                # Сбрасываем состояние при таймауте
+                self._leader_move_state['is_moving'] = False
+                self._leader_move_state['move_start_time'] = 0
+                self._leader_move_state['current_move'] = None
+                return False
+            
+            return True
+    
+    def get_current_move_info(self) -> dict:
+        """Возвращает информацию о текущем ходе лидера"""
+        with self._move_state_lock:
+            return {
+                'is_moving': self._leader_move_state['is_moving'],
+                'move': self._leader_move_state['current_move'],
+                'elapsed_time': time.time() - self._leader_move_state['move_start_time'] if self._leader_move_state['is_moving'] else 0
+            }
 
 
 class WifiEspController:
@@ -281,6 +370,15 @@ class WifiEspController:
         # Ping/Pong для проверки активности дронов
         self._ping_responses = {}  # {drone_name: timestamp}
         self._ping_lock = threading.Lock()
+        
+        # Состояние хода лидера
+        self._leader_move_state = {
+            'is_moving': False,
+            'move_start_time': 0,
+            'move_timeout': 60.0,  # Таймаут хода в секундах
+            'current_move': None
+        }
+        self._move_state_lock = threading.Lock()
 
         # UDP сокет: bind + broadcast
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -374,7 +472,29 @@ class WifiEspController:
             if ping_id and from_drone:
                 with self._ping_lock:
                     self._ping_responses[from_drone] = time.time()
-
+        
+        # Уведомление о начале хода лидера
+        elif cmd_type == 'move_start':
+            from_drone = obj.get('from')
+            move_info = obj.get('move')
+            if from_drone:
+                with self._move_state_lock:
+                    self._leader_move_state['is_moving'] = True
+                    self._leader_move_state['move_start_time'] = time.time()
+                    self._leader_move_state['current_move'] = move_info
+                self.logger.info(f"[WiFi] Leader {from_drone} started move: {move_info}")
+        
+        # Уведомление о завершении хода лидера
+        elif cmd_type == 'move_complete':
+            from_drone = obj.get('from')
+            move_info = obj.get('move')
+            if from_drone:
+                with self._move_state_lock:
+                    self._leader_move_state['is_moving'] = False
+                    self._leader_move_state['move_start_time'] = 0
+                    self._leader_move_state['current_move'] = None
+                self.logger.info(f"[WiFi] Leader {from_drone} completed move: {move_info}")
+    
     def _recv_loop(self):
         while not self._stop_event.is_set():
             try:
@@ -509,6 +629,64 @@ class WifiEspController:
                 self.logger.warning(f"[WiFi] Drone {drone_name} is not responding to ping")
         
         return alive_drones
+    
+    def broadcast_move_start(self, move_info: str):
+        """Уведомляет всех дронов о начале хода лидера"""
+        if not self.is_leader:
+            return False
+        
+        payload = {
+            'type': 'move_start',
+            'move': move_info,
+            'from': self.drone_name,
+            'timestamp': time.time()
+        }
+        
+        self.logger.info(f"[WiFi] Broadcasting move start: {move_info}")
+        return self._broadcast_unreliable(payload)
+    
+    def broadcast_move_complete(self, move_info: str, success: bool = True):
+        """Уведомляет всех дронов о завершении хода лидера"""
+        if not self.is_leader:
+            return False
+        
+        payload = {
+            'type': 'move_complete',
+            'move': move_info,
+            'success': success,
+            'from': self.drone_name,
+            'timestamp': time.time()
+        }
+        
+        self.logger.info(f"[WiFi] Broadcasting move complete: {move_info} (success={success})")
+        return self._broadcast_unreliable(payload)
+    
+    def is_leader_moving(self) -> bool:
+        """Проверяет, выполняет ли лидер сейчас ход"""
+        with self._move_state_lock:
+            if not self._leader_move_state['is_moving']:
+                return False
+            
+            # Проверяем таймаут
+            elapsed = time.time() - self._leader_move_state['move_start_time']
+            if elapsed > self._leader_move_state['move_timeout']:
+                self.logger.warning(f"[WiFi] Leader move timeout exceeded ({elapsed:.1f}s > {self._leader_move_state['move_timeout']:.1f}s)")
+                # Сбрасываем состояние при таймауте
+                self._leader_move_state['is_moving'] = False
+                self._leader_move_state['move_start_time'] = 0
+                self._leader_move_state['current_move'] = None
+                return False
+            
+            return True
+    
+    def get_current_move_info(self) -> dict:
+        """Возвращает информацию о текущем ходе лидера"""
+        with self._move_state_lock:
+            return {
+                'is_moving': self._leader_move_state['is_moving'],
+                'move': self._leader_move_state['current_move'],
+                'elapsed_time': time.time() - self._leader_move_state['move_start_time'] if self._leader_move_state['is_moving'] else 0
+            }
 
 
 def create_comm_controller(swarm, drone_name=None):

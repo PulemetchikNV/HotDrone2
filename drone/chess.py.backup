@@ -101,7 +101,7 @@ class ChessDroneSingle:
         if self.swarm and self.esp:
             # Предполагаем что swarm имеет метод set_custom_message_callback
             if hasattr(self.swarm, 'set_custom_message_callback'):
-                self.swarm.set_custom_message_callback(self.esp._on_custom_message)
+                self.swarm.set_custom_message_callback(self._on_esp_message)
                 self.logger.info("ESP message handler registered")
         
         # Список доступных дронов для назначения задач (постоянный порядок)
@@ -124,9 +124,9 @@ class ChessDroneSingle:
         except (ValueError, KeyError) as e:
             self.logger.warning(f"Failed to get drone config: {e}. Using defaults.")
             # Фолбэк на старые переменные окружения
-            self.drone_role = os.getenv("DRONE_ROLE", "").lower()
-            self.drone_color = os.getenv("DRONE_COLOR", "white").lower()
-            self.initial_letter = os.getenv("INITIAL_LETTER", "").lower()
+        self.drone_role = os.getenv("DRONE_ROLE", "").lower()
+        self.drone_color = os.getenv("DRONE_COLOR", "white").lower()
+        self.initial_letter = os.getenv("INITIAL_LETTER", "").lower()
             self.drone_team = self.drone_color
         
         self.logger.info(f"Drone role: {self.drone_role}, color: {self.drone_color}, initial_letter: {self.initial_letter}, team: {self.drone_team}")
@@ -177,6 +177,27 @@ class ChessDroneSingle:
         # Для упрощенной логики выбора лидера
         self._is_our_turn_cache = False
         self._last_turn_check = 0.0
+        
+        # Система состояний лидера для предотвращения конфликтов
+        self._leader_move_in_progress = False
+        self._leader_move_start_time = 0.0
+        self._leader_move_timeout = 60.0  # 1 минута на выполнение хода
+        self._move_completion_announced = False
+
+    def _on_esp_message(self, message):
+        """Обработчик сообщений от ESP контроллера"""
+        try:
+            if self.esp:
+                # Сначала передаем сообщение стандартному обработчику ESP
+                self.esp._on_custom_message(message)
+                
+                # Затем обрабатываем объявления о состоянии хода
+                if isinstance(message, dict):
+                    msg_type = message.get('type')
+                    if msg_type in ('move_start', 'move_complete'):
+                        self._handle_move_announcement(message)
+        except Exception as e:
+            self.logger.debug(f"Failed to handle ESP message: {e}")
 
     def get_cell_coordinates(self, cell):
         """Получает координаты клетки из карты или вычисляет их"""
@@ -254,6 +275,36 @@ class ChessDroneSingle:
         # 5. Финальное зависание перед завершением
         # self.fc.wait(0.5)
 
+    def _announce_move_start(self, from_cell: str, to_cell: str):
+        """Объявляет всем дронам о начале выполнения хода лидером"""
+        if self.esp and self.esp.is_leader:
+            payload = {
+                'type': 'move_start',
+                'leader': self.drone_name,
+                'move': f"{from_cell}->{to_cell}",
+                'timestamp': time.time()
+            }
+            self.esp._broadcast_reliable(payload)
+            self._leader_move_in_progress = True
+            self._leader_move_start_time = time.time()
+            self._move_completion_announced = False
+            self.logger.info(f"Announced move start: {from_cell}->{to_cell}")
+    
+    def _announce_move_complete(self, from_cell: str, to_cell: str, success: bool = True):
+        """Объявляет всем дронам о завершении хода лидером"""
+        if self.esp and self.esp.is_leader and not self._move_completion_announced:
+            payload = {
+                'type': 'move_complete',
+                'leader': self.drone_name,
+                'move': f"{from_cell}->{to_cell}",
+                'success': success,
+                'timestamp': time.time()
+            }
+            self.esp._broadcast_reliable(payload)
+            self._leader_move_in_progress = False
+            self._move_completion_announced = True
+            self.logger.info(f"Announced move complete: {from_cell}->{to_cell}, success={success}")
+
     def run_once(self):
         """Выполняется только на лидере - получает ход и отправляет команду исполнителю"""
         if not self.esp or not self.esp.is_leader:
@@ -288,43 +339,39 @@ class ChessDroneSingle:
 
         from_cell = getattr(move, 'from_cell', 'e2')
         to_cell = getattr(move, 'to_cell', 'e4')
-        chess_move = f"{from_cell}->{to_cell}"
-        self.logger.info(f"MOVING {chess_move}")
+        self.logger.info(f"MOVING {from_cell}->{to_cell}")
         
-        # Уведомляем всех дронов о начале хода
-        if self.esp and self.esp.is_leader:
-            self.esp.broadcast_move_start(chess_move)
+        # Объявляем начало хода всем дронам
+        self._announce_move_start(from_cell, to_cell)
         
         # 3) Определяем исполнителя по фигуре на from_cell через камеру
         is_pawn_camera, pawn_id = self._is_pawn_move_by_camera(from_cell)
         
-        move_success = False
         try:
-            if is_pawn_camera and self.rover_ids:
-                # Пешка -> выполняем ход ровером
-                self.logger.info(f"Executing pawn move {from_cell}->{to_cell} with rover")
-                self._execute_rover_move(move)
-                self.logger.info(f"Leader completed rover move: {from_cell}->{to_cell}")
-                move_success = True
-            else:
-                # Не пешка -> выполняем ход дроном
-                self.logger.info(f"Executing piece move {from_cell}->{to_cell} with drone")
+        if is_pawn_camera and self.rover_ids:
+            # Пешка -> выполняем ход ровером
+            self.logger.info(f"Executing pawn move {from_cell}->{to_cell} with rover")
+            self._execute_rover_move(move)
+            self.logger.info(f"Leader completed rover move: {from_cell}->{to_cell}")
+        else:
+            # Не пешка -> выполняем ход дроном
+            self.logger.info(f"Executing piece move {from_cell}->{to_cell} with drone")
                 self._execute_drone_move(move)
-                self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
-                move_success = True
+            self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
             
             # MOCK CAMERA
             requests.post(
                 f"http://192.168.1.119:8001/make_move", 
                 json={"to_cell": to_cell, "from_cell": from_cell}
             )
+            
+            # Объявляем успешное завершение хода
+            self._announce_move_complete(from_cell, to_cell, success=True)
+            
         except Exception as e:
-            self.logger.error(f"Failed to execute move {chess_move}: {e}")
-            move_success = False
-        finally:
-            # Всегда уведомляем о завершении хода (успешном или неуспешном)
-            if self.esp and self.esp.is_leader:
-                self.esp.broadcast_move_complete(chess_move, success=move_success)
+            self.logger.error(f"Failed to execute move {from_cell}->{to_cell}: {e}")
+            # Объявляем неуспешное завершение хода
+            self._announce_move_complete(from_cell, to_cell, success=False)
 
     
     def _build_drone_role_mapping(self):
@@ -339,11 +386,11 @@ class ChessDroneSingle:
                 initial = drone_config['initial_letter'].lower()
             except (ValueError, KeyError):
                 # Фолбэк на старые переменные окружения
-                role_var = f"DRONE_ROLE_{drone_name.upper()}"
-                initial_var = f"INITIAL_LETTER_{drone_name.upper()}"
-                role = os.getenv(role_var, "").lower()
-                initial = os.getenv(initial_var, "").lower()
-                
+            role_var = f"DRONE_ROLE_{drone_name.upper()}"
+            initial_var = f"INITIAL_LETTER_{drone_name.upper()}"
+            role = os.getenv(role_var, "").lower()
+            initial = os.getenv(initial_var, "").lower()
+            
             if role:
                 # Для уникальных фигур (король, ферзь) используем только роль
                 if role in ['king', 'queen']:
@@ -447,7 +494,8 @@ class ChessDroneSingle:
                 self.move_to_xy(x, y, self.flight_z)
                 self.logger.info(f"Leader completed own move to {to_cell}")
             except Exception as e:
-                self.logger.error(f"Leader failed to execute own move")
+                self.logger.error(f"Leader failed to execute own move: {e}")
+                raise  # Перебрасываем исключение для обработки в run_once
         else:
             # Проверяем живость дрона-ведомого перед отправкой команды
             self.logger.info(f"Checking if target drone {target_drone} is alive before sending command")
@@ -735,7 +783,7 @@ class ChessDroneSingle:
 
 
     def _tick_leader_election(self):
-        """Упрощенная логика выбора лидера"""
+        """Упрощенная логика выбора лидера с защитой от смены во время хода"""
         if not self.esp:
             return
         
@@ -743,16 +791,12 @@ class ChessDroneSingle:
         if not self._check_is_our_turn():
             return
         
-        self.logger.info("Our turn detected - checking leader status")
-        
-        # Проверяем, выполняет ли лидер сейчас ход
-        leader_is_moving = self.esp.is_leader_moving() if self.esp else False
-        
-        if leader_is_moving:
-            move_info = self.esp.get_current_move_info() if self.esp else {}
-            self.logger.info(f"Leader {self.current_leader} is executing move: {move_info.get('move', 'unknown')} (elapsed: {move_info.get('elapsed_time', 0):.1f}s)")
-            # Лидер выполняет ход - не переизбираем его
+        # Проверяем, есть ли ход в процессе выполнения
+        if self._is_leader_move_in_progress():
+            self.logger.debug(f"Leader move in progress, skipping leader election")
             return
+        
+        self.logger.info("Our turn detected - checking leader status")
         
         # Проверяем живость текущего лидера двумя способами
         leader_alive_camera = self._check_leader_alive_by_camera()
@@ -762,7 +806,7 @@ class ChessDroneSingle:
         
         # Если лидер неактивен по одному из критериев, выбираем нового
         if not leader_alive_camera or not leader_alive_ping:
-            self.logger.warning(f"Leader {self.current_leader} is inactive (camera={leader_alive_camera}, ping={leader_alive_ping}), selecting new leader")
+            self.logger.warning(f"Leader {self.current_leader} is inactive, selecting new leader")
             
             new_leader = self._select_new_leader()
             
@@ -817,6 +861,41 @@ class ChessDroneSingle:
         
         return False
     
+    def _is_leader_move_in_progress(self) -> bool:
+        """Проверяет, выполняется ли сейчас ход лидера"""
+        if not self._leader_move_in_progress:
+            return False
+        
+        # Проверяем таймаут (если лидер завис во время хода)
+        current_time = time.time()
+        if (current_time - self._leader_move_start_time) > self._leader_move_timeout:
+            self.logger.warning(f"Leader move timeout exceeded ({self._leader_move_timeout}s), allowing leader election")
+            self._leader_move_in_progress = False
+            return False
+        
+        return True
+    
+    def _handle_move_announcement(self, announcement: dict):
+        """Обрабатывает объявления о состоянии хода от лидера"""
+        announcement_type = announcement.get('type')
+        leader_name = announcement.get('leader')
+        move = announcement.get('move', '')
+        timestamp = announcement.get('timestamp', 0)
+        
+        if announcement_type == 'move_start':
+            self.logger.info(f"Leader {leader_name} started move: {move}")
+            if leader_name == self.current_leader:
+                self._leader_move_in_progress = True
+                self._leader_move_start_time = timestamp
+                self._move_completion_announced = False
+        
+        elif announcement_type == 'move_complete':
+            success = announcement.get('success', True)
+            self.logger.info(f"Leader {leader_name} completed move: {move}, success={success}")
+            if leader_name == self.current_leader:
+                self._leader_move_in_progress = False
+                self._move_completion_announced = True
+    
     def _check_leader_alive_by_camera(self) -> bool:
         """Проверяет через камеру, виден ли лидер на доске"""
         if not self.current_leader:
@@ -856,10 +935,11 @@ class ChessDroneSingle:
             
             if is_alive:
                 self.logger.debug(f"Leader {self.current_leader} is alive (ping successful)")
-            else:
+        else:
                 self.logger.warning(f"Leader {self.current_leader} did not respond to ping")
             
-            return is_alive            
+            return is_alive
+            
         except Exception as e:
             self.logger.debug(f"Ping leader check failed: {e}")
             return False
