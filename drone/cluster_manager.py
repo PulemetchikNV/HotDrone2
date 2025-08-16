@@ -19,17 +19,27 @@ class ClusterManager:
     def get_alive_drone_ips(self, alive_drone_names: List[str]) -> List[str]:
         """Извлекает IP адреса живых дронов из конфигурации"""
         ips = []
+        valid_drones = []
+        
         for drone_name in alive_drone_names:
             try:
                 config = get_drone_config(drone_name)
                 raw_ip = config.get('raw_ip')
-                if raw_ip:
-                    ips.append(raw_ip)
+                if raw_ip and raw_ip.strip():  # проверяем что IP не пустой
+                    ips.append(raw_ip.strip())
+                    valid_drones.append(drone_name)
                     self.logger.debug(f"Drone {drone_name} -> IP {raw_ip}")
                 else:
-                    self.logger.warning(f"No raw_ip found for drone {drone_name}")
+                    self.logger.warning(f"No valid raw_ip found for drone {drone_name}")
             except Exception as e:
                 self.logger.warning(f"Failed to get IP for {drone_name}: {e}")
+        
+        # Логируем статистику
+        if len(valid_drones) != len(alive_drone_names):
+            invalid_count = len(alive_drone_names) - len(valid_drones)
+            self.logger.info(f"Filtered {invalid_count} drones without valid IPs from {len(alive_drone_names)} alive drones")
+            self.logger.info(f"Valid drones with IPs: {valid_drones}")
+        
         return ips
     
     def read_current_cluster_hosts(self) -> List[str]:
@@ -54,10 +64,8 @@ class ClusterManager:
             if os.path.exists(self.cluster_hosts_path):
                 os.rename(self.cluster_hosts_path, backup_path)
             
-            # Записываем новый файл
+            # Записываем новый файл (только IP адреса, без комментариев)
             with open(self.cluster_hosts_path, 'w') as f:
-                f.write("# Auto-generated cluster hosts file\n")
-                f.write(f"# Updated at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 for ip in ips:
                     f.write(f"{ip}\n")
                     
@@ -185,7 +193,9 @@ class ClusterManager:
     
     def get_mpi_command(self, alive_drone_names: List[str]) -> str:
         """Формирует команду MPI для кластерного вычисления"""
-        np = len(alive_drone_names)
+        # Используем количество реальных IP адресов, а не имен дронов
+        ips = self.get_alive_drone_ips(alive_drone_names)
+        np = len(ips)
         return f"mpirun --hostfile {self.cluster_hosts_path} -map-by node -np {np} stockfish"
     
     def perform_graceful_restart(self, reason: str = "cluster_change"):
