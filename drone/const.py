@@ -4,6 +4,9 @@ LEADER_DRONE = 'drone21'
 DRONES_TOTAL = 2
 OUR_TEAM = 'black'
 
+# Режим алгоритма выбора ходов
+ALG_MODE = 'cluster2'  # 'api', 'llm', 'cluster1', 'cluster2'
+
 # Централизованная конфигурация дронов
 DRONES_CONFIG = {
     'drone15': {

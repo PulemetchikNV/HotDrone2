@@ -21,7 +21,7 @@ from board_utils import get_board_state
 from alg2_stockfish import get_turn as get_turn_sf
 from alg_mock2 import get_turn as get_turn_mock
 from esp import EspController, create_comm_controller
-from const import DRONE_LIST, LEADER_DRONE, rovers, get_current_drone_config, get_drone_config
+from const import DRONE_LIST, LEADER_DRONE, rovers, get_current_drone_config, get_drone_config, ALG_MODE
 from rover import RoverController
 from camera import create_camera_controller
 
@@ -87,8 +87,8 @@ def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
     Returns:
         MoveDecision объект с выбранным ходом
     """
-    alg_mode = os.getenv("ALG_MODE", "api").lower()
-
+    alg_mode = ALG_MODE.lower()
+    
     if alg_mode.startswith("cluster"):
         return get_turn_sf(board, time_budget_ms=time_budget_ms)
     else:
@@ -375,7 +375,7 @@ class ChessDroneSingle:
             print(f"OUR TURN: {current_player}")
 
         # 1.5) Для кластерного режима передаем информацию о живых дронах
-        if os.getenv("ALG_MODE", "api").lower() == "cluster":
+        if ALG_MODE.lower().startswith("cluster"):
             alive_drones = self.esp.ping_all_drones(self.available_drones) if self.esp else []
             os.environ["CLUSTER_ALIVE_DRONES"] = ",".join(alive_drones)
             print(f"==== DEBUG chess.py: available_drones={self.available_drones}, alive_drones={alive_drones}")
