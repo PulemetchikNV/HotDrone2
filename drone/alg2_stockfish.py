@@ -380,61 +380,42 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
 
     print(f"==== HOSTFILE: {open(hostfile, 'r').read()}")
 
-    # Новый подход: запускаем Stockfish по SSH на каждом хосте параллельно без MPI
-    # Это надёжней, так как bench работает, а stdin под MPI нестабилен
-    depth = min(max(5, movetime_ms // 1000), 15)
-    timeout_s = max(10, depth * 2 + 5)
-    print(f"==== DEBUG: SSH multi-host mode, depth={depth}, timeout={timeout_s}s")
+    # Надёжный подход: UCI подаём только в stdin ранга 0
+    # Используем go movetime, как изначально, но можно ограничить сверху
+    movetime = max(1000, min(movetime_ms, 30000))
+    uci_script = (
+        "uci\n"
+        "isready\n"
+        "ucinewgame\n"
+        "setoption name Threads value 1\n"
+        f"position fen {fen}\n"
+        f"go movetime {movetime}\n"
+        "quit\n"
+    )
 
-    uci_script = "uci\nisready\nposition fen {fen}\ngo depth {depth}\nquit\n".format(fen=fen, depth=depth)
-    ssh_results: List[Dict[str, Any]] = []
+    cmd = f"mpirun --hostfile {hostfile} -map-by node -np {np} --stdin 0 stockfish"
+    timeout_s = max(10, movetime // 1000 + 10)
+    print(f"==== DEBUG: Running command: {cmd}")
+    print(f"==== DEBUG: UCI script:\n{uci_script}")
+    print(f"==== DEBUG: Timeout: {timeout_s}s")
 
-    for host in hosts:
-        cmd = f"ssh -o BatchMode=yes -o ConnectTimeout=5 {host} 'stockfish'"
-        print(f"==== DEBUG: Running SSH stockfish on {host}: {cmd}")
-        try:
-            res = subprocess.run(
-                cmd,
-                input=uci_script,
-                capture_output=True,
-                text=True,
-                timeout=timeout_s,
-                shell=True
-            )
-            out_h = res.stdout or ""
-            err_h = res.stderr or ""
-            print(f"==== DEBUG: {host} rc={res.returncode}")
-            print(f"==== DEBUG: {host} stdout:\n{out_h}")
-            print(f"==== DEBUG: {host} stderr:\n{err_h}")
+    res = subprocess.run(
+        cmd,
+        input=uci_script,
+        capture_output=True,
+        text=True,
+        timeout=timeout_s,
+        shell=True
+    )
+    out = res.stdout or ""
+    err = res.stderr or ""
+    print(f"==== DEBUG: Return code: {res.returncode}")
+    print(f"==== DEBUG: stdout: {out}")
+    print(f"==== DEBUG: stderr: {err}")
+    print(f"==== GOT CMD: {cmd}")
 
-            if res.returncode != 0:
-                print(f"==== DEBUG: {host} returned non-zero code, skipping host")
-                continue
-
-            # Парсим вывод узла и добавляем результаты
-            info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
-            bestmove_re = re.compile(r"bestmove\s+([a-h][1-8][a-h][1-8][qrbn]?)")
-            last_score: Optional[Dict[str, Any]] = None
-            for line in out_h.splitlines():
-                m1 = info_score_re.search(line)
-                if m1:
-                    score_type, score_val = m1.group(1), int(m1.group(2))
-                    last_score = {"type": score_type, "value": score_val}
-                    continue
-                m2 = bestmove_re.search(line)
-                if m2:
-                    mv = m2.group(1)
-                    ssh_results.append({"move": mv, "score": last_score, "host": host})
-                    last_score = None
-        except Exception as e:
-            print(f"==== DEBUG: SSH call failed for {host}: {e}")
-            continue
-
-    # Если получили результаты с узлов — используем их
-    if ssh_results:
-        results = ssh_results
-    else:
-        print("==== DEBUG: No SSH results collected, returning None")
+    if res.returncode != 0:
+        print(f"==== DEBUG: Command failed with return code {res.returncode}, returning None")
         return None
 
     info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
@@ -442,25 +423,19 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
 
     results: List[Dict[str, Any]] = []
     last_score: Optional[Dict[str, Any]] = None
-    print(f"==== DEBUG: Parsing output lines...")
-    for line_num, line in enumerate(out.splitlines()):
-        print(f"==== DEBUG: Line {line_num}: {repr(line)}")
+    for line in out.splitlines():
         m1 = info_score_re.search(line)
         if m1:
             score_type, score_val = m1.group(1), int(m1.group(2))
             last_score = {"type": score_type, "value": score_val}
-            print(f"==== DEBUG: Found score: {last_score}")
             continue
         m2 = bestmove_re.search(line)
         if m2:
             mv = m2.group(1)
             results.append({"move": mv, "score": last_score})
-            print(f"==== DEBUG: Found move: {mv} with score: {last_score}")
             last_score = None
 
-    print(f"==== DEBUG: Parsed {len(results)} results: {results}")
     if not results:
-        print(f"==== DEBUG: No results parsed, returning None")
         return None
 
     def side_score(s: Optional[Dict[str, Any]]) -> int:
