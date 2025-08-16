@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any, Union, List
 import subprocess
 import shutil
 import re
+import uuid
 
 # Для Python 3.7 совместимости
 try:
@@ -379,45 +380,89 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
 
     print(f"==== HOSTFILE: {open(hostfile, 'r').read()}")
 
-    # Формируем команду MPI с динамическим количеством процессов
-    binary_path = f"mpirun --hostfile cluster_hosts -map-by node -np {np} stockfish"
-
-    # Один поток на процесс для честного распределения
-    uci_script = (
-        "uci\n"
-        "isready\n"
-        "ucinewgame\n"
-        "setoption name Threads value 1\n"
-        f"position fen {fen}\n"
-        f"go movetime {movetime_ms}\n"
-        "quit\n"
-    )
-
-    # Используем shell=True для выполнения команды как строки
-    cmd = binary_path
-
-    timeout_s = max(10, movetime_ms // 1000 + 10)
+    # Кластерный Stockfish не поддерживает UCI через stdin в MPI режиме
+    # Используем approach с go depth вместо go movetime для совместимости
+    
+    # Создаем временные файлы для ввода и вывода
+    temp_id = str(uuid.uuid4())[:8]
+    input_file = f"/tmp/stockfish_input_{temp_id}.txt"
+    output_file = f"/tmp/stockfish_output_{temp_id}.txt"
+    
+    # Конвертируем movetime в depth (примерно)
+    depth = min(max(5, movetime_ms // 1000), 15)  # 5-15 глубина в зависимости от времени
+    
+    # Создаем скрипт для анализа позиции
+    uci_script = f"""#!/bin/bash
+echo "position fen {fen}"
+echo "go depth {depth}"
+echo "quit"
+"""
+    
+    print(f"==== DEBUG: Using depth {depth} instead of movetime {movetime_ms}")
+    print(f"==== DEBUG: Creating temp files: {input_file}, {output_file}")
+    
+    with open(input_file, 'w') as f:
+        f.write(uci_script)
+    
+    # Формируем команду через script файл
+    cmd = f"mpirun --hostfile cluster_hosts -map-by node -np {np} bash -c 'stockfish < {input_file} > {output_file} 2>&1'"
+    
+    timeout_s = max(10, depth * 2 + 5)  # timeout на основе глубины
     print(f"==== DEBUG: Running command: {cmd}")
-    print(f"==== DEBUG: UCI script:\n{uci_script}")
     print(f"==== DEBUG: Timeout: {timeout_s}s")
     
-    res = subprocess.run(
-        cmd,
-        input=uci_script,
-        capture_output=True,
-        text=True,
-        timeout=timeout_s,
-        shell=True
-    )
-    out = res.stdout or ""
-    err = res.stderr or ""
-    print(f"==== DEBUG: Return code: {res.returncode}")
-    print(f"==== DEBUG: stdout: {out}")
-    print(f"==== DEBUG: stderr: {err}")
-    print(f"==== GOT CMD: {cmd}")
-    
-    if res.returncode != 0:
-        print(f"==== DEBUG: Command failed with return code {res.returncode}, returning None")
+    try:
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            shell=True
+        )
+        
+        # Читаем результат из файла
+        try:
+            with open(output_file, 'r') as f:
+                out = f.read()
+        except:
+            out = ""
+        
+        err = res.stderr or ""
+        print(f"==== DEBUG: Return code: {res.returncode}")
+        print(f"==== DEBUG: stdout from file: {out}")
+        print(f"==== DEBUG: stderr: {err}")
+        
+        # Очищаем временные файлы
+        try:
+            os.unlink(input_file)
+            os.unlink(output_file)
+        except:
+            pass
+        
+        if res.returncode != 0:
+            print(f"==== DEBUG: File-based command failed with return code {res.returncode}, trying simple approach")
+            
+            # Простой fallback - используем только один узел
+            simple_cmd = f"ssh {hosts[0]} 'echo \"position fen {fen}\" | stockfish | grep bestmove'"
+            print(f"==== DEBUG: Trying simple command: {simple_cmd}")
+            
+            res_simple = subprocess.run(
+                simple_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+                shell=True
+            )
+            
+            if res_simple.returncode == 0:
+                out = res_simple.stdout or ""
+                print(f"==== DEBUG: Simple command succeeded: {out}")
+            else:
+                print(f"==== DEBUG: Simple command also failed, returning None")
+                return None
+                
+    except Exception as e:
+        print(f"==== DEBUG: Exception during file-based execution: {e}")
         return None
 
     info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
