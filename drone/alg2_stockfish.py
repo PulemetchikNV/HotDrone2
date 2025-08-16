@@ -345,6 +345,8 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
     if not _find_stockfish_binary_for_cluster():
         return None
 
+    print(f"==== HOSTFILE: {open(hostfile, 'r').read()}")
+
     # Формируем команду MPI с динамическим количеством процессов
     binary_path = f"mpirun --hostfile {hostfile} -map-by node -np {np} stockfish"
 
@@ -373,6 +375,7 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
             shell=True
         )
         out = res.stdout or ""
+        print(f"==== GOT CMD: {cmd}")
     except Exception:
         return None
 

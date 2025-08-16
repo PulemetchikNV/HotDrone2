@@ -52,6 +52,7 @@ class ClusterManager:
             return []
     
     def update_cluster_hosts(self, alive_drone_names: List[str]) -> bool:
+        print(f"==== update_cluster_hosts: {alive_drone_names}")
         """Обновляет файл cluster_hosts с IP живых дронов"""
         ips = self.get_alive_drone_ips(alive_drone_names)
         if not ips:
@@ -68,6 +69,7 @@ class ClusterManager:
             with open(self.cluster_hosts_path, 'w') as f:
                 for ip in ips:
                     f.write(f"{ip}\n")
+
                     
             self.logger.info(f"Updated {self.cluster_hosts_path} with {len(ips)} IPs: {ips}")
             return True
