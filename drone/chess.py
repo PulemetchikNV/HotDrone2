@@ -88,7 +88,7 @@ def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
         MoveDecision объект с выбранным ходом
     """
     alg_mode = os.getenv("ALG_MODE", "api").lower()
-    if alg_mode == "cluster":
+    if alg_mode.startswith("cluster"):
         return get_turn_sf(board, time_budget_ms=time_budget_ms)
     else:
         # api и llm пока одинаково — используем мок-алгоритм
