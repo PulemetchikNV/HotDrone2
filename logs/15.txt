@@ -1,292 +1,166 @@
-==== DEBUG chess.py: available_drones=['drone15', 'drone21'], alive_drones=['drone15', 'drone21']
-==== DEBUG chess.py: CLUSTER_NP before=4
-==== DEBUG: hostfile=/home/pi/cluster_hosts, hosts=['192.168.1.62', '192.168.1.59'], CLUSTER_NP=4
-==== DEBUG: CLUSTER_NP=4 != len(hosts)=2, using len(hosts)
-==== DEBUG: final np=2, len(hosts)=2
-==== HOSTFILE: 192.168.1.62
-192.168.1.59
-
-==== GOT CMD: mpirun --hostfile /home/pi/cluster_hosts -map-by node -np 2 stockfish
-Warning: Stockfish dev version detected, trying alternative initialization
-Stockfish dev version initialized with UCI wrapper: /usr/games/stockfish
-GOT MOVE: MoveDecision(uci='d8d4', from_cell='d8', to_cell='d4', score_cp=-2010, is_mate=False, reason='stockfish-engine', meta={'policy': 'stockfish', 'evaluation': {'type': 'cp', 'value': -2010}, 'top_moves': [{'Move': 'e8d7', 'Centipawn': 0}], 'depth': 20, 'skill_level': 20})
-[drone21] 16:51:55 - INFO - MOVING d8->d4
-[drone21] 16:51:55 - INFO - [WiFi] Broadcasting move start: d8->d4
-BROADCASTING UNRELIABLE: {'type': 'move_start', 'move': 'd8->d4', 'from': 'drone21', 'timestamp': 1755359515.6615472}
-[drone21] 16:51:55 - INFO - [WiFi] Leader drone21 started move: d8->d4
-[drone21] 16:51:56 - INFO - Executing piece move d8->d4 with drone
-PIECE TYPE: queen
-TARGET DRONE: drone15
-[drone21] 16:51:56 - INFO - Piece queen on d8 -> drone drone15
-[drone21] 16:51:56 - INFO - Checking if target drone drone15 is alive before sending command
-[drone21] 16:51:57 - INFO - Leader sending chess move: d8->d4 to drone drone15
-BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone15', 'move': 'd8->d4'}
-[drone21] 16:51:57 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone15', 'move': 'd8->d4', 'msg_id': '7f6d', 'from': 'drone21'}
-[drone21] 16:51:58 - INFO - [WiFi] Received ACK 7f6d from drone15
-[drone21] 16:51:58 - INFO - [WiFi] ACK received for msg_id: 7f6d
-[drone21] 16:51:58 - INFO - Successfully sent move command to drone15
-[drone21] 16:51:58 - INFO - Leader completed drone move: d8->d4
-[drone21] 16:51:59 - INFO - [WiFi] Broadcasting move complete: d8->d4 (success=True)
-BROADCASTING UNRELIABLE: {'type': 'move_complete', 'move': 'd8->d4', 'success': True, 'from': 'drone21', 'timestamp': 1755359519.183053}
-[drone21] 16:51:59 - INFO - [WiFi] Leader drone21 completed move: d8->d4
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:00 - INFO - AM I LEADER? True
-[drone21] 16:52:01 - INFO - AM I LEADER? True
-[drone21] 16:52:01 - INFO - AM I LEADER? True
-[drone21] 16:52:01 - INFO - AM I LEADER? True
-[drone21] 16:52:01 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:02 - INFO - AM I LEADER? True
-[drone21] 16:52:03 - INFO - AM I LEADER? True
-[drone21] 16:52:03 - INFO - AM I LEADER? True
-[drone21] 16:52:03 - INFO - AM I LEADER? True
-[drone21] 16:52:03 - INFO - AM I LEADER? True
-[drone21] 16:52:03 - INFO - AM I LEADER? True
-[drone21] 16:52:04 - INFO - AM I LEADER? True
-[drone21] 16:52:04 - INFO - AM I LEADER? True
-[drone21] 16:52:04 - INFO - === Leader run_once call ===
-GOT BOARD: 4k3/8/8/8/3qP3/8/PPPP1PPP/RNBQKBNR w - - 0 1
-[drone21] 16:52:07 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:08 - INFO - AM I LEADER? True
-[drone21] 16:52:09 - INFO - AM I LEADER? True
-[drone21] 16:52:09 - INFO - AM I LEADER? True
-[drone21] 16:52:09 - INFO - AM I LEADER? True
-[drone21] 16:52:09 - INFO - AM I LEADER? True
-[drone21] 16:52:09 - INFO - AM I LEADER? True
-[drone21] 16:52:09 - INFO - AM I LEADER? True
-[drone21] 16:52:10 - INFO - Our turn detected - checking leader status
-[drone21] 16:52:12 - INFO - Leader drone21 is healthy
-[drone21] 16:52:12 - INFO - AM I LEADER? True
-[drone21] 16:52:12 - INFO - Our turn detected - checking leader status
-[drone21] 16:52:14 - INFO - Leader drone21 is healthy
-[drone21] 16:52:14 - INFO - AM I LEADER? True
-[drone21] 16:52:14 - INFO - === Leader run_once call ===
-GOT BOARD: 4k3/8/8/8/3qPP2/8/PPPP2PP/RNBQKBNR b - - 0 1
-OUR TURN: black
-==== DEBUG chess.py: available_drones=['drone15', 'drone21'], alive_drones=['drone15', 'drone21']
-==== DEBUG chess.py: CLUSTER_NP before=4
-==== DEBUG: hostfile=/home/pi/cluster_hosts, hosts=['192.168.1.62', '192.168.1.59'], CLUSTER_NP=4
-==== DEBUG: CLUSTER_NP=4 != len(hosts)=2, using len(hosts)
-==== DEBUG: final np=2, len(hosts)=2
-==== HOSTFILE: 192.168.1.62
-192.168.1.59
-
-GOT MOVE: MoveDecision(uci='d4e4', from_cell='d4', to_cell='e4', score_cp=-1758, is_mate=False, reason='stockfish-engine', meta={'policy': 'stockfish', 'evaluation': {'type': 'cp', 'value': -1758}, 'top_moves': [{'Move': 'e8f7', 'Centipawn': 0}], 'depth': 20, 'skill_level': 20})
-[drone21] 16:52:39 - INFO - MOVING d4->e4
-[drone21] 16:52:39 - INFO - [WiFi] Broadcasting move start: d4->e4
-BROADCASTING UNRELIABLE: {'type': 'move_start', 'move': 'd4->e4', 'from': 'drone21', 'timestamp': 1755359559.377665}
-[drone21] 16:52:39 - INFO - [WiFi] Leader drone21 started move: d4->e4
-[drone21] 16:52:40 - INFO - Executing piece move d4->e4 with drone
-PIECE TYPE: queen
-TARGET DRONE: drone15
-[drone21] 16:52:40 - INFO - Piece queen on d4 -> drone drone15
-[drone21] 16:52:40 - INFO - Checking if target drone drone15 is alive before sending command
-[drone21] 16:52:42 - INFO - Leader sending chess move: d4->e4 to drone drone15
-BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone15', 'move': 'd4->e4'}
-[drone21] 16:52:42 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone15', 'move': 'd4->e4', 'msg_id': '6cb3', 'from': 'drone21'}
-[drone21] 16:52:42 - INFO - [WiFi] Received ACK 6cb3 from drone15
-[drone21] 16:52:42 - INFO - [WiFi] ACK received for msg_id: 6cb3
-[drone21] 16:52:42 - INFO - Successfully sent move command to drone15
-[drone21] 16:52:42 - INFO - Leader completed drone move: d4->e4
-[drone21] 16:52:43 - INFO - [WiFi] Broadcasting move complete: d4->e4 (success=True)
-BROADCASTING UNRELIABLE: {'type': 'move_complete', 'move': 'd4->e4', 'success': True, 'from': 'drone21', 'timestamp': 1755359563.2890563}
-[drone21] 16:52:43 - INFO - [WiFi] Leader drone21 completed move: d4->e4
-[drone21] 16:52:43 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:44 - INFO - AM I LEADER? True
-[drone21] 16:52:45 - INFO - AM I LEADER? True
-[drone21] 16:52:45 - INFO - AM I LEADER? True
-[drone21] 16:52:45 - INFO - AM I LEADER? True
-[drone21] 16:52:45 - INFO - AM I LEADER? True
-[drone21] 16:52:45 - INFO - AM I LEADER? True
-[drone21] 16:52:45 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:46 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:47 - INFO - AM I LEADER? True
-[drone21] 16:52:48 - INFO - AM I LEADER? True
-[drone21] 16:52:48 - INFO - AM I LEADER? True
-[drone21] 16:52:48 - INFO - AM I LEADER? True
-[drone21] 16:52:48 - INFO - AM I LEADER? True
-[drone21] 16:52:48 - INFO - === Leader run_once call ===
-GOT BOARD: 4k3/8/8/8/4qP2/8/PPPP2PP/RNBQKBNR w - - 0 1
-[drone21] 16:52:50 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:51 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:52 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:53 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:54 - INFO - AM I LEADER? True
-[drone21] 16:52:55 - INFO - AM I LEADER? True
-[drone21] 16:52:55 - INFO - === Leader run_once call ===
-GOT BOARD: 4k3/8/8/8/4qP2/8/PPPP2PP/RNBQKBNR w - - 0 1
-[drone21] 16:52:58 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:52:59 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:00 - INFO - AM I LEADER? True
-[drone21] 16:53:01 - INFO - Our turn detected - checking leader status
-[drone21] 16:53:02 - INFO - Leader drone21 is healthy
-[drone21] 16:53:02 - INFO - AM I LEADER? True
-[drone21] 16:53:02 - INFO - Our turn detected - checking leader status
-[drone21] 16:53:04 - INFO - Leader drone21 is healthy
-[drone21] 16:53:04 - INFO - AM I LEADER? True
-[drone21] 16:53:04 - INFO - === Leader run_once call ===
-GOT BOARD: 4k3/8/8/7Q/4qP2/8/PPPP2PP/RNB1KBNR b - - 0 1
-OUR TURN: black
-==== DEBUG chess.py: available_drones=['drone15', 'drone21'], alive_drones=['drone15', 'drone21']
-==== DEBUG chess.py: CLUSTER_NP before=4
-==== DEBUG: hostfile=/home/pi/cluster_hosts, hosts=['192.168.1.62', '192.168.1.59'], CLUSTER_NP=4
-==== DEBUG: CLUSTER_NP=4 != len(hosts)=2, using len(hosts)
-==== DEBUG: final np=2, len(hosts)=2
-==== HOSTFILE: 192.168.1.62
-192.168.1.59
-
-==== GOT CMD: mpirun --hostfile /home/pi/cluster_hosts -map-by node -np 2 stockfish
-GOT MOVE: MoveDecision(uci='e8d8', from_cell='e8', to_cell='d8', score_cp=0, is_mate=False, reason='stockfish-engine', meta={'policy': 'stockfish', 'evaluation': {'type': 'cp', 'value': -1873}, 'top_moves': [{'Move': 'e8d8', 'Centipawn': 0}], 'depth': 20, 'skill_level': 20})
-[drone21] 16:53:22 - INFO - MOVING e8->d8
-[drone21] 16:53:22 - INFO - [WiFi] Broadcasting move start: e8->d8
-BROADCASTING UNRELIABLE: {'type': 'move_start', 'move': 'e8->d8', 'from': 'drone21', 'timestamp': 1755359602.6930063}
-[drone21] 16:53:22 - INFO - [WiFi] Leader drone21 started move: e8->d8
-[drone21] 16:53:23 - INFO - Executing piece move e8->d8 with drone
-PIECE TYPE: king
-TARGET DRONE: drone21
-[drone21] 16:53:24 - INFO - Piece king on e8 -> drone drone21
-[drone21] 16:53:24 - INFO - Leader executing own move: e8->d8
-[drone21] 16:53:24 - INFO - Using map coords for d8: x=-0.218, y=1.525
-[drone21] 16:53:24 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
-[drone21] 16:53:24 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
-^C^Z
-[2]+  Stopped                 python3 ./drone/main.py
+USING MAIN IMPL
+Loaded DRONE_NAME=drone15
+Loaded LOG_LEVEL=INFO
+Loaded FLIGHT_IMPL=main
+Loaded ROVER_IMPL=mock
+Loaded CAMERA_IMPL=mock
+Loaded COMM_IMPL=wifi
+Loaded CAMERA_API_URL=http://192.168.1.119:8001/api/positions
+Loaded ALG_MODE=cluster2
+Loaded CLUSTER_HOSTFILE=/home/pi/HotDrone2/cluster_hosts
+Loaded CLUSTER_NP=4
+INITIALIZING COMM_IMPL: wifi
+[drone15] 22:38:15 - INFO - WifiEspController initialized on 0.0.0.0:47000, leader=False, drone=drone15
+[drone15] 22:38:15 - INFO - Custom message callback set
+[drone15] 22:38:15 - INFO - ESP message handler registered
+[drone15] 22:38:15 - INFO - Available drones: ['drone15', 'drone21']
+[drone15] 22:38:15 - INFO - Drone role: queen, color: black, initial_letter: d, team: black
+[drone15] 22:38:15 - INFO - Drone drone15 mapped to unique role: queen
+[drone15] 22:38:15 - INFO - Drone drone21 mapped to unique role: king
+[drone15] 22:38:15 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
+[drone15] 22:38:15 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
+[drone15] 22:38:15 - INFO - Our team: black
+[drone15] 22:38:15 - INFO - Starting chess drone MAIN LOOP (dynamic leadership)...
+[drone15] 22:38:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:26 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:26 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:26 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:27 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:27 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:27 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:28 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:28 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:28 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:29 - INFO - Leader drone21 is healthy
+[drone15] 22:38:29 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:30 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:30 - INFO - Leader drone21 is healthy
+[drone15] 22:38:31 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:31 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:32 - INFO - Leader drone21 is healthy
+[drone15] 22:38:32 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:32 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:33 - INFO - Leader drone21 is healthy
+[drone15] 22:38:33 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:33 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:34 - INFO - Leader drone21 is healthy
+[drone15] 22:38:34 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:35 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:35 - INFO - Leader drone21 is healthy
+[drone15] 22:38:36 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:36 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:37 - INFO - Leader drone21 is healthy
+[drone15] 22:38:37 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:37 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:38 - INFO - Leader drone21 is healthy
+[drone15] 22:38:38 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:38 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:39 - INFO - Leader drone21 is healthy
+[drone15] 22:38:39 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:40 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:41 - INFO - [WiFi] Ping to drone21 succeeded on attempt 2/3
+[drone15] 22:38:41 - INFO - Leader drone21 is healthy
+[drone15] 22:38:41 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:42 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:42 - INFO - Leader drone21 is healthy
+[drone15] 22:38:43 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:43 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:44 - INFO - Leader drone21 is healthy
+[drone15] 22:38:44 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:44 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:45 - INFO - Leader drone21 is healthy
+[drone15] 22:38:45 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:45 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:46 - INFO - Leader drone21 is healthy
+[drone15] 22:38:46 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:47 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:48 - INFO - [WiFi] Ping to drone21 succeeded on attempt 2/3
+[drone15] 22:38:48 - INFO - Leader drone21 is healthy
+[drone15] 22:38:48 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:49 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:49 - INFO - Leader drone21 is healthy
+[drone15] 22:38:50 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:50 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:51 - INFO - Leader drone21 is healthy
+[drone15] 22:38:51 - INFO - [WiFi] Leader drone21 started move: d8->d5
+[drone15] 22:38:51 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:51 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:51 - INFO - Leader drone21 is executing move: d8->d5 (elapsed: 0.1s)
+[drone15] 22:38:51 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:51 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:51 - INFO - Leader drone21 is executing move: d8->d5 (elapsed: 0.5s)
+[drone15] 22:38:52 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:38:52 - INFO - Our turn detected - checking leader status
+[drone15] 22:38:52 - INFO - Leader drone21 is executing move: d8->d5 (elapsed: 0.8s)
+[drone15] 22:38:52 - INFO - [WiFi] Sent ACK c25c to drone21
+[drone15] 22:38:52 - INFO - [WiFi] Received CHESS MOVE command: d8->d5
+[drone15] 22:38:52 - INFO - Using map coords for d5: x=-0.218, y=0.244
+[drone15] 22:38:52 - INFO - Flying to d5 at coordinates (-0.218, 0.244)
+[drone15] 22:38:52 - INFO - Taking off to z=1.00
+[drone15] 22:38:53 - INFO - [WiFi] Leader drone21 completed move: d8->d5
+[drone15] 22:38:56 - INFO - Takeoff done
+[drone15] 22:38:59 - INFO - Navigating to x=-0.22 y=0.24 z=1.00 in aruco_map
+[drone15] 22:39:08 - INFO - Navigating to x=-0.22 y=0.24 z=0.15 in aruco_map
+[drone15] 22:39:14 - INFO - Принудительное дизарминг дрона
+[drone15] 22:39:14 - INFO - ✅ Дрон успешно дизармлен (принудительно)
+[drone15] 22:39:14 - INFO - Successfully completed move to d5
+[drone15] 22:39:14 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:15 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:15 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:15 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:16 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:17 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:18 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:19 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:20 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:21 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:22 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:23 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:24 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:25 - WARNING - Timeout waiting for chess move command (0.3s)
+[drone15] 22:39:26 - WARNING - Timeout waiting for chess move command (0.3s)
+^Z
