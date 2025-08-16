@@ -18,10 +18,9 @@ except ImportError:
         def Literal(*args):
             return str
 
-from camera import create_camera_controller, get_board_state_from_camera, CameraTemporaryError, CameraPermanentError
-
 # Импорт общих типов и исключений
 from utils import BoardState, MoveDecision, AlgTemporaryError, AlgPermanentError
+from board_utils import get_board_state, get_board_state_from_camera
 
 # -----------------------------
 # Источник данных камеры
@@ -29,14 +28,7 @@ from utils import BoardState, MoveDecision, AlgTemporaryError, AlgPermanentError
 FILES = "abcdefgh"
 RANKS = "12345678"
 
-_camera_controller = None
-
-
-def _get_camera_controller():
-    global _camera_controller
-    if _camera_controller is None:
-        _camera_controller = create_camera_controller()
-    return _camera_controller
+# Убрали _camera_controller - используем board_utils
 
 
 def _normalize_cell(cell: str) -> str:
@@ -48,32 +40,7 @@ def _normalize_cell(cell: str) -> str:
     return f + r
 
 
-def get_board_state() -> BoardState:
-    """Считывает текущее состояние с камеры и возвращает BoardState."""
-    try:
-        camera = _get_camera_controller()
-        board_info = get_board_state_from_camera(camera)
-        
-        meta = {
-            "current_cell": board_info['current_cell'],
-            "positions": board_info['positions'],
-            "camera_timestamp": board_info['timestamp']
-        }
-        
-        return BoardState(
-            fen=board_info['fen'],
-            turn=board_info['turn'],
-            move_number=1,
-            timestamp=time.time(),
-            meta=meta,
-        )
-        
-    except CameraTemporaryError as e:
-        raise AlgTemporaryError(f"Camera temporary error {e}")
-    except CameraPermanentError as e:
-        raise AlgPermanentError(f"Camera permanent error {e}")
-    except Exception as e:
-        raise AlgTemporaryError(f"Unexpected camera error {e}")
+# get_board_state теперь импортируется из board_utils
 
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:

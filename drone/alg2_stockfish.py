@@ -26,11 +26,9 @@ except ImportError:
     StockfishException = Exception
     STOCKFISH_AVAILABLE = False
 
-from camera import create_camera_controller, CameraTemporaryError, CameraPermanentError
-
-
 # Импорт общих типов и исключений
 from utils import BoardState, MoveDecision, AlgTemporaryError, AlgPermanentError
+from board_utils import get_board_state
 
 
 # -----------------------------
@@ -254,20 +252,9 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
     return best
 
 # -----------------------------
-# Источник данных камеры
+# Локальные утилиты Stockfish
 # -----------------------------
-FILES = "abcdefgh"
-RANKS = "12345678"
-
-_camera_controller = None
 _stockfish_manager = None
-
-
-def _get_camera_controller():
-    global _camera_controller
-    if _camera_controller is None:
-        _camera_controller = create_camera_controller()
-    return _camera_controller
 
 
 def _get_stockfish_manager():
@@ -283,58 +270,9 @@ def _normalize_cell(cell: str) -> str:
     if not isinstance(cell, str) or len(cell) != 2:
         raise AlgPermanentError("cell must be like 'e2'")
     f, r = cell[0].lower(), cell[1]
-    if f not in FILES or r not in RANKS:
+    if f not in "abcdefgh" or r not in "12345678":
         raise AlgPermanentError(f"invalid cell: {cell}")
     return f + r
-
-
-def _camera_read_board() -> Dict[str, Any]:
-    try:
-        camera = _get_camera_controller()
-        positions = camera.get_board_positions()
-        board_info = {
-            'positions': positions,
-            'timestamp': time.time(),
-        }
-        # current_cell: выбираем первую фигуру для детерминизма
-        current_cell = os.getenv("START_CELL", "e2")
-        for color in ("white", "black"):
-            if color in positions and isinstance(positions[color], dict):
-                for piece in positions[color].values():
-                    current_cell = piece.cell
-                    break
-                if current_cell != os.getenv("START_CELL", "e2"):
-                    break
-        board_info['current_cell'] = _normalize_cell(current_cell)
-        # чей ход — если контроллер умеет, заберём; иначе white
-        turn = getattr(camera, 'get_turn', lambda: None)() or 'white'
-        board_info['turn'] = 'w' if turn.lower().startswith('w') else 'b'
-        return board_info
-    except CameraTemporaryError as e:
-        raise AlgTemporaryError(f"Camera temporary error: {e}")
-    except CameraPermanentError as e:
-        raise AlgPermanentError(f"Camera permanent error: {e}")
-    except Exception as e:
-        raise AlgTemporaryError(f"Unexpected camera error: {e}")
-
-
-def get_board_state() -> BoardState:
-    """Считывает текущее состояние с камеры и возвращает BoardState."""
-    board_info = _camera_read_board()
-    # Пока fen упрощённый — берём из позиций через мок-сервер, либо дефолт
-    fen = os.getenv("DEFAULT_FEN", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    meta = {
-        "current_cell": board_info['current_cell'],
-        "positions": board_info['positions'],
-        "camera_timestamp": board_info['timestamp']
-    }
-    return BoardState(
-        fen=fen,
-        turn=board_info['turn'],
-        move_number=1,
-        timestamp=time.time(),
-        meta=meta,
-    )
 
 
 def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> MoveDecision:

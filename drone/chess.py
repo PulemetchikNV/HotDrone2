@@ -17,7 +17,8 @@ except ImportError:
 from flight import FlightController
 from helpers import setup_logging
 from utils import AlgTemporaryError, AlgPermanentError
-from alg2_stockfish import get_board_state, get_turn as get_turn_sf
+from board_utils import get_board_state
+from alg2_stockfish import get_turn as get_turn_sf
 from alg_mock2 import get_turn as get_turn_mock
 from esp import EspController, create_comm_controller
 from const import DRONE_LIST, LEADER_DRONE, rovers
