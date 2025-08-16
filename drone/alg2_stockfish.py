@@ -383,29 +383,16 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
     # Кластерный Stockfish не поддерживает UCI через stdin в MPI режиме
     # Используем approach с go depth вместо go movetime для совместимости
     
-    # Создаем временные файлы для ввода и вывода
-    temp_id = str(uuid.uuid4())[:8]
-    input_file = f"/tmp/stockfish_input_{temp_id}.txt"
-    output_file = f"/tmp/stockfish_output_{temp_id}.txt"
-    
     # Конвертируем movetime в depth (примерно)
     depth = min(max(5, movetime_ms // 1000), 15)  # 5-15 глубина в зависимости от времени
     
-    # Создаем скрипт для анализа позиции
-    uci_script = f"""#!/bin/bash
-echo "position fen {fen}"
-echo "go depth {depth}"
-echo "quit"
-"""
-    
     print(f"==== DEBUG: Using depth {depth} instead of movetime {movetime_ms}")
-    print(f"==== DEBUG: Creating temp files: {input_file}, {output_file}")
     
-    with open(input_file, 'w') as f:
-        f.write(uci_script)
+    # Создаем команду без временных файлов - используем echo и pipe
+    # Это работает на всех узлах без синхронизации файлов
     
-    # Формируем команду через script файл
-    cmd = f"mpirun --hostfile cluster_hosts -map-by node -np {np} bash -c 'stockfish < {input_file} > {output_file} 2>&1'"
+    # Формируем команду через echo и pipe - работает на всех узлах
+    cmd = f"mpirun --hostfile cluster_hosts -map-by node -np {np} bash -c 'echo -e \"uci\\nisready\\nposition fen {fen}\\ngo depth {depth}\\nquit\" | stockfish'"
     
     timeout_s = max(10, depth * 2 + 5)  # timeout на основе глубины
     print(f"==== DEBUG: Running command: {cmd}")
@@ -420,31 +407,18 @@ echo "quit"
             shell=True
         )
         
-        # Читаем результат из файла
-        try:
-            with open(output_file, 'r') as f:
-                out = f.read()
-        except:
-            out = ""
-        
+        out = res.stdout or ""
         err = res.stderr or ""
         print(f"==== DEBUG: Return code: {res.returncode}")
-        print(f"==== DEBUG: stdout from file: {out}")
+        print(f"==== DEBUG: stdout: {out}")
         print(f"==== DEBUG: stderr: {err}")
         
-        # Очищаем временные файлы
-        try:
-            os.unlink(input_file)
-            os.unlink(output_file)
-        except:
-            pass
-        
         if res.returncode != 0:
-            print(f"==== DEBUG: File-based command failed with return code {res.returncode}, trying simple approach")
+            print(f"==== DEBUG: MPI echo command failed with return code {res.returncode}, trying SSH fallback")
             
-            # Простой fallback - используем только один узел
-            simple_cmd = f"ssh {hosts[0]} 'echo \"position fen {fen}\" | stockfish | grep bestmove'"
-            print(f"==== DEBUG: Trying simple command: {simple_cmd}")
+            # SSH fallback - используем только один узел
+            simple_cmd = f"ssh {hosts[0]} 'echo -e \"uci\\nisready\\nposition fen {fen}\\ngo depth {depth}\\nquit\" | stockfish'"
+            print(f"==== DEBUG: Trying SSH command: {simple_cmd}")
             
             res_simple = subprocess.run(
                 simple_cmd,
@@ -456,13 +430,13 @@ echo "quit"
             
             if res_simple.returncode == 0:
                 out = res_simple.stdout or ""
-                print(f"==== DEBUG: Simple command succeeded: {out}")
+                print(f"==== DEBUG: SSH command succeeded")
             else:
-                print(f"==== DEBUG: Simple command also failed, returning None")
+                print(f"==== DEBUG: SSH command also failed, returning None")
                 return None
                 
     except Exception as e:
-        print(f"==== DEBUG: Exception during file-based execution: {e}")
+        print(f"==== DEBUG: Exception during echo-based execution: {e}")
         return None
 
     info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
