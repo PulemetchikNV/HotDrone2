@@ -20,38 +20,8 @@ except ImportError:
 
 from camera import create_camera_controller, get_board_state_from_camera, CameraTemporaryError, CameraPermanentError
 
-# -----------------------------
-# Исключения уровня алгоритма
-# -----------------------------
-class AlgTemporaryError(Exception):
-    """Временная ошибка (плохой кадр/низкая уверенность). Можно повторить позже."""
-
-
-class AlgPermanentError(Exception):
-    """Постоянная ошибка (некорректная позиция или входные данные)."""
-
-
-# -----------------------------
-# Модели данных контракта
-# -----------------------------
-@dataclass(frozen=True)
-class BoardState:
-    fen: str
-    turn: Literal["w", "b"]
-    move_number: int
-    timestamp: float
-    meta: Union[Dict[str, Any], None] = None
-
-
-@dataclass(frozen=True)
-class MoveDecision:
-    uci: str
-    from_cell: str
-    to_cell: str
-    score_cp: Optional[int] = None
-    is_mate: bool = False
-    reason: Optional[str] = None
-    meta: Union[Dict[str, Any], None] = None
+# Импорт общих типов и исключений
+from utils import BoardState, MoveDecision, AlgTemporaryError, AlgPermanentError
 
 # -----------------------------
 # Источник данных камеры
@@ -97,6 +67,7 @@ def get_board_state() -> BoardState:
             timestamp=time.time(),
             meta=meta,
         )
+        
     except CameraTemporaryError as e:
         raise AlgTemporaryError(f"Camera temporary error {e}")
     except CameraPermanentError as e:

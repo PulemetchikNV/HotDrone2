@@ -10,9 +10,8 @@ import time
 # Add the drone directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'drone'))
 
-from alg2_stockfish import (
-    BoardState, MoveDecision, get_stockfish_status, test_stockfish_integration
-)
+from utils import BoardState, MoveDecision
+from alg2_stockfish import get_stockfish_status, test_stockfish_integration
 
 
 def test_basic_functionality():

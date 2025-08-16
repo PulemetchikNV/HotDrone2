@@ -1,79 +1,163 @@
-PIECE TYPE: queen
-[drone15] 20:51:28 - INFO - Piece queen on b6 -> drone drone15
-[drone15] 20:51:28 - INFO - Leader executing own move: b6->a7
-[drone15] 20:51:28 - INFO - Using map coords for a7: x=-1.525, y=1.090
-[drone15] 20:51:28 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
-[drone15] 20:51:28 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
-[drone15] 20:51:34 - INFO - ✅ Mock takeoff completed
-[drone15] 20:51:37 - INFO - 🎯 MOCK NAVIGATE to x=-1.52 y=1.09 z=1.00 in 
-[drone15] 20:51:37 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
-[drone15] 20:51:43 - INFO - ✅ Mock navigation completed
-[drone15] 20:51:44 - INFO - 🎯 MOCK NAVIGATE to x=-1.52 y=1.09 z=0.15 in 
-[drone15] 20:51:44 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
-[drone15] 20:51:50 - INFO - ✅ Mock navigation completed
-[drone15] 20:51:50 - INFO - 🔒 MOCK FORCE DISARM
-[drone15] 20:51:50 - INFO - Leader completed own move to a7
-[drone15] 20:51:50 - INFO - Leader completed drone move: b6->a7
-[drone15] 20:51:56 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-GOT BOARD: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-[drone15] 20:51:56 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 20:52:01 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-GOT BOARD: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-[drone15] 20:52:01 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 20:52:06 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-GOT BOARD: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-[drone15] 20:52:06 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 20:52:11 - INFO - === Leader run_once call ===
-GOT TURN: white
-GOT FEN: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-GOT BOARD: 4k3/q7/8/2P5/P7/8/1PP1PPPP/RNBQKBNR w - - 0 1
-[drone15] 20:52:11 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 20:52:13 - INFO - Our turn detected - checking leader status
-[drone15] 20:52:14 - WARNING - [WiFi] Drone drone21 is not responding to ping
-[drone15] 20:52:14 - INFO - Leader drone15 is healthy
-[drone15] 20:52:14 - INFO - Our turn detected - checking leader status
-[drone15] 20:52:15 - INFO - Leader drone15 is healthy
-[drone15] 20:52:15 - INFO - Our turn detected - checking leader status
-[drone15] 20:52:16 - INFO - Leader drone15 is healthy
-[drone15] 20:52:16 - INFO - === Leader run_once call ===
-GOT TURN: black
-GOT FEN: 4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1
-GOT BOARD: 4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1
+Loaded DRONE_NAME=drone15
+Loaded INITIAL_LETTER=d
+Loaded DRONE_ROLE=queen
+Loaded DRONE_ROLE_DRONE15=queen
+Loaded DRONE_ROLE_DRONE21=king
+Loaded DRONE_COLOR=black
+Loaded LOG_LEVEL=INFO
+Loaded FLIGHT_IMPL=mock
+Loaded ROVER_IMPL=mock
+Loaded CAMERA_IMPL=mock
+Loaded COMM_IMPL=wifi
+Loaded CAMERA_API_URL=http://192.168.1.119:8001/api/positions
+Loaded ALG_MODE=api
+Loaded CLUSTER_HOSTFILE=/home/pi/cluster_hosts
+Loaded CLUSTER_NP=4
+[drone15] 09:59:18 - INFO - 🔧 MOCK MODE: Flight controller initialized
+INITIALIZING COMM_IMPL: wifi
+[drone15] 09:59:18 - INFO - WifiEspController initialized on 0.0.0.0:47000, leader=True, drone=drone15
+[drone15] 09:59:18 - INFO - Custom message callback set
+[drone15] 09:59:18 - INFO - ESP message handler registered
+[drone15] 09:59:18 - INFO - Available drones: ['drone15', 'drone21']
+[drone15] 09:59:18 - INFO - Drone role: queen, color: black, initial_letter: d
+[drone15] 09:59:18 - INFO - Drone drone15 mapped to unique role: queen
+[drone15] 09:59:18 - INFO - Drone drone21 mapped to unique role: king
+[drone15] 09:59:18 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
+[drone15] 09:59:18 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
+[drone15] 09:59:18 - INFO - Our team: black
+[drone15] 09:59:18 - INFO - Starting chess drone MAIN LOOP (dynamic leadership)...
+[drone15] 09:59:19 - INFO - === Leader run_once call ===
+[camera] 09:59:19 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
+[camera] 09:59:19 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+[drone15] 09:59:19 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 09:59:24 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:25 - INFO - Leader drone15 is healthy
+[drone15] 09:59:25 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 OUR TURN: black
-SENDING FEN TO SF: 4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1
-==== RAW STOCKFISH DATA: {'text': 'Move e8 → f7 (Kf7): [14.75]. White is winning. Depth 12.', 'captured': False, 'promotion': False, 'isCapture': False, 'isPromotion': False, 'isCastling': False, 'fen': '4k3/q7/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R b - - 0 1', 'type': 'bestmove', 'depth': 12, 'move': 'e8f7', 'eval': 14.75, 'centipawns': 1475, 'mate': None, 'continuationArr': ['f6d5', 'a7a5', 'b1c3', 'a5c5', 'a4a5', 'c5c6', 'd1d3', 'c6g6', 'a1a4'], 'debug': 'info depth 12 seldepth 14 multipv 1 score cp -1475 nodes 189536 nps 47384000 hashfull 19 tbhits 0 time 4 pv e8f7 f6d5 a7a5 b1c3 a5c5 a4a5 c5c6 d1d3 c6g6 a1a4', 'winChance': 99.56406698108913, 'taskId': 'pc9i0w7gg', 'turn': 'b', 'color': 'b', 'piece': 'k', 'from': 'e8', 'to': 'f7', 'san': 'Kf7', 'flags': 'n', 'lan': 'e8f7', 'fromNumeric': '58', 'toNumeric': '67', 'continuation': [{'from': 'f6', 'to': 'd5', 'fromNumeric': '66', 'toNumeric': '45'}, {'from': 'a7', 'to': 'a5', 'fromNumeric': '17', 'toNumeric': '15'}]}
-GOT MOVE: MoveDecision(uci='e8f7', from_cell='e8', to_cell='f7', score_cp=1475, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 14.75, 'text': 'Move e8 → f7 (Kf7): [14.75]. White is winning. Depth 12.', 'flags': 'n'})
-[drone15] 20:52:17 - INFO - MOVING e8->f7
-[drone15] 20:52:17 - INFO - Executing piece move e8->f7 with drone
-PIECE TYPE: king
-[drone15] 20:52:17 - INFO - Piece king on e8 -> drone drone21
-[drone15] 20:52:17 - INFO - Checking if target drone drone21 is alive before sending command
-[drone15] 20:52:18 - INFO - Leader sending chess move: e8->f7 to drone drone21
-BROADCASTING RELIABLE: {'type': 'move', 'to': 'drone21', 'move': 'e8->f7'}
-[drone15] 20:52:18 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 1/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:18 - WARNING - [WiFi] No ACK for CHESS MOVE 0bd4 (attempt 1/6)
-[drone15] 20:52:18 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 2/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:19 - WARNING - [WiFi] No ACK for CHESS MOVE 0bd4 (attempt 2/6)
-[drone15] 20:52:19 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 3/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:19 - WARNING - [WiFi] No ACK for CHESS MOVE 0bd4 (attempt 3/6)
-[drone15] 20:52:19 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 4/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:20 - WARNING - [WiFi] No ACK for CHESS MOVE 0bd4 (attempt 4/6)
-[drone15] 20:52:20 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 5/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:20 - WARNING - [WiFi] No ACK for CHESS MOVE 0bd4 (attempt 5/6)
-[drone15] 20:52:20 - INFO - [WiFi] Broadcasting CHESS MOVE (attempt 6/6): {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:21 - WARNING - [WiFi] No ACK for CHESS MOVE 0bd4 (attempt 6/6)
-[drone15] 20:52:21 - ERROR - [WiFi] Broadcast failed after 6 retries for payload: {'type': 'move', 'to': 'drone21', 'move': 'e8->f7', 'msg_id': '0bd4', 'from': 'drone15'}
-[drone15] 20:52:21 - ERROR - Failed to send move command to drone21
-[drone15] 20:52:21 - INFO - Leader completed drone move: e8->f7
-[drone15] 20:52:26 - INFO - === Leader run_once call ===
-zGOT TURN: white
-GOT FEN: 8/q4k2/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R w - - 0 1
-GOT BOARD: 8/q4k2/5N2/2P5/P7/8/1PP1PPPP/RNBQKB1R w - - 0 1
-x[drone15] 20:52:26 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-^Z
+[drone15] 09:59:26 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:26 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:27 - INFO - Leader drone15 is healthy
+[drone15] 09:59:27 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:27 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:27 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:28 - INFO - Leader drone15 is healthy
+[drone15] 09:59:28 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:28 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:29 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:30 - INFO - Leader drone15 is healthy
+[drone15] 09:59:30 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:30 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:30 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:31 - INFO - Leader drone15 is healthy
+[drone15] 09:59:31 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:31 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:32 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:33 - INFO - Leader drone15 is healthy
+[drone15] 09:59:33 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:33 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:33 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:34 - WARNING - [WiFi] Drone drone21 is not responding to ping
+[drone15] 09:59:34 - INFO - Leader drone15 is healthy
+[drone15] 09:59:34 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:34 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
+[drone15] 09:59:34 - INFO - Our turn detected - checking leader status
+[drone15] 09:59:35 - WARNING - [WiFi] Drone drone21 is not responding to ping
+[drone15] 09:59:35 - INFO - Leader drone15 is healthy
+[drone15] 09:59:35 - INFO - === Leader run_once call ===
+GOT BOARD: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+OUR TURN: black
+[drone15] 09:59:36 - ERROR - main loop error
+Traceback (most recent call last):
+  File "/home/pi/HotDrone2/drone/chess.py", line 1017, in run
+    self.run_once()
+  File "/home/pi/HotDrone2/drone/chess.py", line 276, in run_once
+    move = get_turn_final(board, time_budget_ms=5000)
+  File "/home/pi/HotDrone2/drone/chess.py", line 53, in get_turn_final
+    return get_turn_mock(board, time_budget_ms=time_budget_ms)
+  File "/home/pi/HotDrone2/drone/alg_mock2.py", line 111, in get_turn
+    raise AlgPermanentError("board must be BoardState")
+alg_mock2.AlgPermanentError: board must be BoardState
