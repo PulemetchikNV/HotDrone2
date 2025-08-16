@@ -228,6 +228,36 @@ class ChessDroneSingle:
             self.logger.warning(f"No map coords for {cell}. Using computed coords: x={x:.3f}, y={y:.3f}")
             return x, y
     
+    def _is_enemy_piece_on_cell(self, cell: str) -> bool:
+        """
+        Проверяет, есть ли на указанной клетке вражеская фигура.
+        
+        Args:
+            cell: Клетка для проверки (например, "e4")
+            
+        Returns:
+            bool: True если на клетке есть вражеская фигура
+        """
+        try:
+            positions = self.camera.get_board_positions()
+            
+            # Определяем цвет врага
+            enemy_color = 'white' if self.our_team == 'black' else 'black'
+            
+            # Ищем фигуры противника на целевой клетке
+            if enemy_color in positions:
+                for piece_type, piece_pos in positions[enemy_color].items():
+                    if piece_pos.cell == cell:
+                        self.logger.info(f"Enemy {enemy_color} {piece_type} found on {cell} - this is a capture move")
+                        return True
+            
+            self.logger.debug(f"No enemy piece found on {cell}")
+            return False
+            
+        except Exception as e:
+            self.logger.debug(f"Failed to check enemy piece on {cell}: {e}")
+            return False
+
     def _get_rover_position_from_camera(self, rover_id: str, from_cell: str) -> tuple:
         """
         Получает текущую позицию ровера с камеры по его ID и начальной клетке.
@@ -272,8 +302,7 @@ class ChessDroneSingle:
             rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
             return rover_x, rover_y, 0.0
 
-    def move_to_xy(self, x: float, y: float, z: float):
-        
+    def move_to_xy(self, x: float, y: float, z: float, is_kill = False):
         # 1. Взлёт на рабочую высоту
         self.fc.takeoff(z=self.takeoff_z, delay=2, speed=0.5)
         time.sleep(3)
@@ -285,7 +314,7 @@ class ChessDroneSingle:
             speed=self.speed,
             auto_arm=True,
         )
-        self.fc.wait(0.5)
+        self.fc.wait(0.5 if is_kill else 4.0)
         
         self.fc.navigate_wait(
             x=x, 
@@ -504,8 +533,10 @@ class ChessDroneSingle:
             try:
                 # Получаем координаты целевой клетки
                 x, y = self.get_cell_coordinates(to_cell)
+                # Проверяем, есть ли на целевой клетке вражеская фигура
+                is_kill = self._is_enemy_piece_on_cell(to_cell)
                 # Выполняем движение локально
-                self.move_to_xy(x, y, self.flight_z)
+                self.move_to_xy(x, y, self.flight_z, is_kill=is_kill)
                 self.logger.info(f"Leader completed own move to {to_cell}")
             except Exception as e:
                 self.logger.error(f"Leader failed to execute own move")
@@ -577,7 +608,9 @@ class ChessDroneSingle:
                         # Лидер выполняет ход сам
                         self.logger.info(f"Leader executing recalculated own move: {new_from_cell}->{new_to_cell}")
                         x, y = self.get_cell_coordinates(new_to_cell)
-                        self.move_to_xy(x, y, self.flight_z)
+                        # Проверяем, есть ли на целевой клетке вражеская фигура
+                        is_kill = self._is_enemy_piece_on_cell(new_to_cell)
+                        self.move_to_xy(x, y, self.flight_z, is_kill=is_kill)
                     else:
                         # Отправляем команду другому живому дрону
                         new_chess_move = f"{new_from_cell}->{new_to_cell}"
@@ -725,6 +758,9 @@ class ChessDroneSingle:
         self.logger.info(f"  From position (meters): ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°)")
         self.logger.info(f"  To position (meters): ({target_x:.3f}, {target_y:.3f})")
         
+        # TODO: Добавить логику is_kill для роверов (проверка вражеской фигуры на целевой клетке)
+        # is_kill = self._is_enemy_piece_on_cell(move.to_cell)
+        
         try:
             # Отправляем команду с текущей и целевой позицией в метрах
             success = self.rover.navigate(
@@ -783,7 +819,9 @@ class ChessDroneSingle:
             # Выполняем движение
             try:
                 self.logger.info(f"Flying to {to_cell} at coordinates ({x:.3f}, {y:.3f})")
-                self.move_to_xy(x, y, self.flight_z)
+                # Проверяем, есть ли на целевой клетке вражеская фигура
+                is_kill = self._is_enemy_piece_on_cell(to_cell)
+                self.move_to_xy(x, y, self.flight_z, is_kill=is_kill)
                 self.logger.info(f"Successfully completed move to {to_cell}")
                 return True
             except Exception as e:

@@ -16,7 +16,8 @@ DRONES_CONFIG = {
         'role': 'king', 
         'color': 'black',
         'initial_letter': 'e',
-        'team': 'black'
+        'team': 'black',
+        'raw_ip': '192.168.1.59'
     }
     # Добавляйте новые дроны здесь по мере необходимости
 }
