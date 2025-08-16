@@ -160,6 +160,21 @@ class EspController:
                     self._leader_move_state['move_start_time'] = 0
                     self._leader_move_state['current_move'] = None
                 self.logger.info(f"Leader {from_drone} completed move: {move_info}")
+        
+        # Уведомление о перезапуске лидера
+        elif cmd_type == 'leader_restart_notify':
+            from_drone = obj.get('from')
+            reason = obj.get('reason', 'unknown')
+            restart_delay = obj.get('restart_delay', 10)
+            if from_drone:
+                self.logger.info(f"Leader {from_drone} will restart in {restart_delay}s (reason: {reason})")
+                # Ведомые могут использовать эту информацию для ожидания
+        
+        # Уведомление о завершении перезапуска лидера
+        elif cmd_type == 'leader_restart_complete':
+            from_drone = obj.get('from')
+            if from_drone:
+                self.logger.info(f"Leader {from_drone} restart completed - resuming normal operations")
 
     def _broadcast_reliable(self, payload, retries=3, timeout=0.5):
         """Надежная отправка сообщения с ожиданием подтверждения."""
@@ -511,6 +526,21 @@ class WifiEspController:
                     self._leader_move_state['move_start_time'] = 0
                     self._leader_move_state['current_move'] = None
                 self.logger.info(f"[WiFi] Leader {from_drone} completed move: {move_info}")
+        
+        # Уведомление о перезапуске лидера
+        elif cmd_type == 'leader_restart_notify':
+            from_drone = obj.get('from')
+            reason = obj.get('reason', 'unknown')
+            restart_delay = obj.get('restart_delay', 10)
+            if from_drone:
+                self.logger.info(f"[WiFi] Leader {from_drone} will restart in {restart_delay}s (reason: {reason})")
+                # Ведомые могут использовать эту информацию для ожидания
+        
+        # Уведомление о завершении перезапуска лидера
+        elif cmd_type == 'leader_restart_complete':
+            from_drone = obj.get('from')
+            if from_drone:
+                self.logger.info(f"[WiFi] Leader {from_drone} restart completed - resuming normal operations")
     
     def _recv_loop(self):
         while not self._stop_event.is_set():

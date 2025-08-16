@@ -275,10 +275,43 @@ def _normalize_cell(cell: str) -> str:
     return f + r
 
 
+def _check_cluster_changes_needed(alive_drones: List[str]) -> bool:
+    """
+    Проверяет, нужны ли изменения в кластере.
+    
+    Args:
+        alive_drones: Список имен живых дронов
+        
+    Returns:
+        bool: True если нужно обновить кластер
+    """
+    try:
+        from cluster_manager import ClusterManager
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        cluster_mgr = ClusterManager(logger)
+        
+        return cluster_mgr.cluster_composition_changed(alive_drones)
+        
+    except Exception as e:
+        # Если не можем проверить - считаем что изменений нет
+        return False
+
+
 def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> MoveDecision:
     """Generate a move using Stockfish engine."""
     # Кластерный режим (опционально). Если не сработал — фолбэк на локальный движок
     if os.getenv("ALG_MODE", "api").lower() == "cluster":
+        # Проверяем актуальность кластера перед вычислением хода
+        alive_drones_str = os.getenv("CLUSTER_ALIVE_DRONES", "")
+        if alive_drones_str:
+            alive_drones = [d.strip() for d in alive_drones_str.split(",") if d.strip()]
+            
+            # Проверяем изменения в кластере
+            if _check_cluster_changes_needed(alive_drones):
+                raise AlgTemporaryError("Cluster composition changed - restart required")
+        
         best = _cluster_analyze_position(board.fen, time_budget_ms, board.turn)
         if best and best.get("move"):
             move = best["move"]

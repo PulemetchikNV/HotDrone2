@@ -371,9 +371,23 @@ class ChessDroneSingle:
         else:
             print(f"OUR TURN: {current_player}")
 
+        # 1.5) Для кластерного режима передаем информацию о живых дронах
+        if os.getenv("ALG_MODE", "api").lower() == "cluster":
+            alive_drones = self.esp.ping_all_drones(self.available_drones) if self.esp else []
+            os.environ["CLUSTER_ALIVE_DRONES"] = ",".join(alive_drones)
+            self.logger.debug(f"Updated cluster alive drones: {alive_drones}")
+
         # 2) Запрашиваем ход (внутри alg решается логика)
-        move = get_turn_final(board, time_budget_ms=5000)
-        print(f"GOT MOVE: {move}")
+        try:
+            move = get_turn_final(board, time_budget_ms=5000)
+            print(f"GOT MOVE: {move}")
+        except AlgTemporaryError as e:
+            if "restart required" in str(e).lower():
+                self.logger.info("Cluster restart required - initiating restart sequence")
+                self._handle_cluster_restart_request()
+                return
+            else:
+                raise
 
         from_cell = getattr(move, 'from_cell', 'e2')
         to_cell = getattr(move, 'to_cell', 'e4')
@@ -1133,7 +1147,36 @@ class ChessDroneSingle:
             
         except Exception as e:
             self.logger.error(f"Leader selection failed: {e}")
-            return self.drone_name 
+            return self.drone_name
+    
+    def _handle_cluster_restart_request(self):
+        """Обрабатывает запрос на перезапуск кластера"""
+        try:
+            from cluster_manager import ClusterManager
+            
+            cluster_mgr = ClusterManager(self.logger, self.esp)
+            
+            # Получаем живых дронов
+            alive_drones = self.esp.ping_all_drones(self.available_drones) if self.esp else []
+            
+            # Инициируем перезапуск кластера
+            if cluster_mgr.initiate_cluster_restart(alive_drones, "drone_list_changed"):
+                self.logger.info("Cluster restart initiated - exiting process")
+                # Используем метод из cluster_manager для изящного завершения
+                cluster_mgr.perform_graceful_restart("drone_list_changed")
+            else:
+                self.logger.error("Failed to initiate cluster restart")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to handle cluster restart: {e}")
+    
+    def _check_and_handle_restart_completion(self):
+        """Проверяет и обрабатывает завершение перезапуска после старта"""
+        try:
+            from cluster_manager import handle_restart_after_startup
+            handle_restart_after_startup(self.logger, self.esp)
+        except Exception as e:
+            self.logger.debug(f"Failed to handle restart completion: {e}") 
 
     def run(self):
         try:
@@ -1142,6 +1185,9 @@ class ChessDroneSingle:
             pass
 
         self.logger.info("Starting chess drone MAIN LOOP (dynamic leadership)...")
+        
+        # Проверяем завершение перезапуска кластера
+        self._check_and_handle_restart_completion()
 
         last_move_ts = 0.0
         move_interval = 5.0
