@@ -482,61 +482,121 @@ def _check_cluster_changes_needed(alive_drones: List[str]) -> bool:
 def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> MoveDecision:
     """Generate a move using Stockfish engine."""
     # Кластерный режим (опционально). Если не сработал — фолбэк на локальный движок
-    # Проверяем актуальность кластера перед вычислением хода
-    alive_drones_str = os.getenv("CLUSTER_ALIVE_DRONES", "")
-    if alive_drones_str:
-        alive_drones = [d.strip() for d in alive_drones_str.split(",") if d.strip()]
+    if os.getenv("ALG_MODE", "api").lower() == "cluster":
+        print(f"==== DEBUG: cluster mode")
+        # Проверяем актуальность кластера перед вычислением хода
+        alive_drones_str = os.getenv("CLUSTER_ALIVE_DRONES", "")
+        if alive_drones_str:
+            alive_drones = [d.strip() for d in alive_drones_str.split(",") if d.strip()]
+            
+            # Проверяем изменения в кластере
+            if _check_cluster_changes_needed(alive_drones):
+                # Мягкая перезагрузка только stockfish-кластера без убийства процесса
+                try:
+                    from cluster_manager import ClusterManager
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    cluster_mgr = ClusterManager(logger)
+                    restarted = cluster_mgr.restart_stockfish_cluster(alive_drones)
+                    if restarted:
+                        logger.info("Stockfish cluster restarted in-place successfully")
+                    else:
+                        logger.warning("Failed to restart stockfish cluster in-place; continuing")
+                except Exception as e:
+                    print(f"Soft stockfish cluster restart failed: {e}")
         
-        # Проверяем изменения в кластере
-        if _check_cluster_changes_needed(alive_drones):
-            # Мягкая перезагрузка только stockfish-кластера без убийства процесса
-            try:
-                from cluster_manager import ClusterManager
-                import logging
-                logger = logging.getLogger(__name__)
-                cluster_mgr = ClusterManager(logger)
-                restarted = cluster_mgr.restart_stockfish_cluster(alive_drones)
-                if restarted:
-                    logger.info("Stockfish cluster restarted in-place successfully")
-                else:
-                    logger.warning("Failed to restart stockfish cluster in-place; continuing")
-            except Exception as e:
-                print(f"Soft stockfish cluster restart failed: {e}")
-    
-    best = _cluster_analyze_position(board.fen, time_budget_ms, board.turn)
-    if best and best.get("move"):
-        move = best["move"]
-        # Parse UCI move
-        if len(move) < 4:
-            raise AlgPermanentError(f"Invalid UCI move format: {move}")
-        from_cell = move[:2]
-        to_cell = move[2:4]
+        best = _cluster_analyze_position(board.fen, time_budget_ms, board.turn)
+        if best and best.get("move"):
+            move = best["move"]
+            # Parse UCI move
+            if len(move) < 4:
+                raise AlgPermanentError(f"Invalid UCI move format: {move}")
+            from_cell = move[:2]
+            to_cell = move[2:4]
 
-        score_cp = None
-        is_mate = False
-        score = best.get("score")
-        if score:
-            if score.get("type") == "cp":
-                score_cp = score.get("value")
-            elif score.get("type") == "mate":
-                is_mate = True
-                score_val = score.get("value", 0)
-                score_cp = 10000 if score_val > 0 else -10000
+            score_cp = None
+            is_mate = False
+            score = best.get("score")
+            if score:
+                if score.get("type") == "cp":
+                    score_cp = score.get("value")
+                elif score.get("type") == "mate":
+                    is_mate = True
+                    score_val = score.get("value", 0)
+                    score_cp = 10000 if score_val > 0 else -10000
 
-        return MoveDecision(
-            uci=move,
-            from_cell=from_cell,
-            to_cell=to_cell,
-            score_cp=score_cp,
-            is_mate=is_mate,
-            reason="stockfish-mpi",
-            meta={
-                "policy": "stockfish-mpi",
-                "np": os.getenv("CLUSTER_NP", None),
-                "hostfile": os.getenv("CLUSTER_HOSTFILE", "cluster_hosts"),
-            },
-        )
+            return MoveDecision(
+                uci=move,
+                from_cell=from_cell,
+                to_cell=to_cell,
+                score_cp=score_cp,
+                is_mate=is_mate,
+                reason="stockfish-mpi",
+                meta={
+                    "policy": "stockfish-mpi",
+                    "np": os.getenv("CLUSTER_NP", None),
+                    "hostfile": os.getenv("CLUSTER_HOSTFILE", "cluster_hosts"),
+                },
+            )
 
+    # Фолбэк: локальный движок
+    print(f"==== DEBUG: fallback to local stockfish")
+    stockfish = _get_stockfish_manager()
+
+    # Get best move from Stockfish
+    result = stockfish.get_best_move(board.fen, time_budget_ms)
+
+    move = result["move"]
+    evaluation = result["evaluation"]
+    top_moves = result["top_moves"]
+
+    # Parse UCI move
+    if len(move) != 4:
+        raise AlgPermanentError(f"Invalid UCI move format: {move}")
+
+    from_cell = move[:2]
+    to_cell = move[2:4]
+
+    # Extract score
+    score_cp = None
+    is_mate = False
+
+    if evaluation["type"] == "cp":
+        score_cp = evaluation["value"]
+    elif evaluation["type"] == "mate":
+        is_mate = True
+        score_cp = 10000 if evaluation["value"] > 0 else -10000
+
+    # Find move in top moves for additional info
+    move_info = None
+    for top_move in top_moves:
+        if top_move.get("Move") == move:
+            move_info = top_move
+            break
+
+    # Override score if available in top moves
+    if move_info:
+        if move_info.get("Mate") is not None:
+            is_mate = True
+            score_cp = 10000 if move_info["Mate"] > 0 else -10000
+        elif move_info.get("Centipawn") is not None:
+            score_cp = move_info["Centipawn"]
+
+    return MoveDecision(
+        uci=move,
+        from_cell=from_cell,
+        to_cell=to_cell,
+        score_cp=score_cp,
+        is_mate=is_mate,
+        reason="stockfish-engine",
+        meta={
+            "policy": "stockfish",
+            "evaluation": evaluation,
+            "top_moves": top_moves,
+            "depth": stockfish.depth,
+            "skill_level": stockfish.skill_level
+        },
+    )
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
     """Возвращает следующий ход используя Stockfish."""
