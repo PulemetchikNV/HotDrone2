@@ -1,488 +1,104 @@
-Loaded DRONE_NAME=drone15
-Loaded INITIAL_LETTER=d
-Loaded DRONE_ROLE=queen
-Loaded DRONE_ROLE_DRONE15=queen
-Loaded DRONE_ROLE_DRONE21=king
-Loaded DRONE_COLOR=black
-Loaded LOG_LEVEL=INFO
-Loaded FLIGHT_IMPL=mock
-Loaded ROVER_IMPL=mock
-Loaded CAMERA_IMPL=mock
-Loaded COMM_IMPL=wifi
-Loaded CAMERA_API_URL=http://192.168.1.119:8001/api/positions
-Loaded ALG_MODE=api
-Loaded CLUSTER_HOSTFILE=/home/pi/cluster_hosts
-Loaded CLUSTER_NP=4
-[drone15] 11:16:14 - INFO - 🔧 MOCK MODE: Flight controller initialized
-INITIALIZING COMM_IMPL: wifi
-[drone15] 11:16:14 - INFO - WifiEspController initialized on 0.0.0.0:47000, leader=True, drone=drone15
-[drone15] 11:16:14 - INFO - Custom message callback set
-[drone15] 11:16:14 - INFO - ESP message handler registered
-[drone15] 11:16:14 - INFO - Available drones: ['drone15', 'drone21']
-[drone15] 11:16:14 - INFO - Drone role: queen, color: black, initial_letter: d, team: black
-[drone15] 11:16:14 - INFO - Drone drone15 mapped to unique role: queen
-[drone15] 11:16:14 - INFO - Drone drone21 mapped to unique role: king
-[drone15] 11:16:14 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
-[drone15] 11:16:14 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
-[drone15] 11:16:14 - INFO - Our team: black
-[drone15] 11:16:14 - INFO - Starting chess drone MAIN LOOP (dynamic leadership)...
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - === Leader run_once call ===
-[camera] 11:16:14 - INFO - Camera controller initialized: URL=http://192.168.1.119:8001/api/positions
-[camera] 11:16:14 - INFO - Mock camera controller bound to http://192.168.1.119:8001/api/positions
-GOT BOARD: 8/2q3k1/8/1P6/Q1P5/8/P2PPPPP/RNB1KBNR w - - 0 1
-[drone15] 11:16:14 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:14 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:15 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:16 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:17 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:18 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - === Leader run_once call ===
-GOT BOARD: 8/2q3k1/8/1P6/Q1P5/8/P2PPPPP/RNB1KBNR w - - 0 1
-[drone15] 11:16:19 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:19 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:20 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:21 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:22 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:23 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - === Leader run_once call ===
-GOT BOARD: 8/2q3k1/8/1P6/Q1P5/8/P2PPPPP/RNB1KBNR w - - 0 1
-[drone15] 11:16:24 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:24 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:25 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - AM I LEADER? True
-[drone15] 11:16:26 - INFO - Our turn detected - checking leader status
-[drone15] 11:16:27 - WARNING - [WiFi] Drone drone21 is not responding to ping
-[drone15] 11:16:27 - INFO - Leader drone15 is healthy
-[drone15] 11:16:27 - INFO - AM I LEADER? True
-[drone15] 11:16:27 - INFO - Our turn detected - checking leader status
-[drone15] 11:16:28 - INFO - Leader drone15 is healthy
-[drone15] 11:16:28 - INFO - AM I LEADER? True
-[drone15] 11:16:28 - INFO - Our turn detected - checking leader status
-[drone15] 11:16:29 - INFO - Leader drone15 is healthy
-[drone15] 11:16:29 - INFO - AM I LEADER? True
-[drone15] 11:16:29 - INFO - === Leader run_once call ===
-GOT BOARD: 8/2q3k1/8/1P6/Q1P1P3/8/P2P1PPP/RNB1KBNR b - - 0 1
+[drone15] 12:00:40 - INFO - === Leader run_once call ===
+GOT BOARD: 4k3/8/8/8/2P2P2/4q1P1/PP1PP2P/RNB1KBNR w - - 0 1
+[drone15] 12:00:40 - INFO - Not our turn. Current turn is white, we are black. Waiting.
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:40 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:41 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:42 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - AM I LEADER? True
+[drone15] 12:00:43 - INFO - Our turn detected - checking leader status
+[drone15] 12:00:44 - INFO - Leader drone15 is healthy
+[drone15] 12:00:44 - INFO - AM I LEADER? True
+[drone15] 12:00:44 - INFO - Our turn detected - checking leader status
+[drone15] 12:00:45 - INFO - Leader drone15 is healthy
+[drone15] 12:00:45 - INFO - AM I LEADER? True
+[drone15] 12:00:45 - INFO - === Leader run_once call ===
+GOT BOARD: 4k2R/8/8/8/2P2P2/4q1P1/PP1PP2P/RNB1KBN1 b - - 0 1
 OUR TURN: black
-SENDING FEN TO SF: 8/2q3k1/8/1P6/Q1P1P3/8/P2P1PPP/RNB1KBNR b - - 0 1
-==== RAW STOCKFISH DATA: {'text': 'Move c7 → f4 (Qf4): [14.69]. White is winning. Depth 12.', 'captured': False, 'promotion': False, 'isCapture': False, 'isPromotion': False, 'isCastling': False, 'fen': '8/2q3k1/8/1P6/Q1P1P3/8/P2P1PPP/RNB1KBNR b - - 0 1', 'type': 'bestmove', 'depth': 12, 'move': 'c7f4', 'eval': 14.69, 'centipawns': 1469, 'mate': None, 'continuationArr': ['b1c3', 'g7g8', 'g1f3', 'g8h7', 'a4b3', 'f4c7', 'c4c5', 'c7c5', 'f1e2', 'c5h5', 'c1b2', 'h5g6', 'h1f1', 'g6g2', 'b3f7', 'h7h6', 'f7f4', 'h6h7', 'e1d1', 'g2g7', 'f4f5', 'g7g6', 'f3g5', 'h7h6', 'f5h3', 'h6g7'], 'debug': 'info depth 12 seldepth 28 multipv 1 score cp -1469 nodes 1655375 nps 75244318 hashfull 37 tbhits 0 time 22 pv c7f4 b1c3 g7g8 g1f3 g8h7 a4b3 f4c7 c4c5 c7c5 f1e2 c5h5 c1b2 h5g6 h1f1 g6g2 b3f7 h7h6 f7f4 h6h7 e1d1 g2g7 f4f5 g7g6 f3g5 h7h6 f5h3 h6g7', 'winChance': 99.5543723625027, 'taskId': 'rnbv5241g', 'turn': 'b', 'color': 'b', 'piece': 'q', 'from': 'c7', 'to': 'f4', 'san': 'Qf4', 'flags': 'n', 'lan': 'c7f4', 'fromNumeric': '37', 'toNumeric': '64', 'continuation': [{'from': 'b1', 'to': 'c3', 'fromNumeric': '21', 'toNumeric': '33'}, {'from': 'g7', 'to': 'g8', 'fromNumeric': '77', 'toNumeric': '78'}]}
-GOT MOVE: MoveDecision(uci='c7f4', from_cell='c7', to_cell='f4', score_cp=1469, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 14.69, 'text': 'Move c7 → f4 (Qf4): [14.69]. White is winning. Depth 12.', 'flags': 'n'})
-[drone15] 11:16:30 - INFO - MOVING c7->f4
-[drone15] 11:16:30 - INFO - Executing piece move c7->f4 with drone
-PIECE TYPE: queen
-[drone15] 11:16:30 - INFO - Piece queen on c7 -> drone drone15
-[drone15] 11:16:30 - INFO - Leader executing own move: c7->f4
-[drone15] 11:16:30 - INFO - Using map coords for f4: x=0.654, y=-0.218
-[drone15] 11:16:30 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
-[drone15] 11:16:30 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
-[drone15] 11:16:36 - INFO - ✅ Mock takeoff completed
-[drone15] 11:16:39 - INFO - 🎯 MOCK NAVIGATE to x=0.65 y=-0.22 z=1.00 in 
-[drone15] 11:16:39 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
-[drone15] 11:16:45 - INFO - ✅ Mock navigation completed
-[drone15] 11:16:45 - INFO - 🎯 MOCK NAVIGATE to x=0.65 y=-0.22 z=0.15 in 
-[drone15] 11:16:45 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
-[drone15] 11:16:52 - INFO - ✅ Mock navigation completed
-[drone15] 11:16:52 - INFO - 🔒 MOCK FORCE DISARM
-[drone15] 11:16:52 - INFO - Leader completed own move to f4
-[drone15] 11:16:52 - INFO - Leader completed drone move: c7->f4
-[drone15] 11:16:52 - INFO - AM I LEADER? True
-[drone15] 11:16:52 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:53 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:54 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:55 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:56 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:57 - INFO - === Leader run_once call ===
-GOT BOARD: 8/6k1/8/1P6/Q1P1Pq2/8/P2P1PPP/RNB1KBNR w - - 0 1
-[drone15] 11:16:57 - INFO - Not our turn. Current turn is white, we are black. Waiting.
-[drone15] 11:16:57 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:58 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:16:59 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - AM I LEADER? True
-[drone15] 11:17:00 - INFO - Our turn detected - checking leader status
-[drone15] 11:17:02 - INFO - Leader drone15 is healthy
-[drone15] 11:17:02 - INFO - AM I LEADER? True
-[drone15] 11:17:02 - INFO - Our turn detected - checking leader status
-[drone15] 11:17:03 - INFO - Leader drone15 is healthy
-[drone15] 11:17:03 - INFO - AM I LEADER? True
-[drone15] 11:17:03 - INFO - === Leader run_once call ===
-GOT BOARD: 8/6k1/8/1P6/Q1P1Pq1R/8/P2P1PPP/RNB1KBN1 b - - 0 1
-OUR TURN: black
-SENDING FEN TO SF: 8/6k1/8/1P6/Q1P1Pq1R/8/P2P1PPP/RNB1KBN1 b - - 0 1
-==== RAW STOCKFISH DATA: {'text': 'Move f4 → h4 (Qxh4): [13.05]. White is winning. Depth 12.', 'captured': 'r', 'promotion': False, 'isCapture': True, 'isPromotion': False, 'isCastling': False, 'fen': '8/6k1/8/1P6/Q1P1Pq1R/8/P2P1PPP/RNB1KBN1 b - - 0 1', 'type': 'bestmove', 'depth': 12, 'move': 'f4h4', 'eval': 13.05, 'centipawns': 1305, 'mate': None, 'continuationArr': ['g1e2', 'h4h2', 'c1b2', 'g7g8', 'a4a8', 'g8f7', 'a8b7', 'f7e8', 'b7c6', 'e8f7', 'c6f6', 'f7e8'], 'debug': 'info depth 12 seldepth 26 multipv 1 score cp -1305 nodes 148484 nps 49494666 hashfull 44 tbhits 0 time 3 pv f4h4 g1e2 h4h2 c1b2 g7g8 a4a8 g8f7 a8b7 f7e8 b7c6 e8f7 c6f6 f7e8', 'winChance': 99.18787307576551, 'taskId': 'b4d49t3kr', 'turn': 'b', 'color': 'b', 'piece': 'q', 'from': 'f4', 'to': 'h4', 'san': 'Qxh4', 'flags': 'c', 'lan': 'f4h4', 'fromNumeric': '64', 'toNumeric': '84', 'continuation': [{'from': 'g1', 'to': 'e2', 'fromNumeric': '71', 'toNumeric': '52'}, {'from': 'h4', 'to': 'h2', 'fromNumeric': '84', 'toNumeric': '82'}]}
-GOT MOVE: MoveDecision(uci='f4h4', from_cell='f4', to_cell='h4', score_cp=1305, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 13.05, 'text': 'Move f4 → h4 (Qxh4): [13.05]. White is winning. Depth 12.', 'flags': 'c'})
-[drone15] 11:17:03 - INFO - MOVING f4->h4
-[drone15] 11:17:03 - INFO - Executing piece move f4->h4 with drone
-PIECE TYPE: queen
-[drone15] 11:17:03 - INFO - Piece queen on f4 -> drone drone15
-[drone15] 11:17:03 - INFO - Leader executing own move: f4->h4
-[drone15] 11:17:03 - INFO - Using map coords for h4: x=1.525, y=-0.218
-[drone15] 11:17:03 - INFO - 🚁 MOCK TAKEOFF to z=1.00m
-[drone15] 11:17:03 - INFO - ⏰ Waiting 6 seconds - manually lift the drone now!
-[drone15] 11:17:09 - INFO - ✅ Mock takeoff completed
-[drone15] 11:17:12 - INFO - 🎯 MOCK NAVIGATE to x=1.52 y=-0.22 z=1.00 in 
-[drone15] 11:17:12 - INFO - ⏰ Waiting 6 seconds - manually move the drone now!
-^Z
-[3]+  Stopped                 python3 ./drone/main.py
+SENDING FEN TO SF: 4k2R/8/8/8/2P2P2/4q1P1/PP1PP2P/RNB1KBN1 b - - 0 1
+==== RAW STOCKFISH DATA: {'text': 'Move e8 → e7 (Ke7): [14.88]. White is winning. Depth 12.', 'captured': False, 'promotion': False, 'isCapture': False, 'isPromotion': False, 'isCastling': False, 'fen': '4k2R/8/8/8/2P2P2/4q1P1/PP1PP2P/RNB1KBN1 b - - 0 1', 'type': 'bestmove', 'depth': 12, 'move': 'e8e7', 'eval': 14.88, 'centipawns': 1488, 'mate': None, 'continuationArr': ['d2e3', 'e7d7', 'g1f3', 'd7e6', 'a2a4', 'e6d7', 'f1g2', 'd7e7', 'b1c3', 'e7f7', 'h8h7', 'f7f8'], 'debug': 'info depth 12 seldepth 17 multipv 1 score cp -1488 nodes 122328 nps 61164000 hashfull 58 tbhits 0 time 2 pv e8e7 d2e3 e7d7 g1f3 d7e6 a2a4 e6d7 f1g2 d7e7 b1c3 e7f7 h8h7 f7f8', 'winChance': 99.58435757357799, 'taskId': 'tl939mir3', 'turn': 'b', 'color': 'b', 'piece': 'k', 'from': 'e8', 'to': 'e7', 'san': 'Ke7', 'flags': 'n', 'lan': 'e8e7', 'fromNumeric': '58', 'toNumeric': '57', 'continuation': [{'from': 'd2', 'to': 'e3', 'fromNumeric': '42', 'toNumeric': '53'}, {'from': 'e7', 'to': 'd7', 'fromNumeric': '57', 'toNumeric': '47'}]}
+GOT MOVE: MoveDecision(uci='e8e7', from_cell='e8', to_cell='e7', score_cp=1488, is_mate=False, reason='stockfish-api', meta={'depth': 12, 'eval': 14.88, 'text': 'Move e8 → e7 (Ke7): [14.88]. White is winning. Depth 12.', 'flags': 'n'})
+[drone15] 12:00:46 - INFO - MOVING e8->e7
+[drone15] 12:00:46 - INFO - [WiFi] Broadcasting move start: e8->e7
+BROADCASTING UNRELIABLE: {'type': 'move_start', 'move': 'e8->e7', 'from': 'drone15', 'timestamp': 1755342046.124532}
+[drone15] 12:00:46 - INFO - [WiFi] Leader drone15 started move: e8->e7
+[drone15] 12:00:46 - INFO - Executing piece move e8->e7 with drone
+PIECE TYPE: king
+[drone15] 12:00:46 - INFO - Piece king on e8 -> drone drone21
+[drone15] 12:00:46 - INFO - Checking if target drone drone21 is alive before sending command
+[drone15] 12:00:47 - WARNING - [WiFi] Drone drone21 is not responding to ping
+[drone15] 12:00:47 - WARNING - Drone drone21 did not respond to ping
+[drone15] 12:00:47 - WARNING - Target drone drone21 is not alive, recalculating move with updated board state
+[drone15] 12:00:47 - INFO - Removing king from dead drone drone21
+[drone15] 12:00:47 - INFO - Removing king from dead drone drone21
+[drone15] 12:00:47 - WARNING - No specific drone found for piece rook_a1, using fallback
+[drone15] 12:00:47 - WARNING - No specific drone found for piece rook_h1, using fallback
+[drone15] 12:00:47 - WARNING - No specific drone found for piece knight_b1, using fallback
+[drone15] 12:00:47 - WARNING - No specific drone found for piece knight_g1, using fallback
+[drone15] 12:00:47 - WARNING - No specific drone found for piece bishop_c1, using fallback
+[drone15] 12:00:47 - WARNING - No specific drone found for piece bishop_f1, using fallback
+[drone15] 12:00:47 - INFO - Created updated board state without drone drone21 (simplified)
+[drone15] 12:00:47 - INFO - New board FEN would be: 7R/8/8/8/8/4Q3/8/RNB2BN1 b KQkq - 0 1
+[drone15] 12:00:47 - INFO - Recalculating move with updated board state (without drone drone21)
+SENDING FEN TO SF: 4k2R/8/8/8/2P2P2/4q1P1/PP1PP2P/RNB1KBN1 b - - 0 1
+==== RAW STOCKFISH DATA: {'text': 'Move e8 → f7 (Kf7): [15.19]. White is winning. Depth 12.', 'captured': False, 'promotion': False, 'isCapture': False, 'isPromotion': False, 'isCastling': False, 'fen': '4k2R/8/8/8/2P2P2/4q1P1/PP1PP2P/RNB1KBN1 b - - 0 1', 'type': 'bestmove', 'depth': 12, 'move': 'e8f7', 'eval': 15.19, 'centipawns': 1519, 'mate': None, 'continuationArr': ['d2e3', 'f7e7', 'b1c3', 'e7e6', 'g1f3', 'e6d6', 'a2a4', 'd6e6', 'h8h3', 'e6d7', 'a1a3', 'd7c6'], 'debug': 'info depth 12 seldepth 22 multipv 1 score cp -1519 nodes 237411 nps 59352750 hashfull 23 tbhits 0 time 4 pv e8f7 d2e3 f7e7 b1c3 e7e6 g1f3 e6d6 a2a4 d6e6 h8h3 e6d7 a1a3 d7c6', 'winChance': 99.62902698773762, 'taskId': 'pna2dku3u', 'turn': 'b', 'color': 'b', 'piece': 'k', 'from': 'e8', 'to': 'f7', 'san': 'Kf7', 'flags': 'n', 'lan': 'e8f7', 'fromNumeric': '58', 'toNumeric': '67', 'continuation': [{'from': 'd2', 'to': 'e3', 'fromNumeric': '42', 'toNumeric': '53'}, {'from': 'f7', 'to': 'e7', 'fromNumeric': '67', 'toNumeric': '57'}]}
+[drone15] 12:00:47 - INFO - Recalculated move: e8->f7
+[drone15] 12:00:47 - ERROR - No valid target drone found for recalculated move or target is same dead drone
+[drone15] 12:00:47 - INFO - Leader completed drone move: e8->e7
+[drone15] 12:00:47 - INFO - [WiFi] Broadcasting move complete: e8->e7 (success=True)
+BROADCASTING UNRELIABLE: {'type': 'move_complete', 'move': 'e8->e7', 'success': True, 'from': 'drone15', 'timestamp': 1755342047.9181805}
+[drone15] 12:00:47 - INFO - [WiFi] Leader drone15 completed move: e8->e7
+[drone15] 12:00:47 - INFO - AM I LEADER? True

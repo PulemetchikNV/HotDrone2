@@ -429,6 +429,7 @@ class ChessDroneSingle:
         
         # Находим дрон, ответственный за эту фигуру
         target_drone = self._find_drone_for_piece(piece_type)
+        print(f"TARGET DRONE: {target_drone}")
         
         if not target_drone:
             self.logger.error(f"No drone found for piece {piece_type} on {from_cell}")
@@ -453,13 +454,14 @@ class ChessDroneSingle:
             self.logger.info(f"Checking if target drone {target_drone} is alive before sending command")
             
             drone_alive_camera = self._check_drone_alive_by_camera(target_drone)
-            drone_alive_ping = self._check_drone_alive_by_ping(target_drone)
+            # Используем более настойчивые пинги: 3 попытки с таймаутом 0.8 сек
+            drone_alive_ping = self._check_drone_alive_by_ping(target_drone, retries=3, timeout=0.8)
             
             self.logger.debug(f"Drone {target_drone} status: camera={drone_alive_camera}, ping={drone_alive_ping}")
             
             # Если дрон не жив по одному из критериев
             if not drone_alive_camera or not drone_alive_ping:
-                self.logger.warning(f"Target drone {target_drone} is not alive, recalculating move with updated board state")
+                self.logger.warning(f"Target drone {target_drone} is not alive (camera={drone_alive_camera}, ping={drone_alive_ping}), recalculating move with updated board state")
                 return self._handle_dead_drone_and_recalculate(target_drone)
             
             # Дрон жив - отправляем команду
@@ -846,13 +848,13 @@ class ChessDroneSingle:
             return False
     
     def _check_leader_alive_by_ping(self) -> bool:
-        """Проверяет живость лидера через ping всех дронов"""
+        """Проверяет живость лидера через ping с умеренными ретраями"""
         if not self.esp or not self.current_leader:
             return False
         
         try:
-            alive_drones = self.esp.ping_all_drones(self.available_drones)
-            is_alive = self.current_leader in alive_drones
+            # Для проверки лидера используем меньше попыток: 3 попытки по 0.8 сек
+            is_alive = self.esp.ping_drone(self.current_leader, retries=3, timeout=0.8)
             
             if is_alive:
                 self.logger.debug(f"Leader {self.current_leader} is alive (ping successful)")
@@ -892,19 +894,25 @@ class ChessDroneSingle:
             self.logger.debug(f"Camera drone check failed for {drone_name}: {e}")
             return False
     
-    def _check_drone_alive_by_ping(self, drone_name: str) -> bool:
-        """Проверяет живость указанного дрона через ping"""
+    def _check_drone_alive_by_ping(self, drone_name: str, retries: int = 5, timeout: float = 1.0) -> bool:
+        """
+        Проверяет живость указанного дрона через ping
+        
+        Args:
+            drone_name: Имя проверяемого дрона
+            retries: Количество попыток пинга
+            timeout: Таймаут ожидания ответа
+        """
         if not self.esp or not drone_name:
             return False
         
         try:
-            alive_drones = self.esp.ping_all_drones([drone_name])
-            is_alive = drone_name in alive_drones
+            is_alive = self.esp.ping_drone(drone_name, retries=retries, timeout=timeout)
             
             if is_alive:
                 self.logger.debug(f"Drone {drone_name} is alive (ping successful)")
             else:
-                self.logger.warning(f"Drone {drone_name} did not respond to ping")
+                self.logger.warning(f"Drone {drone_name} did not respond to ping after {retries} attempts")
             
             return is_alive
             

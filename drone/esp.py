@@ -234,38 +234,55 @@ class EspController:
             self.is_leader = is_leader
             self.logger.info(f"ESP role updated: is_leader={self.is_leader}")
     
-    def ping_drone(self, target_drone: str) -> bool:
-        """Пингует конкретный дрон и проверяет ответ"""
+    def ping_drone(self, target_drone: str, retries: int = 5, timeout: float = 1.0) -> bool:
+        """
+        Пингует конкретный дрон и проверяет ответ с ретраями
+        
+        Args:
+            target_drone: Имя целевого дрона
+            retries: Количество попыток (по умолчанию 5)
+            timeout: Таймаут ожидания ответа в секундах (по умолчанию 1.0)
+        """
         if not self.swarm:
             return False
+        
+        for attempt in range(retries):
+            ping_id = uuid.uuid4().hex[:8]
             
-        ping_id = uuid.uuid4().hex[:8]
+            # Очищаем старые ответы от этого дрона
+            with self._ping_lock:
+                if target_drone in self._ping_responses:
+                    del self._ping_responses[target_drone]
+            
+            # Отправляем ping
+            ping_payload = {
+                'type': 'ping',
+                'ping_id': ping_id,
+                'to': target_drone,
+                'from': self.drone_name
+            }
+            
+            try:
+                self.swarm.broadcast_custom_message(json.dumps(ping_payload))
+            except Exception as e:
+                self.logger.debug(f"Failed to send ping to {target_drone} (attempt {attempt + 1}/{retries}): {e}")
+                continue
+            
+            # Ждем ответ
+            time.sleep(timeout)
+            
+            # Проверяем ответ
+            with self._ping_lock:
+                if target_drone in self._ping_responses:
+                    if attempt > 0:  # Логируем только если были неудачные попытки
+                        self.logger.info(f"Ping to {target_drone} succeeded on attempt {attempt + 1}/{retries}")
+                    return True
+            
+            if attempt < retries - 1:  # Не логируем последнюю неудачную попытку
+                self.logger.debug(f"No ping response from {target_drone} (attempt {attempt + 1}/{retries})")
         
-        # Очищаем старые ответы от этого дрона
-        with self._ping_lock:
-            if target_drone in self._ping_responses:
-                del self._ping_responses[target_drone]
-        
-        # Отправляем ping
-        ping_payload = {
-            'type': 'ping',
-            'ping_id': ping_id,
-            'to': target_drone,
-            'from': self.drone_name
-        }
-        
-        try:
-            self.swarm.broadcast_custom_message(json.dumps(ping_payload))
-        except Exception as e:
-            self.logger.warning(f"Failed to send ping to {target_drone}: {e}")
-            return False
-        
-        # Ждем ответ 1 секунду
-        time.sleep(1.0)
-        
-        # Проверяем ответ
-        with self._ping_lock:
-            return target_drone in self._ping_responses
+        self.logger.warning(f"Drone {target_drone} is not responding to ping after {retries} attempts")
+        return False
     
     def ping_all_drones(self, drone_list: list) -> list:
         """Пингует всех дронов и возвращает список живых"""
@@ -585,32 +602,50 @@ class WifiEspController:
             self.is_leader = is_leader
             self.logger.info(f"[WiFi] Role updated: is_leader={self.is_leader}")
     
-    def ping_drone(self, target_drone: str) -> bool:
-        """Пингует конкретный дрон и проверяет ответ"""
-        ping_id = uuid.uuid4().hex[:8]
+    def ping_drone(self, target_drone: str, retries: int = 5, timeout: float = 1.0) -> bool:
+        """
+        Пингует конкретный дрон и проверяет ответ с ретраями
         
-        # Очищаем старые ответы от этого дрона
-        with self._ping_lock:
-            if target_drone in self._ping_responses:
-                del self._ping_responses[target_drone]
+        Args:
+            target_drone: Имя целевого дрона
+            retries: Количество попыток (по умолчанию 5)
+            timeout: Таймаут ожидания ответа в секундах (по умолчанию 1.0)
+        """
+        for attempt in range(retries):
+            ping_id = uuid.uuid4().hex[:8]
+            
+            # Очищаем старые ответы от этого дрона
+            with self._ping_lock:
+                if target_drone in self._ping_responses:
+                    del self._ping_responses[target_drone]
+            
+            # Отправляем ping
+            ping_payload = {
+                'type': 'ping',
+                'ping_id': ping_id,
+                'to': target_drone,
+                'from': self.drone_name
+            }
+            
+            if not self._send_json(ping_payload):
+                self.logger.debug(f"[WiFi] Failed to send ping to {target_drone} (attempt {attempt + 1}/{retries})")
+                continue
+            
+            # Ждем ответ
+            time.sleep(timeout)
+            
+            # Проверяем ответ
+            with self._ping_lock:
+                if target_drone in self._ping_responses:
+                    if attempt > 0:  # Логируем только если были неудачные попытки
+                        self.logger.info(f"[WiFi] Ping to {target_drone} succeeded on attempt {attempt + 1}/{retries}")
+                    return True
+            
+            if attempt < retries - 1:  # Не логируем последнюю неудачную попытку
+                self.logger.debug(f"[WiFi] No ping response from {target_drone} (attempt {attempt + 1}/{retries})")
         
-        # Отправляем ping
-        ping_payload = {
-            'type': 'ping',
-            'ping_id': ping_id,
-            'to': target_drone,
-            'from': self.drone_name
-        }
-        
-        if not self._send_json(ping_payload):
-            return False
-        
-        # Ждем ответ 1 секунду
-        time.sleep(1.0)
-        
-        # Проверяем ответ
-        with self._ping_lock:
-            return target_drone in self._ping_responses
+        self.logger.warning(f"[WiFi] Drone {target_drone} is not responding to ping after {retries} attempts")
+        return False
     
     def ping_all_drones(self, drone_list: list) -> list:
         """Пингует всех дронов и возвращает список живых"""
