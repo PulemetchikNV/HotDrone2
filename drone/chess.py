@@ -1024,6 +1024,7 @@ class ChessDroneSingle:
 
                 now = time.time()
                 if self.esp and self.esp.is_leader:
+                    self.logger.info(f"AM I LEADER? {self.esp.is_leader}")
                     # Ходы лидера с паузой между ними
                     if (now - last_move_ts) >= move_interval:
                         self.logger.info(f"=== Leader run_once call ===")
