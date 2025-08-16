@@ -365,7 +365,7 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
     print(f"==== HOSTFILE: {open(hostfile, 'r').read()}")
 
     # Формируем команду MPI с динамическим количеством процессов
-    binary_path = f"mpirun --hostfile {hostfile} -map-by node -np {np} stockfish"
+    binary_path = f"mpirun --hostfile cluster_hosts -map-by node -np {np} stockfish"
 
     # Один поток на процесс для честного распределения
     uci_script = (
