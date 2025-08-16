@@ -6,7 +6,6 @@ from typing import Optional, Dict, Any, Union, List
 import subprocess
 import shutil
 import re
-import uuid
 
 # Для Python 3.7 совместимости
 try:
@@ -107,7 +106,7 @@ class StockfishManager:
                     "Threads": min(2, os.cpu_count() or 1),
                     "Hash": 128,  # 128MB hash table
                     "Skill Level": self.skill_level,
-                    "Minimum Thinking Time": 5000,
+                    "Minimum Thinking Time": 50,
                     "UCI_LimitStrength": "false"
                 }
             )
@@ -309,34 +308,22 @@ class StockfishManager:
 def _read_cluster_hosts(path: str) -> List[str]:
     try:
         with open(path, 'r') as f:
-            hosts = [l.strip() for l in f if l.strip() and not l.strip().startswith('#')]
-            print(f"==== DEBUG: Successfully read {len(hosts)} hosts from {path}: {hosts}")
-            return hosts
-    except Exception as e:
-        print(f"==== DEBUG: Failed to read cluster hosts from {path}: {e}")
+            return [l.strip() for l in f if l.strip() and not l.strip().startswith('#')]
+    except Exception:
         return []
 
 
 def _find_stockfish_binary_for_cluster() -> bool:
     """Check if stockfish is available in system PATH for cluster mode."""
-    # Check if stockfish command is available
-    result = subprocess.run(['which', 'stockfish'], 
-                          capture_output=True, text=True, timeout=5)
-    print(f"==== DEBUG: 'which stockfish' returned: {result.returncode}, stdout: '{result.stdout.strip()}', stderr: '{result.stderr.strip()}'")
-    if result.returncode == 0:
-        return True
-    
-    # Fallback: check common system paths
-    system_paths = ["/usr/local/bin/stockfish", "/usr/bin/stockfish", "/usr/games/stockfish"]
-    for path in system_paths:
-        exists = os.path.exists(path)
-        executable = os.access(path, os.X_OK) if exists else False
-        print(f"==== DEBUG: Checking {path}: exists={exists}, executable={executable}")
-        if exists and executable:
-            return True
-    
-    print(f"==== DEBUG: No stockfish binary found in system paths")
-    return False
+    try:
+        # Check if stockfish command is available
+        result = subprocess.run(['which', 'stockfish'], 
+                              capture_output=True, text=True, timeout=5)
+        return result.returncode == 0
+    except Exception:
+        # Fallback: check common system paths
+        system_paths = ["/usr/local/bin/stockfish", "/usr/bin/stockfish", "/usr/games/stockfish"]
+        return any(os.path.exists(path) and os.access(path, os.X_OK) for path in system_paths)
 
 
 def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional[Dict[str, Any]]:
@@ -365,57 +352,48 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
     print(f"==== DEBUG: final np={np}, len(hosts)={len(hosts)}")
 
     if np <= 0 or not hosts:
-        print(f"==== DEBUG: No hosts or np<=0, returning None")
         return None
 
     mpirun = shutil.which("mpirun")
     if not mpirun:
-        print(f"==== DEBUG: mpirun not found in PATH, returning None")
         return None
 
     # Проверяем доступность stockfish в PATH
     if not _find_stockfish_binary_for_cluster():
-        print(f"==== DEBUG: stockfish not found for cluster, returning None")
         return None
 
     print(f"==== HOSTFILE: {open(hostfile, 'r').read()}")
 
-    # Надёжный подход: UCI подаём только в stdin ранга 0
-    # Используем go movetime, как изначально, но можно ограничить сверху
-    movetime = max(1000, min(movetime_ms, 30000))
+    # Формируем команду MPI с динамическим количеством процессов
+    binary_path = f"mpirun --hostfile {hostfile} -map-by node -np {np} stockfish"
+
+    # Один поток на процесс для честного распределения
     uci_script = (
         "uci\n"
         "isready\n"
         "ucinewgame\n"
         "setoption name Threads value 1\n"
         f"position fen {fen}\n"
-        f"go movetime {movetime}\n"
+        f"go movetime {movetime_ms}\n"
         "quit\n"
     )
 
-    cmd = f"mpirun --hostfile {hostfile} -map-by node -np {np} --stdin 0 stockfish"
-    timeout_s = max(10, movetime // 1000 + 10)
-    print(f"==== DEBUG: Running command: {cmd}")
-    print(f"==== DEBUG: UCI script:\n{uci_script}")
-    print(f"==== DEBUG: Timeout: {timeout_s}s")
+    # Используем shell=True для выполнения команды как строки
+    cmd = binary_path
 
-    res = subprocess.run(
-        cmd,
-        input=uci_script,
-        capture_output=True,
-        text=True,
-        timeout=timeout_s,
-        shell=True
-    )
-    out = res.stdout or ""
-    err = res.stderr or ""
-    print(f"==== DEBUG: Return code: {res.returncode}")
-    print(f"==== DEBUG: stdout: {out}")
-    print(f"==== DEBUG: stderr: {err}")
-    print(f"==== GOT CMD: {cmd}")
-
-    if res.returncode != 0:
-        print(f"==== DEBUG: Command failed with return code {res.returncode}, returning None")
+    try:
+        timeout_s = max(10, movetime_ms // 1000 + 10)
+        res = subprocess.run(
+            cmd,
+            input=uci_script,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+            shell=True
+        )
+        out = res.stdout or ""
+        print(f"==== GOT CMD: {cmd}")
+    except Exception:
         return None
 
     info_score_re = re.compile(r"score (cp|mate) (-?\d+)")
@@ -505,7 +483,6 @@ def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> M
     """Generate a move using Stockfish engine."""
     # Кластерный режим (опционально). Если не сработал — фолбэк на локальный движок
     if os.getenv("ALG_MODE", "api").lower() == "cluster":
-        print(f"==== DEBUG: cluster mode")
         # Проверяем актуальность кластера перед вычислением хода
         alive_drones_str = os.getenv("CLUSTER_ALIVE_DRONES", "")
         if alive_drones_str:
@@ -562,7 +539,6 @@ def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> M
             )
 
     # Фолбэк: локальный движок
-    print(f"==== DEBUG: fallback to local stockfish")
     stockfish = _get_stockfish_manager()
 
     # Get best move from Stockfish
@@ -619,6 +595,7 @@ def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> M
             "skill_level": stockfish.skill_level
         },
     )
+
 
 def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] = None) -> MoveDecision:
     """Возвращает следующий ход используя Stockfish."""
