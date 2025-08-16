@@ -5,6 +5,7 @@ import signal
 import sys
 from typing import List, Optional, Dict, Any
 from const import DRONES_CONFIG, get_drone_config
+import shutil
 
 
 class ClusterManager:
@@ -164,6 +165,74 @@ class ClusterManager:
             
         except Exception as e:
             self.logger.error(f"Failed to initiate cluster restart: {e}")
+            return False
+
+    def restart_stockfish_cluster(self, alive_drone_names: List[str]) -> bool:
+        """
+        Перезапускает только stockfish-кластер без убийства главного процесса.
+        - Обновляет файл cluster_hosts на основе живых дронов
+        - Валидирует доступность mpirun и stockfish на лидере
+        - Выполняет короткую UCI-сессию для прогрева и проверки
+        """
+        try:
+            # Обновляем cluster_hosts
+            if not self.update_cluster_hosts(alive_drone_names):
+                self.logger.error("restart_stockfish_cluster: failed to update cluster_hosts")
+                return False
+
+            # Проверяем mpirun
+            mpirun_path = shutil.which("mpirun")
+            if not mpirun_path:
+                self.logger.error("restart_stockfish_cluster: mpirun not found in PATH")
+                return False
+
+            # Проверяем stockfish в PATH
+            stockfish_path = shutil.which("stockfish")
+            if not stockfish_path:
+                # Попытка через стандартные пути
+                for p in ["/usr/local/bin/stockfish", "/usr/bin/stockfish", "/usr/games/stockfish"]:
+                    if os.path.exists(p) and os.access(p, os.X_OK):
+                        stockfish_path = p
+                        break
+            if not stockfish_path:
+                self.logger.error("restart_stockfish_cluster: stockfish not found in PATH")
+                return False
+
+            # Формируем команду с актуальным количеством процессов
+            ips = self.get_alive_drone_ips(alive_drone_names)
+            np = max(1, len(ips))
+            cmd = f"{mpirun_path} --hostfile {self.cluster_hosts_path} -map-by node -np {np} {stockfish_path}"
+
+            # Короткая UCI-сессия для проверки/прогрева
+            uci_script = (
+                "uci\n"
+                "isready\n"
+                "ucinewgame\n"
+                "setoption name Threads value 1\n"
+                "quit\n"
+            )
+
+            timeout_s = 10
+            res = subprocess.run(
+                cmd,
+                input=uci_script,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+                shell=True
+            )
+
+            ok = (res.returncode == 0) and ("uciok" in (res.stdout or "") or "readyok" in (res.stdout or ""))
+            if ok:
+                self.logger.info("Stockfish cluster restarted and validated successfully")
+                return True
+            else:
+                self.logger.error(f"Stockfish cluster validation failed (code={res.returncode})")
+                self.logger.debug(f"stdout: {res.stdout}\nstderr: {res.stderr}")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"restart_stockfish_cluster failed: {e}")
             return False
     
     def set_restart_flag(self, restart_info: Dict[str, Any]):

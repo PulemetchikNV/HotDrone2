@@ -490,7 +490,19 @@ def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> M
             
             # Проверяем изменения в кластере
             if _check_cluster_changes_needed(alive_drones):
-                raise AlgTemporaryError("Cluster composition changed - restart required")
+                # Мягкая перезагрузка только stockfish-кластера без убийства процесса
+                try:
+                    from cluster_manager import ClusterManager
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    cluster_mgr = ClusterManager(logger)
+                    restarted = cluster_mgr.restart_stockfish_cluster(alive_drones)
+                    if restarted:
+                        logger.info("Stockfish cluster restarted in-place successfully")
+                    else:
+                        logger.warning("Failed to restart stockfish cluster in-place; continuing")
+                except Exception as e:
+                    print(f"Soft stockfish cluster restart failed: {e}")
         
         best = _cluster_analyze_position(board.fen, time_budget_ms, board.turn)
         if best and best.get("move"):

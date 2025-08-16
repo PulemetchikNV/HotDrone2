@@ -387,9 +387,20 @@ class ChessDroneSingle:
             print(f"GOT MOVE: {move}")
         except AlgTemporaryError as e:
             if "restart required" in str(e).lower():
-                self.logger.info("Cluster restart required - initiating restart sequence")
-                self._handle_cluster_restart_request()
-                return
+                # Обновляем только stockfish-кластер без убийства главного процесса
+                try:
+                    from cluster_manager import ClusterManager
+                    alive_drones = self.esp.ping_all_drones(self.available_drones) if self.esp else []
+                    cluster_mgr = ClusterManager(self.logger, self.esp)
+                    if cluster_mgr.restart_stockfish_cluster(alive_drones):
+                        self.logger.info("Stockfish cluster was restarted in-place; skipping this turn once")
+                        return
+                    else:
+                        self.logger.warning("Failed to restart stockfish cluster in-place; skipping this turn once")
+                        return
+                except Exception as e2:
+                    self.logger.error(f"Failed to soft-restart stockfish cluster: {e2}")
+                    return
             else:
                 raise
 
