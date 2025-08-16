@@ -267,7 +267,7 @@ class ClusterManager:
         # Используем количество реальных IP адресов, а не имен дронов
         ips = self.get_alive_drone_ips(alive_drone_names)
         np = len(ips)
-        return f"mpirun --hostfile cluster_hosts -map-by node -np {np} stockfish"
+        return f"mpirun --hostfile {self.cluster_hosts_path} -map-by node -np {np} stockfish"
     
     def perform_graceful_restart(self, reason: str = "cluster_change"):
         """Выполняет изящный перезапуск главного процесса"""

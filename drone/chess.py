@@ -74,7 +74,7 @@ def rover_meters_to_aruco(rover_x, rover_y):
     return aruco_x, aruco_y
 
 
-TIME_BUDGET_MS = 35000
+TIME_BUDGET_MS = 15000
 
 def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
     """
@@ -88,7 +88,8 @@ def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
         MoveDecision объект с выбранным ходом
     """
     alg_mode = os.getenv("ALG_MODE", "api").lower()
-    if alg_mode == "cluster":
+
+    if alg_mode.startswith("cluster"):
         return get_turn_sf(board, time_budget_ms=time_budget_ms)
     else:
         # api и llm пока одинаково — используем мок-алгоритм
@@ -575,7 +576,8 @@ class ChessDroneSingle:
             
             drone_alive_camera = self._check_drone_alive_by_camera(target_drone)
             # Используем более настойчивые пинги: 3 попытки с таймаутом 0.8 сек
-            drone_alive_ping = self._check_drone_alive_by_ping(target_drone, retries=3, timeout=0.8)
+            drone_alive_ping = True # MOCKAEM
+            # self._check_drone_alive_by_ping(target_drone, retries=3, timeout=0.8)
             
             self.logger.debug(f"Drone {target_drone} status: camera={drone_alive_camera}, ping={drone_alive_ping}")
             
@@ -884,7 +886,8 @@ class ChessDroneSingle:
         
         # Проверяем живость текущего лидера двумя способами
         leader_alive_camera = self._check_leader_alive_by_camera()
-        leader_alive_ping = self._check_leader_alive_by_ping()
+        leader_alive_ping = True # MOCKAEM
+        # self._check_leader_alive_by_ping()
         
         self.logger.debug(f"Leader {self.current_leader} status: camera={leader_alive_camera}, ping={leader_alive_ping}")
         
@@ -952,6 +955,7 @@ class ChessDroneSingle:
             
         try:
             positions = self.camera.get_board_positions()
+            print(f"Positions: {positions}")
             
             # Ищем фигуры на доске - если видим фигуры, значит дроны живые
             for color_data in positions.values():
