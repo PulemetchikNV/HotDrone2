@@ -62,7 +62,7 @@ rovers = {
     'rover_b': {
         'ip': '192.168.1.98',
         'port': 12345,
-        'initial_letter': 'b',
+        'initial_letter': 'd',
         'number': 11,
     }
     # '2': {
