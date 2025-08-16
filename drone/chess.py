@@ -74,7 +74,9 @@ def rover_meters_to_aruco(rover_x, rover_y):
     return aruco_x, aruco_y
 
 
-def get_turn_final(board, time_budget_ms: int = 5000):
+TIME_BUDGET_MS = 35000
+
+def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
     """
     Универсальная функция выбора алгоритма для получения хода.
     
@@ -379,7 +381,7 @@ class ChessDroneSingle:
 
         # 2) Запрашиваем ход (внутри alg решается логика)
         try:
-            move = get_turn_final(board, time_budget_ms=5000)
+            move = get_turn_final(board, time_budget_ms=TIME_BUDGET_MS)
             print(f"GOT MOVE: {move}")
         except AlgTemporaryError as e:
             if "restart required" in str(e).lower():
@@ -598,7 +600,7 @@ class ChessDroneSingle:
             self.logger.info(f"Recalculating move with updated board state (without drone {dead_drone_name})")
             
             # Пересчитываем ход с обновленным состоянием доски
-            new_move = get_turn_final(updated_board, time_budget_ms=5000)
+            new_move = get_turn_final(updated_board, time_budget_ms=TIME_BUDGET_MS)
             
             if new_move:
                 new_from_cell = getattr(new_move, 'from_cell', 'e2')
