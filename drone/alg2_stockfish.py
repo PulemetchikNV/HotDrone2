@@ -44,9 +44,32 @@ class StockfishManager:
         self._initialize_engine()
     
     def _find_stockfish_binary(self) -> Optional[str]:
-        """Find Stockfish binary with architecture detection."""
-        # Check multiple possible paths
-        possible_paths = [
+        """Find Stockfish binary with preference for system PATH."""
+        # Check system PATH first (preferred for cluster mode)
+        system_paths = [
+            "/usr/local/bin/stockfish",
+            "/usr/bin/stockfish", 
+            "/usr/games/stockfish"
+        ]
+        
+        # Also check if stockfish is available via which command
+        try:
+            result = subprocess.run(['which', 'stockfish'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0 and result.stdout.strip():
+                stockfish_path = result.stdout.strip()
+                if os.access(stockfish_path, os.X_OK):
+                    return stockfish_path
+        except Exception:
+            pass
+        
+        # Check explicit system paths
+        for path in system_paths:
+            if os.path.exists(path) and os.access(path, os.X_OK):
+                return path
+        
+        # Fallback to local project paths (for development)
+        local_paths = [
             # From project root
             "./drone/chess/stockfish/stockfish",
             "./drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2",
@@ -56,14 +79,10 @@ class StockfishManager:
             "./chess/stockfish/stockfish",
             "./chess/stockfish/stockfish-ubuntu-x86-64-avx2",
             "./chess/stockfish/stockfish-android-armv8",
-            "./chess/stockfish/stockfish-android-armv7",
-            # System paths
-            "/usr/bin/stockfish",
-            "/usr/games/stockfish",
-            "/usr/local/bin/stockfish"
+            "./chess/stockfish/stockfish-android-armv7"
         ]
         
-        for path in possible_paths:
+        for path in local_paths:
             if os.path.exists(path) and os.access(path, os.X_OK):
                 return path
         
@@ -294,24 +313,17 @@ def _read_cluster_hosts(path: str) -> List[str]:
         return []
 
 
-def _find_stockfish_binary_for_cluster() -> Optional[str]:
-    possible_paths = [
-        "./drone/chess/stockfish/stockfish",
-        "./drone/chess/stockfish/stockfish-ubuntu-x86-64-avx2",
-        "./drone/chess/stockfish/stockfish-android-armv8",
-        "./drone/chess/stockfish/stockfish-android-armv7",
-        "./chess/stockfish/stockfish",
-        "./chess/stockfish/stockfish-ubuntu-x86-64-avx2",
-        "./chess/stockfish/stockfish-android-armv8",
-        "./chess/stockfish/stockfish-android-armv7",
-        "/usr/bin/stockfish",
-        "/usr/games/stockfish",
-        "/usr/local/bin/stockfish",
-    ]
-    for path in possible_paths:
-        if os.path.exists(path) and os.access(path, os.X_OK):
-            return path
-    return None
+def _find_stockfish_binary_for_cluster() -> bool:
+    """Check if stockfish is available in system PATH for cluster mode."""
+    try:
+        # Check if stockfish command is available
+        result = subprocess.run(['which', 'stockfish'], 
+                              capture_output=True, text=True, timeout=5)
+        return result.returncode == 0
+    except Exception:
+        # Fallback: check common system paths
+        system_paths = ["/usr/local/bin/stockfish", "/usr/bin/stockfish", "/usr/games/stockfish"]
+        return any(os.path.exists(path) and os.access(path, os.X_OK) for path in system_paths)
 
 
 def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional[Dict[str, Any]]:
@@ -329,9 +341,12 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
     if not mpirun:
         return None
 
-    binary = _find_stockfish_binary_for_cluster()
-    if not binary:
+    # Проверяем доступность stockfish в PATH
+    if not _find_stockfish_binary_for_cluster():
         return None
+
+    # Формируем команду MPI с динамическим количеством процессов
+    binary_path = f"mpirun --hostfile {hostfile} -map-by node -np {np} stockfish"
 
     # Один поток на процесс для честного распределения
     uci_script = (
@@ -344,10 +359,8 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
         "quit\n"
     )
 
-    cmd = [
-        mpirun, "--hostfile", hostfile, "-map-by", "node",
-        "-np", str(np), "--tag-output", binary
-    ]
+    # Используем shell=True для выполнения команды как строки
+    cmd = binary_path
 
     try:
         timeout_s = max(10, movetime_ms // 1000 + 10)
@@ -356,7 +369,8 @@ def _cluster_analyze_position(fen: str, movetime_ms: int, turn: str) -> Optional
             input=uci_script,
             capture_output=True,
             text=True,
-            timeout=timeout_s
+            timeout=timeout_s,
+            shell=True
         )
         out = res.stdout or ""
     except Exception:

@@ -183,6 +183,11 @@ class ClusterManager:
         except Exception as e:
             self.logger.debug(f"Failed to remove restart flag: {e}")
     
+    def get_mpi_command(self, alive_drone_names: List[str]) -> str:
+        """Формирует команду MPI для кластерного вычисления"""
+        np = len(alive_drone_names)
+        return f"mpirun --hostfile {self.cluster_hosts_path} -map-by node -np {np} stockfish"
+    
     def perform_graceful_restart(self, reason: str = "cluster_change"):
         """Выполняет изящный перезапуск главного процесса"""
         self.logger.info(f"Performing graceful restart: {reason}")

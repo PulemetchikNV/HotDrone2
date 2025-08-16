@@ -6,9 +6,16 @@
 # 1. Установить MPI
 sudo apt update && sudo apt install openmpi-bin openmpi-dev
 
-# 2. Скачать и разместить Stockfish бинарники
-mkdir -p drone/chess/stockfish
-# Поместить stockfish бинарники в drone/chess/stockfish/
+# 2. Установить Stockfish (глобально в PATH)
+# Вариант A: Установка через пакетный менеджер
+sudo apt install stockfish
+
+# Вариант B: Скачать и разместить в системном PATH
+sudo cp stockfish /usr/local/bin/
+sudo chmod +x /usr/local/bin/stockfish
+
+# Проверить доступность
+which stockfish
 
 # 3. Настроить IP адреса дронов в drone/const.py
 # Убедиться что каждый дрон имеет 'raw_ip' в DRONES_CONFIG
@@ -38,6 +45,9 @@ python3 drone/main.py
 
 # Проверить MPI вручную
 mpirun --hostfile cluster_hosts -np 2 hostname
+
+# Проверить MPI со Stockfish
+mpirun --hostfile cluster_hosts -map-by node -np 2 stockfish
 
 # Проверить ping дронов
 python3 -c "
@@ -72,8 +82,14 @@ which mpirun
 
 **Проблема**: Stockfish не найден  
 ```bash
-ls -la drone/chess/stockfish/
-chmod +x drone/chess/stockfish/*
+# Проверить глобальную доступность
+which stockfish
+stockfish --help
+
+# Если не найден - установить
+sudo apt install stockfish
+# или скопировать в PATH
+sudo cp your_stockfish_binary /usr/local/bin/stockfish
 ```
 
 **Проблема**: Ошибка версии Stockfish dev (invalid literal for int)

@@ -150,15 +150,22 @@ Wrapper-скрипт перезапускает процесс
 
 ### 4. MPI команда для вычисления
 
+Система автоматически формирует команду:
+
 ```bash
-mpirun --hostfile cluster_hosts -map-by node -np 4 stockfish bench
+mpirun --hostfile cluster_hosts -map-by node -np {количество_дронов} stockfish
+```
+
+Например:
+```bash
+mpirun --hostfile cluster_hosts -map-by node -np 4 stockfish
 ```
 
 Где:
 - `cluster_hosts` - файл с IP живых дронов (по одному на строку)
-- `-map-by node` - по одному процессу на узел
-- `-np 4` - общее количество процессов
-- `stockfish` - путь к бинарнику Stockfish
+- `-map-by node` - по одному процессу на узел  
+- `-np {количество_дронов}` - **динамически определяется** = количество живых дронов
+- `stockfish` - бинарник Stockfish (должен быть в PATH на всех узлах)
 
 ## Файлы кластера
 
