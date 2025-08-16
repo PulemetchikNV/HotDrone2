@@ -74,7 +74,7 @@ def rover_meters_to_aruco(rover_x, rover_y):
     return aruco_x, aruco_y
 
 
-TIME_BUDGET_MS = 35000
+TIME_BUDGET_MS = 15000
 
 def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
     """
