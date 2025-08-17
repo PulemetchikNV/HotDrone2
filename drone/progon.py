@@ -92,7 +92,7 @@ class Progon:
         for waypoint in waypoints:
             print(f"Moving to {waypoint}")
             x, y = self.get_cell_coordinates(waypoint)
-            self.move_to_xy(x, y, 1.2, is_kill=True)
+            self.move_to_xy(x, y, 1.2)
 
         #x, y = self.get_cell_coordinates(to_cell)
         # Выполняем движение локально
