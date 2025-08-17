@@ -7,6 +7,21 @@ createApp({
         const messageBox = ref(null);
         let currentMessage = null;
 
+        const avatarMap = {
+            'king': '0.png',
+            'queen': '1.png',
+            'bishop': '2.png',
+            'knight': '3.png',
+            'pawn': '4.png',
+            'rook': '4.png', // Assuming Rook uses the same icon as Pawn for now
+            'master': '0.png' // Master uses the King's avatar
+        };
+        
+        const russianRoles = {
+            "king": "Король", "queen": "Королева", "bishop": "Слон", "knight": "Конь", "rook": "Ладья", "pawn": "Пешка",
+            "master": "Мастер"
+        };
+
         const scrollToBottom = () => {
             nextTick(() => {
                 if (messageBox.value) {
@@ -16,27 +31,47 @@ createApp({
         };
 
         const processLine = (line) => {
-            const agentMatch = line.match(/^Агент (.+?) \((.+?)\):/);
-            const iterationMatch = line.match(/^--- Итерация .* ---/);
-            const finalDecisionMatch = line.match(/^--- ФИНАЛЬНОЕ РЕШЕНИЕ ---/);
-            const masterChoiceMatch = line.match(/^Мастер выбрал ход: (.*)/);
+            const [type, ...parts] = line.split(':');
+            const content = parts.join(':');
 
-            if (iterationMatch || finalDecisionMatch) {
-                currentMessage = null; // End any previous message
-                messages.value.push({ type: 'highlight', content: line });
-            } else if (agentMatch) {
-                currentMessage = { type: 'agent', agentId: agentMatch[1], content: '' };
-                messages.value.push(currentMessage);
-            } else if (masterChoiceMatch) {
-                currentMessage = null;
-                messages.value.push({ type: 'agent', agentId: 'Мастер', content: `Выбрал ход: ${masterChoiceMatch[1]}` });
-            }
-            else if (currentMessage && line.trim() !== '') {
-                // Append line to the content of the current agent message
-                currentMessage.content += line + '\n';
-            } else if (line.trim() !== '') {
-                // Treat as a system message if it doesn't fit other patterns
-                messages.value.push({ type: 'system', content: line });
+            switch (type) {
+                case 'FIGURE':
+                    const [figure, role, thought] = parts;
+                    const agentName = russianRoles[figure] || figure;
+                    messages.value.push({
+                        type: 'agent',
+                        agentId: `${agentName} (${role})`,
+                        avatar: avatarMap[figure] || '4.png',
+                        content: thought
+                    });
+                    break;
+                case 'MASTER':
+                    messages.value.push({
+                        type: 'agent',
+                        agentId: 'Мастер',
+                        avatar: avatarMap['master'],
+                        content: content
+                    });
+                    break;
+                case 'SYSTEM':
+                    messages.value.push({ type: 'highlight', content: content });
+                    break;
+                case 'FINAL_MOVE':
+                     messages.value.push({ type: 'highlight', content: `--- ФИНАЛЬНОЕ РЕШЕНИЕ ---` });
+                     messages.value.push({
+                        type: 'agent',
+                        agentId: 'Мастер',
+                        avatar: avatarMap['master'],
+                        content: `Выбранный ход: ${content}`
+                    });
+                    break;
+                case 'ERROR':
+                    messages.value.push({ type: 'system', content: `ОШИБКА: ${content}` });
+                    break;
+                default:
+                     if (line.trim()) {
+                        messages.value.push({ type: 'system', content: line });
+                    }
             }
             scrollToBottom();
         };

@@ -19,9 +19,12 @@
                 </button>
             </div>
             <div class="chat-messages" ref="messageBox">
-                <div v-for="(msg, index) in messages" :key="index" class="message-bubble" :class="msg.type">
-                    <div v-if="msg.agentId" class="agent-id">{{ msg.agentId }}</div>
-                    <p class="message-content">{{ msg.content }}</p>
+                <div v-for="(msg, index) in messages" :key="index" class="message-container">
+                    <img v-if="msg.avatar" :src="msg.avatar" class="avatar">
+                    <div class="message-bubble" :class="msg.type">
+                        <div v-if="msg.agentId" class="agent-id">{{ msg.agentId }}</div>
+                        <p class="message-content">{{ msg.content }}</p>
+                    </div>
                 </div>
                  <div v-if="messages.length === 0 && !isLoading" class="system-message">
                     Нажмите "Запустить новый расчет", чтобы начать.
