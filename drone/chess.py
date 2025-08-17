@@ -328,9 +328,6 @@ class ChessDroneSingle:
             speed=0.2,
             auto_arm=False,
         )
-        if(is_kill):
-            time.sleep(3.5)
-
 
         self.fc.wait(0.8)
 
