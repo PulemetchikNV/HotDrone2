@@ -17,6 +17,21 @@ class RoverControllerMain:
         self.logger = logger or setup_logging('rover')
         self.session = requests.Session()
 
+    def _sanitize_turn_angle(self, angle: int) -> int:
+        """
+        Преобразует угол поворота к допустимому формату контроллера:
+        - Запрещены отрицательные углы, вместо них отправляем (360 - abs(angle)).
+        - Любой угол нормализуем в диапазон [0, 360).
+        """
+        try:
+            a = int(angle)
+        except Exception:
+            a = 0
+        a = a % 360
+        if angle < 0:
+            a = (360 - abs(angle) % 360) % 360
+        return a
+
     def _get_rover_url(self, rover_id):
         """Получить базовый URL для ровера"""
         if rover_id not in rovers:
@@ -65,13 +80,18 @@ class RoverControllerMain:
             return False
             
         base_url = self._get_rover_url(rover_id)
+        # Санитизация угла для поворота
+        send_angle = self._sanitize_turn_angle(angle) if command == "turn" else angle
         data = {
             "command": command,
             "distance": distance,
-            "angle": angle
+            "angle": send_angle
         }
         
-        self.logger.info(f"Отправка команды роверу {rover_id}: {command}, дистанция: {distance}мм, угол: {angle}°")
+        if command == "turn" and angle != send_angle:
+            self.logger.info(f"Отправка команды роверу {rover_id}: {command}, дистанция: {distance}мм, угол: {angle}° -> {send_angle}° (нормализовано)")
+        else:
+            self.logger.info(f"Отправка команды роверу {rover_id}: {command}, дистанция: {distance}мм, угол: {send_angle}°")
         try:
             response = self.session.post(
                 f"{base_url}/command",
@@ -112,8 +132,12 @@ class RoverControllerMain:
             True если команда отправлена успешно
         """
         direction = "направо" if angle > 0 else "налево"
-        self.logger.info(f"Поворот ровера {rover_id} {direction} на {abs(angle)} градусов...")
-        return self.send_command(rover_id, "turn", angle=angle)
+        normalized = self._sanitize_turn_angle(angle)
+        if angle != normalized:
+            self.logger.info(f"Поворот ровера {rover_id} {direction} на {abs(angle)} градусов -> отправляем {normalized}°")
+        else:
+            self.logger.info(f"Поворот ровера {rover_id} {direction} на {abs(angle)} градусов...")
+        return self.send_command(rover_id, "turn", angle=normalized)
 
     def stop(self, rover_id) -> bool:
         """
@@ -211,7 +235,7 @@ class RoverControllerMain:
         
         # Последовательность команд для диагонального движения
         commands = [
-            {'type': 'turn', 'value': angle, 'wait': True},
+            {'type': 'turn', 'value': self._sanitize_turn_angle(angle), 'wait': True},
             {'type': 'forward', 'value': distance_mm, 'wait': True}
         ]
         
@@ -233,9 +257,9 @@ class RoverControllerMain:
         
         # Последовательность команд для диагонального движения с возвратом
         commands = [
-            {'type': 'turn', 'value': angle, 'wait': True},
+            {'type': 'turn', 'value': self._sanitize_turn_angle(angle), 'wait': True},
             {'type': 'forward', 'value': distance_mm, 'wait': True},
-            {'type': 'turn', 'value': -angle, 'wait': True}
+            {'type': 'turn', 'value': self._sanitize_turn_angle(-angle), 'wait': True}
         ]
         
         return self.execute_sequence(rover_id, commands)
@@ -325,8 +349,9 @@ class RoverControllerMain:
         # Выполняем команды движения
         commands = []
         if abs(turn_angle) > 1:  # Поворачиваем только если угол значительный
-            commands.append({'type': 'turn', 'value': int(turn_angle), 'wait': True})
-            self.logger.info(f"🔄 Добавлена команда поворота: {int(turn_angle)}°")
+            normalized_turn = self._sanitize_turn_angle(int(turn_angle))
+            commands.append({'type': 'turn', 'value': normalized_turn, 'wait': True})
+            self.logger.info(f"🔄 Добавлена команда поворота: {int(turn_angle)}° -> {normalized_turn}°")
         else:
             self.logger.info(f"🔄 Поворот не требуется (угол {turn_angle:.1f}° < 1°)")
         

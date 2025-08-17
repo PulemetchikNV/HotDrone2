@@ -35,7 +35,7 @@ FILES = "abcdefgh"
 RANKS = "12345678"
 
 # Константы для конвертации координат
-CELL_SIZE_METERS = 0.40  # 40 см = 1 клетка
+CELL_SIZE_METERS = 0.385  # 40 см = 1 клетка
 ARUCO_MIN = -1.6  # Минимальная координата ArUco (-4 клетки * 0.4м)
 ARUCO_MAX = 1.6   # Максимальная координата ArUco (+4 клетки * 0.4м)
 ARUCO_RANGE = ARUCO_MAX - ARUCO_MIN  # 3.2 метра = 8 клеток по 40см
@@ -817,7 +817,7 @@ class ChessDroneSingle:
                 half_mm = max(1, int((diag_m * 1000) / 2))
 
                 # Определяем направление (вправо = +45°, влево = -45°) относительно текущей ориентации
-                angle = 45 if (fi_to - fi_from) > 0 else -45
+                angle = 45 if (fi_to - fi_from) > 0 else 360 - 45
 
                 self.logger.info(
                     f"Rover kill-move (diagonal, split): angle={angle}°, full={int(diag_m*1000)}мм, half={half_mm}мм"
