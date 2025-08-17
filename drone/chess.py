@@ -183,7 +183,7 @@ class ChessDroneSingle:
 
         # Параметры полёта
         self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.0"))
-        self.flight_z = float(os.getenv("FLIGHT_Z", "1.0"))
+        self.flight_z = float(os.getenv("FLIGHT_Z", "1.3"))
         self.speed = float(os.getenv("SPEED", "0.3"))
 
         # CameraAdapter removed; use unified camera controller as single source of truth
@@ -324,7 +324,7 @@ class ChessDroneSingle:
         self.fc.navigate_wait(
             x=x, 
             y=y, 
-            z=0.15,
+            z=0.25,
             speed=0.2,
             auto_arm=False,
         )
