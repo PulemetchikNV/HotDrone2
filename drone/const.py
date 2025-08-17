@@ -1,9 +1,9 @@
-DRONE_LIST='drone21'
+DRONE_LIST='drone11'
 # DRONE_LIST = 'drone15,drone21,drone11,drone18'
 #,drone18,drone21,drone21'
-LEADER_DRONE = 'drone21'
+LEADER_DRONE = 'drone11'
 DRONES_TOTAL = 2
-OUR_TEAM = 'black'
+OUR_TEAM = 'white'
 
 # Режим алгоритма выбора ходов
 ALG_MODE = 'cluster2'  # 'api', 'llm', 'cluster1', 'cluster2'
@@ -28,7 +28,7 @@ DRONES_CONFIG = {
         'role': 'bishop',
         'color': 'black',
         'initial_letter': 'f',
-        'team': 'black',
+        'team': 'white',
         'raw_ip': '192.168.1.116'
     },
     'drone18': {
@@ -51,6 +51,13 @@ DRONES_CONFIG = {
         'initial_letter': 'g',
         'team': 'black',
         'raw_ip': '192.168.1.144'
+    },
+    'drone3': {
+        'role': 'knight',
+        'color': 'black',
+        'initial_letter': 'e',
+        'team': 'white',
+        'raw_ip': '192.168.1.71'
     }
     # Добавляйте новые дроны здесь по мере необходимости
 }

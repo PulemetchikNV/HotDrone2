@@ -64,15 +64,15 @@ def make_initial_positions():
     # Используем реальные координаты из ArUco карты
     white = {}
     white_pieces = {
-        'king': 'h5', 
-        # 'queen': 'd1',
+        'king': 'g1', 
+        'queen': 'h1',
         # 'rook_a1': 'a1', 'rook_h1': 'h1',
         # 'knight_b1': 'b1', 'knight_g1': 'g1', 
         # 'bishop_c1': 'c1', 'bishop_f1': 'f1',
-        'pawn_d1': 'd1', 
-        'pawn_e1': 'e1', 
-        'pawn_f1': 'f1', 
-        'pawn_g1': 'g1',
+        # 'pawn_d1': 'd1', 
+        # 'pawn_e1': 'e1', 
+        # 'pawn_f1': 'f1', 
+        # 'pawn_g1': 'g1',
     }
     
     for piece_name, cell in white_pieces.items():
@@ -82,8 +82,8 @@ def make_initial_positions():
     # Черные (только те, что активны в тесте)
     black = {}
     black_pieces = {
-        'king': 'e8',
-        'pawn_b7': 'c3'  # Основная фигура из логов
+        'king': 'g8',
+        'queen': 'd8'  # Основная фигура из логов
     }
     
     for piece_name, cell in black_pieces.items():
