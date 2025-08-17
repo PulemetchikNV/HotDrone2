@@ -105,3 +105,5 @@ myvenv/
 
 # another files
 requirements_full.txt
+llm_server/moves_log.json
+llm_server/dialog_log.json

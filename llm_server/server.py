@@ -11,6 +11,7 @@ CORS(app)  # Разрешаем CORS для всех маршрутов
 
 LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'moves.txt')
 MOVES_LOG_PATH = os.path.join(os.path.dirname(__file__), 'moves_log.json')
+DIALOG_LOG_PATH = os.path.join(os.path.dirname(__file__), 'dialog_log.json')
 
 def log_move(move_data):
     """Логирует ход в JSON файл для polling."""
@@ -47,6 +48,39 @@ def log_move(move_data):
     except Exception as e:
         print(f"Error logging move: {e}")
 
+def log_dialog(dialog_data):
+    """Логирует диалог дронов в JSON файл для polling."""
+    try:
+        # Читаем существующие диалоги
+        dialogs = []
+        if os.path.exists(DIALOG_LOG_PATH):
+            with open(DIALOG_LOG_PATH, 'r', encoding='utf-8') as f:
+                try:
+                    dialogs = json.load(f)
+                except json.JSONDecodeError:
+                    dialogs = []
+        
+        # Добавляем новый диалог
+        dialog_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'session_id': dialog_data.get('session_id', 'unknown'),
+            'messages': dialog_data.get('messages', []),
+            'final_move': dialog_data.get('final_move', ''),
+            'fen': dialog_data.get('fen', '')
+        }
+        
+        dialogs.append(dialog_entry)
+        
+        # Оставляем только последние 20 диалогов
+        dialogs = dialogs[-20:]
+        
+        # Сохраняем в файл
+        with open(DIALOG_LOG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(dialogs, f, ensure_ascii=False, indent=2)
+            
+    except Exception as e:
+        print(f"Error logging dialog: {e}")
+
 def get_recent_moves(since_timestamp=None):
     """Возвращает последние ходы, опционально с указанного времени."""
     try:
@@ -68,6 +102,29 @@ def get_recent_moves(since_timestamp=None):
         
     except Exception as e:
         print(f"Error reading moves: {e}")
+        return []
+
+def get_recent_dialogs(since_timestamp=None):
+    """Возвращает последние диалоги, опционально с указанного времени."""
+    try:
+        if not os.path.exists(DIALOG_LOG_PATH):
+            return []
+            
+        with open(DIALOG_LOG_PATH, 'r', encoding='utf-8') as f:
+            dialogs = json.load(f)
+            
+        if since_timestamp:
+            # Фильтруем диалоги после указанного времени
+            filtered_dialogs = []
+            for dialog in dialogs:
+                if dialog.get('timestamp', '') > since_timestamp:
+                    filtered_dialogs.append(dialog)
+            return filtered_dialogs
+        
+        return dialogs[-5:]  # Возвращаем последние 5 диалогов
+        
+    except Exception as e:
+        print(f"Error reading dialogs: {e}")
         return []
 
 @app.route('/')
@@ -95,17 +152,20 @@ def get_log():
 
 @app.route('/poll', methods=['GET'])
 def poll_moves():
-    """Endpoint для polling новых ходов с телефона."""
+    """Endpoint для polling новых диалогов и ходов с телефона."""
     from flask import request
     
     since = request.args.get('since', None)
+    dialogs = get_recent_dialogs(since)
     moves = get_recent_moves(since)
     
     response = jsonify({
         'status': 'success',
+        'dialogs': dialogs,
         'moves': moves,
         'timestamp': datetime.now().isoformat(),
-        'count': len(moves)
+        'dialogs_count': len(dialogs),
+        'moves_count': len(moves)
     })
     
     # Добавляем CORS заголовки вручную для совместимости
@@ -140,8 +200,34 @@ def log_move_endpoint():
     
     return response
 
+@app.route('/log_dialog', methods=['POST'])
+def log_dialog_endpoint():
+    """Endpoint для логирования диалогов дронов."""
+    from flask import request
+    
+    try:
+        dialog_data = request.get_json()
+        if not dialog_data:
+            response = jsonify({'status': 'error', 'message': 'No JSON data provided'})
+            response.status_code = 400
+        else:
+            log_dialog(dialog_data)
+            response = jsonify({'status': 'success', 'message': 'Dialog logged successfully'})
+            
+    except Exception as e:
+        response = jsonify({'status': 'error', 'message': str(e)})
+        response.status_code = 500
+    
+    # Добавляем CORS заголовки
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    
+    return response
+
 @app.route('/poll', methods=['OPTIONS'])
 @app.route('/log_move', methods=['OPTIONS'])
+@app.route('/log_dialog', methods=['OPTIONS'])
 def handle_options():
     """Обрабатываем preflight OPTIONS запросы для CORS."""
     response = Response()
@@ -182,12 +268,61 @@ def run_script():
                 cwd=project_root
             )
 
+            # Собираем диалог для логирования
+            dialog_messages = []
+            final_move = None
+            session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
             # Stream the output line by line
             for line in iter(process.stdout.readline, ''):
+                line_clean = line.strip()
                 yield f"data: {line}\n\n"
+                
+                # Парсим и сохраняем диалог
+                if line_clean:
+                    if line_clean.startswith('FIGURE:'):
+                        parts = line_clean.split(':', 3)
+                        if len(parts) >= 4:
+                            dialog_messages.append({
+                                'type': 'figure',
+                                'figure': parts[1],
+                                'role': parts[2], 
+                                'content': parts[3]
+                            })
+                    elif line_clean.startswith('MASTER:'):
+                        content = line_clean[7:] if len(line_clean) > 7 else ''
+                        dialog_messages.append({
+                            'type': 'master',
+                            'content': content
+                        })
+                    elif line_clean.startswith('FINAL_MOVE:'):
+                        final_move = line_clean[11:].strip()
+                        dialog_messages.append({
+                            'type': 'final_move',
+                            'content': final_move
+                        })
+                    elif line_clean.startswith('SYSTEM:'):
+                        content = line_clean[7:] if len(line_clean) > 7 else ''
+                        dialog_messages.append({
+                            'type': 'system',
+                            'content': content
+                        })
             
             process.stdout.close()
             return_code = process.wait()
+            
+            # Логируем диалог, если есть сообщения
+            if dialog_messages:
+                try:
+                    log_dialog({
+                        'session_id': session_id,
+                        'messages': dialog_messages,
+                        'final_move': final_move or '',
+                        'fen': fen or ''
+                    })
+                except Exception as log_e:
+                    print(f"Error logging dialog: {log_e}")
+            
             if return_code:
                 yield f"data: SCRIPT_ERROR: Process returned exit code {return_code}\n\n"
 

@@ -6,6 +6,7 @@ createApp({
         const isLoading = ref(false);
         const messageBox = ref(null);
         const recentMoves = ref([]);
+        const recentDialogs = ref([]);
         const isPolling = ref(false);
         const connectionStatus = ref('disconnected');
         const lastPollTimestamp = ref(null);
@@ -53,24 +54,69 @@ createApp({
                     connectionStatus.value = 'connected';
                     lastPollTimestamp.value = data.timestamp;
                     
-                    // Обновляем список ходов
-                    if (data.moves && data.moves.length > 0) {
-                        recentMoves.value = [...recentMoves.value, ...data.moves];
-                        // Оставляем только последние 20 ходов
-                        recentMoves.value = recentMoves.value.slice(-20);
+                    // Обновляем список диалогов
+                    if (data.dialogs && data.dialogs.length > 0) {
+                        recentDialogs.value = [...recentDialogs.value, ...data.dialogs];
+                        // Оставляем только последние 10 диалогов
+                        recentDialogs.value = recentDialogs.value.slice(-10);
                         
-                        // Добавляем новые ходы в чат
-                        data.moves.forEach(move => {
+                        // Ограничиваем количество сообщений в чате
+                        if (messages.value.length > 200) {
+                            messages.value = messages.value.slice(-100); // Оставляем последние 100
+                        }
+                        
+                        // Добавляем новые диалоги в чат
+                        data.dialogs.forEach(dialog => {
+                            // Добавляем заголовок диалога
                             messages.value.push({
-                                type: 'move',
-                                timestamp: move.timestamp,
-                                content: `🚁 Новый ход: ${move.move} (${move.from_cell} → ${move.to_cell})`,
-                                engine: move.engine,
-                                fen: move.fen
+                                type: 'highlight',
+                                content: `--- НОВОЕ ОБСУЖДЕНИЕ (${dialog.session_id}) ---`
+                            });
+                            
+                            // Добавляем все сообщения диалога
+                            dialog.messages.forEach(msg => {
+                                if (msg.type === 'figure') {
+                                    const agentName = russianRoles[msg.figure] || msg.figure;
+                                    messages.value.push({
+                                        type: 'agent',
+                                        agentId: `${agentName} (${msg.role})`,
+                                        avatar: avatarMap[msg.figure] || '4.png',
+                                        content: msg.content
+                                    });
+                                } else if (msg.type === 'master') {
+                                    messages.value.push({
+                                        type: 'agent',
+                                        agentId: 'Мастер',
+                                        avatar: avatarMap['master'],
+                                        content: msg.content
+                                    });
+                                } else if (msg.type === 'system') {
+                                    messages.value.push({
+                                        type: 'highlight',
+                                        content: msg.content
+                                    });
+                                } else if (msg.type === 'final_move') {
+                                    messages.value.push({
+                                        type: 'highlight',
+                                        content: `--- ФИНАЛЬНОЕ РЕШЕНИЕ ---`
+                                    });
+                                    messages.value.push({
+                                        type: 'agent',
+                                        agentId: 'Мастер',
+                                        avatar: avatarMap['master'],
+                                        content: `Выбранный ход: ${msg.content}`
+                                    });
+                                }
                             });
                         });
                         
                         scrollToBottom();
+                    }
+                    
+                    // Обновляем список ходов (для совместимости)
+                    if (data.moves && data.moves.length > 0) {
+                        recentMoves.value = [...recentMoves.value, ...data.moves];
+                        recentMoves.value = recentMoves.value.slice(-20);
                     }
                 } else {
                     connectionStatus.value = 'error';
@@ -198,6 +244,7 @@ createApp({
             isLoading,
             messageBox,
             recentMoves,
+            recentDialogs,
             connectionStatus,
             isPolling,
             runScript,
