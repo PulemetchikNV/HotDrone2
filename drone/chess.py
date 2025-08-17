@@ -20,6 +20,7 @@ from utils import AlgTemporaryError, AlgPermanentError
 from board_utils import get_board_state
 from alg2_stockfish import get_turn as get_turn_sf
 from alg_mock2 import get_turn as get_turn_mock
+from alg_llm_chess import get_turn as get_turn_llm_chess
 from esp import EspController, create_comm_controller
 from const import DRONE_LIST, LEADER_DRONE, rovers, get_current_drone_config, get_drone_config, ALG_MODE
 from rover import RoverController
@@ -91,6 +92,8 @@ def get_turn_final(board, time_budget_ms: int = TIME_BUDGET_MS):
     
     if alg_mode.startswith("cluster"):
         return get_turn_sf(board, time_budget_ms=time_budget_ms)
+    elif alg_mode == "llm_chess":
+        return get_turn_llm_chess(board, time_budget_ms=time_budget_ms)
     else:
         # api и llm пока одинаково — используем мок-алгоритм
         return get_turn_mock(board, time_budget_ms=time_budget_ms)

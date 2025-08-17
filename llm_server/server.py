@@ -36,9 +36,23 @@ def run_script():
             script_path = os.path.join(os.path.dirname(__file__), 'alg_llm.py')
             project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
             
+            # Получаем FEN из запроса, если есть
+            from flask import request
+            fen = None
+            try:
+                if request.is_json:
+                    fen = request.json.get('fen')
+            except:
+                pass  # Игнорируем ошибки контекста
+            
+            # Формируем команду
+            cmd = ['python3', '-u', script_path]
+            if fen:
+                cmd.append(fen)
+            
             # Use Popen for real-time streaming
             process = subprocess.Popen(
-                ['python3', '-u', script_path], # -u for unbuffered output
+                cmd, # -u for unbuffered output
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

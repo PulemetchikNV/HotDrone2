@@ -16,6 +16,14 @@ from drone.const import DRONES_CONFIG, LEADER_DRONE, DRONE_LIST
 @dataclass
 class BoardState:
     fen: str
+    turn: str = "w"
+    move_number: int = 1
+    timestamp: float = None
+    
+    def __post_init__(self):
+        if self.timestamp is None:
+            import time
+            object.__setattr__(self, 'timestamp', time.time())
 
 # --- Constants ---
 FILES = "abcdefgh"
@@ -184,5 +192,14 @@ def get_turn(board: BoardState):
 
 if __name__ == '__main__':
     # This block is for direct testing of the script
-    start_board = BoardState(fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    import sys
+    
+    # Если передан FEN как аргумент, используем его
+    if len(sys.argv) > 1:
+        fen = sys.argv[1]
+        start_board = BoardState(fen=fen)
+    else:
+        # Иначе используем начальную позицию
+        start_board = BoardState(fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    
     get_turn(start_board)
