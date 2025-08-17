@@ -36,6 +36,20 @@ DRONES_CONFIG = {
         'initial_letter': 'c',
         'team': 'black',
         'raw_ip': '192.168.1.134'
+    },
+    'drone12': {
+        'role': 'knight',
+        'color': 'black',
+        'initial_letter': 'b',
+        'team': 'black',
+        'raw_ip': '192.168.1.140'
+    },
+    'drone16': {
+        'role': 'knight',
+        'color': 'black',
+        'initial_letter': 'g',
+        'team': 'black',
+        'raw_ip': '192.168.1.144'
     }
     # Добавляйте новые дроны здесь по мере необходимости
 }
@@ -70,36 +84,28 @@ def get_current_drone_config() -> dict:
     return get_drone_config()
 
 rovers = {
-    # 'rover_a': {
-    #     'ip': '192.168.1.97',
-    #     'port': 12345,
-    #     'initial_letter': 'a',
-    #     'number': 2,
-    # },
-    # 'rover_b': {
-    #     'ip': '192.168.1.97',
-    #     'port': 12345,
-    #     'initial_letter': 'd',
-    #     'number': 11,
-    # }
-    # '2': {
-    #     'ip': '192.168.1.97',
-    #     'port': 12345,
-    #     'initial_letter': 'a'
-    # },
-    # '1': {
-    #     'ip': '192.168.1.71',
-    #     'port': 12345,
-    #     'initial_letter': 'b'
-    # },
-    # '3': {
-    #     'ip': '192.168.1.73',
-    #     'port': 12345,
-    #     'initial_letter': 'c'
-    # },
-    # '4': {
-    #     'ip': '192.168.1.74',
-    #     'port': 12345,
-    #     'initial_letter': 'd'
-    # }
+    'rover_a': {
+        'ip': '192.168.1.97',
+        'port': 80,
+        'initial_letter': 'a',
+        'number': 2,
+    },
+    'rover_b': {
+        'ip': '192.168.1.98',
+        'port': 80,
+        'initial_letter': 'b', 
+        'number': 3,
+    },
+    'rover_c': {
+        'ip': '192.168.1.99',
+        'port': 80,
+        'initial_letter': 'c',
+        'number': 4,
+    },
+    'rover_d': {
+        'ip': '192.168.1.100',
+        'port': 80,
+        'initial_letter': 'd',
+        'number': 5,
+    }
 }

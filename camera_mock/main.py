@@ -58,6 +58,8 @@ def make_initial_positions():
         'king': {'x': 0.0,  'y': 3.5, "cell": 'e8'},
         'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
         'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
+        'knight_b8': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
+        'knight_g8': {'x': 2.5, 'y': 3.5, 'cell': 'g8'},
         # 'pawn_d7': {'x': -2.5, 'y': 3.5, 'cell': 'd7'},
     }
     return {'white': white, 'black': black}
@@ -67,6 +69,9 @@ def make_initial_positions():
 POSITIONS = make_initial_positions()
 TURN = 'white'  # white начинает
 IS_PAUSED = False  # Состояние паузы
+
+# История состояний для отката ходов
+GAME_HISTORY = []  # Хранит состояния (positions, turn) перед каждым ходом
 
 
 def positions_to_fen(positions: dict, turn: str) -> str:
@@ -126,6 +131,19 @@ def find_piece_at_cell(cell: str):
     return None, None
 
 
+def save_current_state():
+    """Сохраняет текущее состояние игры в историю"""
+    global GAME_HISTORY
+    state = {
+        'positions': copy.deepcopy(POSITIONS),
+        'turn': TURN
+    }
+    GAME_HISTORY.append(state)
+    # Ограничиваем размер истории (например, последние 50 ходов)
+    if len(GAME_HISTORY) > 50:
+        GAME_HISTORY.pop(0)
+
+
 class Move(BaseModel):
     move: str | None = None  # формат 'e2e4'
     from_cell: str | None = None
@@ -156,6 +174,9 @@ def api_positions():
 @app.post("/make_move")
 def make_move(move: Move):
     global TURN
+
+    # Сохраняем текущее состояние перед выполнением хода
+    save_current_state()
 
     # Распарсим ходы
     if move.move:
@@ -196,11 +217,28 @@ def make_move(move: Move):
     return get_board_state()
 
 
+@app.post("/undo_move")
+def undo_move():
+    """Откатывает последний ход"""
+    global POSITIONS, TURN, GAME_HISTORY
+    
+    if not GAME_HISTORY:
+        raise HTTPException(status_code=400, detail="No moves to undo")
+    
+    # Восстанавливаем последнее сохраненное состояние
+    last_state = GAME_HISTORY.pop()
+    POSITIONS = last_state['positions']
+    TURN = last_state['turn']
+    
+    return get_board_state()
+
+
 @app.post("/reset_board")
 def reset_board():
-    global POSITIONS, TURN
+    global POSITIONS, TURN, GAME_HISTORY
     POSITIONS = make_initial_positions()
     TURN = 'white'
+    GAME_HISTORY = []  # Очищаем историю при сбросе
     return get_board_state()
 
 

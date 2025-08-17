@@ -1,1 +1,1 @@
-drone11:drone11.local;drone21:drone21.local;drone15:drone15.local;drone18:192.168.1.134;drone3:192.168.1.71;
+drone12:drone12.local;drone11:drone11.local;drone21:drone21.local;drone15:drone15.local;drone18:192.168.1.134;drone3:192.168.1.71;
