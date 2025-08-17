@@ -20,7 +20,7 @@ DRONES_CONFIG = {
     'drone21': {
         'role': 'king', 
         'color': 'black',
-        'initial_letter': 'e',
+        'initial_letter': 'd',
         'team': 'black',
         'raw_ip': '192.168.1.59'
     },
