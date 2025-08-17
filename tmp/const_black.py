@@ -64,16 +64,22 @@ def get_current_drone_config() -> dict:
     return get_drone_config()
 
 rovers = {
-    'rover_b': {
-        'ip': '192.168.1.53',
+    'rover_f': {
+        'ip': '192.168.1.97',
         'port': 80,
-        'initial_letter': 'c',
-        'number': 16,
+        'initial_letter': 'f',
+        'number': 11,
     },
-    'rover_b': {
-        'ip': '192.168.1.53',
+    'rover_g': {
+        'ip': '192.168.1.109',
         'port': 80,
-        'initial_letter': 'c',
-        'number': 16,
+        'initial_letter': 'g',
+        'number': 14,
+    },
+    'rover_h': {
+        'ip': '192.168.1.34',
+        'port': 80,
+        'initial_letter': 'h',
+        'number': 19,
     },
 }
