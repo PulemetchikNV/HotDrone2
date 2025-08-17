@@ -60,7 +60,7 @@ def make_initial_positions():
         #'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
         #'knight_b8': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
         #'knight_g8': {'x': 2.5, 'y': 3.5, 'cell': 'g8'},
-        'pawn_a7': {'x': -2.5, 'y': 3.5, 'cell': 'a7'},
+        'pawn_b7': {'x': -2.5, 'y': 3.5, 'cell': 'b7'},
     }
     return {'white': white, 'black': black}
 
