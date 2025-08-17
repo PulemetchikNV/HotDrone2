@@ -478,6 +478,7 @@ class ChessDroneSingle:
             else:
                 self.logger.warning(f"No role defined for drone {drone_name} (env var {role_var})")
         
+        print(f"DRONE ROLE MAPPING: {mapping}")
         return mapping
     
     def _get_piece_on_cell_from_camera(self, cell: str):
@@ -955,7 +956,6 @@ class ChessDroneSingle:
             
         try:
             positions = self.camera.get_board_positions()
-            print(f"Positions: {positions}")
             
             # Ищем фигуры на доске - если видим фигуры, значит дроны живые
             for color_data in positions.values():

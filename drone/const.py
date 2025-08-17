@@ -1,4 +1,4 @@
-DRONE_LIST = 'drone15,drone21'
+DRONE_LIST = 'drone15,drone21,drone11,drone18'
 #,drone18,drone21,drone21'
 LEADER_DRONE = 'drone21'
 DRONES_TOTAL = 2
