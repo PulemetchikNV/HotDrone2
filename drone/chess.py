@@ -35,15 +35,15 @@ FILES = "abcdefgh"
 RANKS = "12345678"
 
 # Константы для конвертации координат
-CELL_SIZE_METERS = 0.30  # 30 см = 1 клетка
-ARUCO_MIN = -1.5  # Минимальная координата ArUco
-ARUCO_MAX = 1.5   # Максимальная координата ArUco
-ARUCO_RANGE = ARUCO_MAX - ARUCO_MIN  # 3.0 метра = 10 клеток
+CELL_SIZE_METERS = 0.40  # 40 см = 1 клетка
+ARUCO_MIN = -1.6  # Минимальная координата ArUco (-4 клетки * 0.4м)
+ARUCO_MAX = 1.6   # Максимальная координата ArUco (+4 клетки * 0.4м)
+ARUCO_RANGE = ARUCO_MAX - ARUCO_MIN  # 3.2 метра = 8 клеток по 40см
 
 def aruco_to_rover_meters(aruco_x, aruco_y):
     """
-    Конвертирует координаты из ArUco формата (-1.5 до 1.5) в метры для роверов.
-    ArUco система: центр (0,0), края ±1.5 метра
+    Конвертирует координаты из ArUco формата (-1.6 до 1.6) в метры для роверов.
+    ArUco система: центр (0,0), края ±1.6 метра (8 клеток по 40см)
     Rover система: начинается с (0,0), в метрах относительно начальной позиции
     
     Args:
@@ -52,9 +52,9 @@ def aruco_to_rover_meters(aruco_x, aruco_y):
     Returns:
         tuple: (rover_x, rover_y) в метрах
     """
-    # Сдвигаем начало координат: ArUco (-1.5, -1.5) становится rover (0, 0)
-    rover_x = aruco_x - ARUCO_MIN  # -1.5 -> 0, 0 -> 1.5, 1.5 -> 3.0
-    rover_y = aruco_y - ARUCO_MIN  # -1.5 -> 0, 0 -> 1.5, 1.5 -> 3.0
+    # Сдвигаем начало координат: ArUco (-1.6, -1.6) становится rover (0, 0)
+    rover_x = aruco_x - ARUCO_MIN  # -1.6 -> 0, 0 -> 1.6, 1.6 -> 3.2
+    rover_y = aruco_y - ARUCO_MIN  # -1.6 -> 0, 0 -> 1.6, 1.6 -> 3.2
     
     return rover_x, rover_y
 
@@ -68,8 +68,8 @@ def rover_meters_to_aruco(rover_x, rover_y):
     Returns:
         tuple: (aruco_x, aruco_y) в ArUco формате
     """
-    aruco_x = rover_x + ARUCO_MIN  # 0 -> -1.5, 1.5 -> 0, 3.0 -> 1.5
-    aruco_y = rover_y + ARUCO_MIN  # 0 -> -1.5, 1.5 -> 0, 3.0 -> 1.5
+    aruco_x = rover_x + ARUCO_MIN  # 0 -> -1.6, 1.6 -> 0, 3.2 -> 1.6
+    aruco_y = rover_y + ARUCO_MIN  # 0 -> -1.6, 1.6 -> 0, 3.2 -> 1.6
     
     return aruco_x, aruco_y
 

@@ -128,7 +128,7 @@ class RoverControllerMain:
         self.logger.info(f"Остановка ровера {rover_id}...")
         return self.send_command(rover_id, "stop")
 
-    def wait_for_completion(self, rover_id, timeout: int = 60) -> bool:
+    def wait_for_completion(self, rover_id, timeout: int = 15) -> bool:
         """
         Ожидание завершения текущего движения
         
@@ -147,7 +147,7 @@ class RoverControllerMain:
             if status.get('status') == 'Ready':
                 self.logger.info(f"Движение ровера {rover_id} завершено!")
                 return True
-            time.sleep(0.5)
+            time.sleep(0.2)
         
         self.logger.warning(f"Тайм-аут ожидания завершения движения ровера {rover_id}")
         return False
@@ -276,6 +276,11 @@ class RoverControllerMain:
         distance_m = math.sqrt(dx*dx + dy*dy)
         distance_mm = int(distance_m * 1000)  # Конвертируем в мм
         
+        # Проверка на разумность расстояния (одна клетка = 400мм)
+        if distance_mm > 1000:  # Больше 2.5 клеток
+            self.logger.warning(f"⚠️  ПОДОЗРИТЕЛЬНО БОЛЬШОЕ РАССТОЯНИЕ: {distance_mm}мм ({distance_m:.3f}м) для одного хода!")
+            self.logger.warning(f"⚠️  Возможно проблема в данных камеры: dx={dx:.3f}м, dy={dy:.3f}м")
+        
         if distance_mm == 0:
             self.logger.info(f"Ровер {rover_id} уже находится в целевой позиции")
             return True
@@ -339,7 +344,7 @@ class RoverControllerMock:
         self.logger.info(f"🤖 MOCK: Остановка ровера {rover_id}")
         return True
 
-    def wait_for_completion(self, rover_id, timeout: int = 60) -> bool:
+    def wait_for_completion(self, rover_id, timeout: int = 15) -> bool:
         """MOCK версия ожидания завершения"""
         self.logger.info(f"🤖 MOCK: Ожидание завершения движения ровера {rover_id} (мгновенно)")
         return True
