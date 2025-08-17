@@ -791,25 +791,72 @@ class ChessDroneSingle:
         self.logger.info(f"  From position (meters): ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°)")
         self.logger.info(f"  To position (meters): ({target_x:.3f}, {target_y:.3f})")
         
-        # TODO: Добавить логику is_kill для роверов (проверка вражеской фигуры на целевой клетке)
-        # is_kill = self._is_enemy_piece_on_cell(move.to_cell)
-        
+        # Проверяем, является ли ход взятием
+        is_kill = False
         try:
-            # Отправляем команду с текущей и целевой позицией в метрах
+            is_kill = self._is_enemy_piece_on_cell(move.to_cell)
+        except Exception as _:
+            is_kill = False
+
+        # Если это взятие пешкой по диагонали — едем по диагонали половину дистанции, затем вторую половину
+        if is_kill:
+            try:
+                fi_from, ri_from = FILES.index(move.from_cell[0]), RANKS.index(move.from_cell[1])
+                fi_to, ri_to = FILES.index(move.to_cell[0]), RANKS.index(move.to_cell[1])
+                is_diagonal = abs(fi_to - fi_from) == 1 and abs(ri_to - ri_from) == 1
+            except Exception:
+                is_diagonal = False
+
+            if is_diagonal:
+                # Вычисляем длину диагонали между центрами клеток в метрах
+                from_cx, from_cy = self.get_cell_coordinates(move.from_cell)
+                to_cx, to_cy = self.get_cell_coordinates(move.to_cell)
+                from_mx, from_my = aruco_to_rover_meters(from_cx, from_cy)
+                to_mx, to_my = aruco_to_rover_meters(to_cx, to_cy)
+                diag_m = math.sqrt((to_mx - from_mx) ** 2 + (to_my - from_my) ** 2)
+                half_mm = max(1, int((diag_m * 1000) / 2))
+
+                # Определяем направление (вправо = +45°, влево = -45°) относительно текущей ориентации
+                angle = 45 if (fi_to - fi_from) > 0 else -45
+
+                self.logger.info(
+                    f"Rover kill-move (diagonal, split): angle={angle}°, full={int(diag_m*1000)}мм, half={half_mm}мм"
+                )
+
+                # Формируем последовательность: один поворот, затем два отрезка движения
+                commands = [
+                    {'type': 'turn', 'value': angle, 'wait': True},
+                    {'type': 'forward', 'value': half_mm, 'wait': True, 'delay': 0.3},
+                    {'type': 'forward', 'value': half_mm, 'wait': True}
+                ]
+
+                try:
+                    success = self.rover.execute_sequence(rover_id, commands)
+                    if success:
+                        self.logger.info(f"Rover {rover_id} kill-move executed successfully")
+                    else:
+                        self.logger.error(f"Rover {rover_id} kill-move failed to execute")
+                except Exception as e:
+                    self.logger.error(f"Failed to execute rover kill-move sequence: {e}")
+
+                return
+
+        # Обычный ход: едем до целевой точки с поворотом по мировым координатам
+        try:
             success = self.rover.navigate(
-                rover_id, 
-                current_x=current_x, 
-                current_y=current_y, 
+                rover_id,
+                current_x=current_x,
+                current_y=current_y,
                 current_yaw=current_yaw,
-                target_x=target_x, 
+                target_x=target_x,
                 target_y=target_y
             )
-            
+
             if success:
                 self.logger.info(f"Rover {rover_id} command sent successfully")
             else:
                 self.logger.error(f"Failed to send command to rover {rover_id}")
-                
+
         except Exception as e:
             self.logger.error(f"Failed to send rover navigate: {e}")
 
