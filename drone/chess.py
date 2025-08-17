@@ -35,15 +35,15 @@ FILES = "abcdefgh"
 RANKS = "12345678"
 
 # Константы для конвертации координат
-CELL_SIZE_METERS = 0.30  # 30 см = 1 клетка
-ARUCO_MIN = -1.5  # Минимальная координата ArUco
-ARUCO_MAX = 1.5   # Максимальная координата ArUco
-ARUCO_RANGE = ARUCO_MAX - ARUCO_MIN  # 3.0 метра = 10 клеток
+CELL_SIZE_METERS = 0.40  # 40 см = 1 клетка
+ARUCO_MIN = -1.6  # Минимальная координата ArUco (-4 клетки * 0.4м)
+ARUCO_MAX = 1.6   # Максимальная координата ArUco (+4 клетки * 0.4м)
+ARUCO_RANGE = ARUCO_MAX - ARUCO_MIN  # 3.2 метра = 8 клеток по 40см
 
 def aruco_to_rover_meters(aruco_x, aruco_y):
     """
-    Конвертирует координаты из ArUco формата (-1.5 до 1.5) в метры для роверов.
-    ArUco система: центр (0,0), края ±1.5 метра
+    Конвертирует координаты из ArUco формата (-1.6 до 1.6) в метры для роверов.
+    ArUco система: центр (0,0), края ±1.6 метра (8 клеток по 40см)
     Rover система: начинается с (0,0), в метрах относительно начальной позиции
     
     Args:
@@ -52,9 +52,9 @@ def aruco_to_rover_meters(aruco_x, aruco_y):
     Returns:
         tuple: (rover_x, rover_y) в метрах
     """
-    # Сдвигаем начало координат: ArUco (-1.5, -1.5) становится rover (0, 0)
-    rover_x = aruco_x - ARUCO_MIN  # -1.5 -> 0, 0 -> 1.5, 1.5 -> 3.0
-    rover_y = aruco_y - ARUCO_MIN  # -1.5 -> 0, 0 -> 1.5, 1.5 -> 3.0
+    # Сдвигаем начало координат: ArUco (-1.6, -1.6) становится rover (0, 0)
+    rover_x = aruco_x - ARUCO_MIN  # -1.6 -> 0, 0 -> 1.6, 1.6 -> 3.2
+    rover_y = aruco_y - ARUCO_MIN  # -1.6 -> 0, 0 -> 1.6, 1.6 -> 3.2
     
     return rover_x, rover_y
 
@@ -68,8 +68,8 @@ def rover_meters_to_aruco(rover_x, rover_y):
     Returns:
         tuple: (aruco_x, aruco_y) в ArUco формате
     """
-    aruco_x = rover_x + ARUCO_MIN  # 0 -> -1.5, 1.5 -> 0, 3.0 -> 1.5
-    aruco_y = rover_y + ARUCO_MIN  # 0 -> -1.5, 1.5 -> 0, 3.0 -> 1.5
+    aruco_x = rover_x + ARUCO_MIN  # 0 -> -1.6, 1.6 -> 0, 3.2 -> 1.6
+    aruco_y = rover_y + ARUCO_MIN  # 0 -> -1.6, 1.6 -> 0, 3.2 -> 1.6
     
     return aruco_x, aruco_y
 
@@ -183,7 +183,7 @@ class ChessDroneSingle:
 
         # Параметры полёта
         self.takeoff_z = float(os.getenv("TAKEOFF_Z", "1.0"))
-        self.flight_z = float(os.getenv("FLIGHT_Z", "1.0"))
+        self.flight_z = float(os.getenv("FLIGHT_Z", "1.3"))
         self.speed = float(os.getenv("SPEED", "0.3"))
 
         # CameraAdapter removed; use unified camera controller as single source of truth
@@ -201,7 +201,7 @@ class ChessDroneSingle:
         default_map_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "aruco_maps",
-            "aruco_map2.json",
+            "aruco_map1.json",
         )
         self.map_path = os.getenv("ARUCO_MAP_JSON", default_map_path)
         self.cell_markers = {}
@@ -286,8 +286,8 @@ class ChessDroneSingle:
                         # Конвертируем в метры для rover API
                         rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
                         
-                        # Пока что используем yaw = 0 (можно расширить позже)
-                        rover_yaw = 0.0
+                        # Базовая ориентация ровера: 0° вдоль +X, вперёд по -Y => yaw = -90°
+                        rover_yaw = -90.0
                         
                         self.logger.info(f"Rover {rover_id} at {from_cell}: ArUco({aruco_x:.3f}, {aruco_y:.3f}) -> Rover({rover_x:.3f}, {rover_y:.3f}, {rover_yaw:.1f}°)")
                         return rover_x, rover_y, rover_yaw
@@ -296,14 +296,14 @@ class ChessDroneSingle:
             self.logger.warning(f"Pawn not found on camera at {from_cell}, using calculated coordinates")
             aruco_x, aruco_y = self.get_cell_coordinates(from_cell)
             rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
-            return rover_x, rover_y, 0.0
+            return rover_x, rover_y, -90.0
             
         except Exception as e:
             self.logger.error(f"Failed to get rover position from camera: {e}")
             # Fallback: используем рассчитанные координаты клетки
             aruco_x, aruco_y = self.get_cell_coordinates(from_cell)
             rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
-            return rover_x, rover_y, 0.0
+            return rover_x, rover_y, -90.0
 
     def move_to_xy(self, x: float, y: float, z: float, is_kill = False):
         # 1. Взлёт на рабочую высоту
@@ -317,16 +317,17 @@ class ChessDroneSingle:
             speed=self.speed,
             auto_arm=True,
         )
-        self.fc.wait(0.5 if is_kill else 4.0)
+        self.fc.wait(0.5 if is_kill else 5.0)
+        if(is_kill):
+            time.sleep(4.5)
         
         self.fc.navigate_wait(
             x=x, 
             y=y, 
-            z=0.15,
+            z=0.25,
             speed=0.2,
             auto_arm=False,
         )
-
 
         self.fc.wait(0.8)
 
@@ -790,25 +791,72 @@ class ChessDroneSingle:
         self.logger.info(f"  From position (meters): ({current_x:.3f}, {current_y:.3f}, {current_yaw:.1f}°)")
         self.logger.info(f"  To position (meters): ({target_x:.3f}, {target_y:.3f})")
         
-        # TODO: Добавить логику is_kill для роверов (проверка вражеской фигуры на целевой клетке)
-        # is_kill = self._is_enemy_piece_on_cell(move.to_cell)
-        
+        # Проверяем, является ли ход взятием
+        is_kill = False
         try:
-            # Отправляем команду с текущей и целевой позицией в метрах
+            is_kill = self._is_enemy_piece_on_cell(move.to_cell)
+        except Exception as _:
+            is_kill = False
+
+        # Если это взятие пешкой по диагонали — едем по диагонали половину дистанции, затем вторую половину
+        if is_kill:
+            try:
+                fi_from, ri_from = FILES.index(move.from_cell[0]), RANKS.index(move.from_cell[1])
+                fi_to, ri_to = FILES.index(move.to_cell[0]), RANKS.index(move.to_cell[1])
+                is_diagonal = abs(fi_to - fi_from) == 1 and abs(ri_to - ri_from) == 1
+            except Exception:
+                is_diagonal = False
+
+            if is_diagonal:
+                # Вычисляем длину диагонали между центрами клеток в метрах
+                from_cx, from_cy = self.get_cell_coordinates(move.from_cell)
+                to_cx, to_cy = self.get_cell_coordinates(move.to_cell)
+                from_mx, from_my = aruco_to_rover_meters(from_cx, from_cy)
+                to_mx, to_my = aruco_to_rover_meters(to_cx, to_cy)
+                diag_m = math.sqrt((to_mx - from_mx) ** 2 + (to_my - from_my) ** 2)
+                half_mm = max(1, int((diag_m * 1000) / 2))
+
+                # Определяем направление (вправо = +45°, влево = -45°) относительно текущей ориентации
+                angle = 45 if (fi_to - fi_from) > 0 else -45
+
+                self.logger.info(
+                    f"Rover kill-move (diagonal, split): angle={angle}°, full={int(diag_m*1000)}мм, half={half_mm}мм"
+                )
+
+                # Формируем последовательность: один поворот, затем два отрезка движения
+                commands = [
+                    {'type': 'turn', 'value': angle, 'wait': True},
+                    {'type': 'forward', 'value': half_mm, 'wait': True, 'delay': 0.3},
+                    {'type': 'forward', 'value': half_mm, 'wait': True}
+                ]
+
+                try:
+                    success = self.rover.execute_sequence(rover_id, commands)
+                    if success:
+                        self.logger.info(f"Rover {rover_id} kill-move executed successfully")
+                    else:
+                        self.logger.error(f"Rover {rover_id} kill-move failed to execute")
+                except Exception as e:
+                    self.logger.error(f"Failed to execute rover kill-move sequence: {e}")
+
+                return
+
+        # Обычный ход: едем до целевой точки с поворотом по мировым координатам
+        try:
             success = self.rover.navigate(
-                rover_id, 
-                current_x=current_x, 
-                current_y=current_y, 
+                rover_id,
+                current_x=current_x,
+                current_y=current_y,
                 current_yaw=current_yaw,
-                target_x=target_x, 
+                target_x=target_x,
                 target_y=target_y
             )
-            
+
             if success:
                 self.logger.info(f"Rover {rover_id} command sent successfully")
             else:
                 self.logger.error(f"Failed to send command to rover {rover_id}")
-                
+
         except Exception as e:
             self.logger.error(f"Failed to send rover navigate: {e}")
 

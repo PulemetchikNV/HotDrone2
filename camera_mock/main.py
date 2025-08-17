@@ -5,6 +5,7 @@ from pydantic import BaseModel
 import uvicorn
 import os
 import copy
+import json
 
 app = FastAPI()
 app.add_middleware(
@@ -14,6 +15,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def load_aruco_map():
+    """Загружает координаты из aruco_map1.json"""
+    try:
+        # Путь к карте ArUco относительно camera_mock
+        map_path = os.path.join(os.path.dirname(__file__), '..', 'aruco_maps', 'aruco_map1.json')
+        with open(map_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Warning: Failed to load aruco_map2.json: {e}")
+        return {}
 ui_directory = os.path.dirname(__file__)
 
 FILES = "abcdefgh"
@@ -33,33 +45,55 @@ def cell_to_xy(cell: str):
 
 
 def make_initial_positions():
-    # Копия структуры из MockCameraController в drone/camera.py
-    white = {
-        'king':      {'x': 0.0,  'y': -3.5, 'cell': 'e1'},
-        'queen':     {'x': -0.5, 'y': -3.5, 'cell': 'd1'},
-        'rook_a1':   {'x': -3.5, 'y': -3.5, 'cell': 'a1'},
-        'rook_h1':   {'x': 3.5,  'y': -3.5, 'cell': 'h1'},
-        'knight_b1': {'x': -2.5, 'y': -3.5, 'cell': 'b1'},
-        'knight_g1': {'x': 2.5,  'y': -3.5, 'cell': 'g1'},
-        'bishop_c1': {'x': -1.5, 'y': -3.5, 'cell': 'c1'},
-        'bishop_f1': {'x': 1.5,  'y': -3.5, 'cell': 'f1'},
-        'pawn_a2':   {'x': -3.5, 'y': -2.5, 'cell': 'a2'},
-        'pawn_b2':   {'x': -2.5, 'y': -2.5, 'cell': 'b2'},
-        'pawn_c2':   {'x': -1.5, 'y': -2.5, 'cell': 'c2'},
-        'pawn_d2':   {'x': -0.5, 'y': -2.5, 'cell': 'd2'},
-        'pawn_e2':   {'x': 0.5, 'y': -2.5, 'cell': 'e2'},
-        'pawn_f2':   {'x': 1.5, 'y': -2.5, 'cell': 'f2'},
-        'pawn_g2':   {'x': 2.5, 'y': -2.5, 'cell': 'g2'},
-        'pawn_h2':   {'x': 3.5, 'y': -2.5, 'cell': 'h2'},
+    """Создает начальные позиции фигур, используя координаты из aruco_map2.json"""
+    aruco_map = load_aruco_map()
+    
+    def get_aruco_coords(cell):
+        """Получает координаты клетки из ArUco карты"""
+        if cell in aruco_map:
+            return aruco_map[cell]['x'], aruco_map[cell]['y']
+        else:
+            print(f"Warning: No ArUco coordinates for {cell}, using fallback")
+            # Fallback к старой системе (если нет в карте)
+            file_idx = FILES.index(cell[0])
+            rank_idx = RANKS.index(cell[1])
+            x = (file_idx - 3.5) * 0.436  # ~40см между клетками
+            y = (rank_idx - 3.5) * 0.436
+            return x, y
+    
+    # Используем реальные координаты из ArUco карты
+    white = {}
+    white_pieces = {
+        'king': 'h5', 
+        # 'queen': 'd1',
+        # 'rook_a1': 'a1', 'rook_h1': 'h1',
+        # 'knight_b1': 'b1', 'knight_g1': 'g1', 
+        # 'bishop_c1': 'c1', 'bishop_f1': 'f1',
+        'pawn_d1': 'd1', 
+        'pawn_e1': 'e1', 
+        'pawn_f1': 'f1', 
+        'pawn_g1': 'g1',
     }
-    black = {
-        #'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
-        'queen': {'x': 0.0,  'y': 3.5, "cell": 'd8'},
-        'king': {'x': 0.0,  'y': 3.5, "cell": 'e8'},
-        'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
-        'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
-        # 'pawn_d7': {'x': -2.5, 'y': 3.5, 'cell': 'd7'},
+    
+    for piece_name, cell in white_pieces.items():
+        x, y = get_aruco_coords(cell)
+        white[piece_name] = {'x': x, 'y': y, 'cell': cell}
+    
+    # Черные (только те, что активны в тесте)
+    black = {}
+    black_pieces = {
+        'king': 'e8',
+        'pawn_b7': 'c3'  # Основная фигура из логов
     }
+    
+    for piece_name, cell in black_pieces.items():
+        x, y = get_aruco_coords(cell)
+        black[piece_name] = {'x': x, 'y': y, 'cell': cell}
+    
+    print(f"ArUco coordinates loaded for mock camera:")
+    print(f"  b7: {black.get('pawn_b7', {})}")
+    print(f"  b6: {get_aruco_coords('b6')}")
+    
     return {'white': white, 'black': black}
 
 
@@ -67,6 +101,9 @@ def make_initial_positions():
 POSITIONS = make_initial_positions()
 TURN = 'white'  # white начинает
 IS_PAUSED = False  # Состояние паузы
+
+# История состояний для отката ходов
+GAME_HISTORY = []  # Хранит состояния (positions, turn) перед каждым ходом
 
 
 def positions_to_fen(positions: dict, turn: str) -> str:
@@ -126,6 +163,19 @@ def find_piece_at_cell(cell: str):
     return None, None
 
 
+def save_current_state():
+    """Сохраняет текущее состояние игры в историю"""
+    global GAME_HISTORY
+    state = {
+        'positions': copy.deepcopy(POSITIONS),
+        'turn': TURN
+    }
+    GAME_HISTORY.append(state)
+    # Ограничиваем размер истории (например, последние 50 ходов)
+    if len(GAME_HISTORY) > 50:
+        GAME_HISTORY.pop(0)
+
+
 class Move(BaseModel):
     move: str | None = None  # формат 'e2e4'
     from_cell: str | None = None
@@ -156,6 +206,9 @@ def api_positions():
 @app.post("/make_move")
 def make_move(move: Move):
     global TURN
+
+    # Сохраняем текущее состояние перед выполнением хода
+    save_current_state()
 
     # Распарсим ходы
     if move.move:
@@ -196,11 +249,28 @@ def make_move(move: Move):
     return get_board_state()
 
 
+@app.post("/undo_move")
+def undo_move():
+    """Откатывает последний ход"""
+    global POSITIONS, TURN, GAME_HISTORY
+    
+    if not GAME_HISTORY:
+        raise HTTPException(status_code=400, detail="No moves to undo")
+    
+    # Восстанавливаем последнее сохраненное состояние
+    last_state = GAME_HISTORY.pop()
+    POSITIONS = last_state['positions']
+    TURN = last_state['turn']
+    
+    return get_board_state()
+
+
 @app.post("/reset_board")
 def reset_board():
-    global POSITIONS, TURN
+    global POSITIONS, TURN, GAME_HISTORY
     POSITIONS = make_initial_positions()
     TURN = 'white'
+    GAME_HISTORY = []  # Очищаем историю при сбросе
     return get_board_state()
 
 

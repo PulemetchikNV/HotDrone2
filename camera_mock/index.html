@@ -24,6 +24,7 @@
 
     <button id="resetButton">Reset Game</button>
     <button id="pauseButton">Pause Game</button>
+    <button id="undoButton">Undo Move</button>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"
@@ -152,6 +153,24 @@
             console.log(data.message);
         } catch (error) {
             console.error('Error toggling pause:', error);
+        }
+    });
+    
+    $('#undoButton').on('click', async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:8001/undo_move', { method: 'POST' });
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Cannot undo move:', error.detail);
+                alert('Cannot undo move: ' + error.detail);
+                return;
+            }
+            const data = await response.json();
+            updateStatus(data);
+            console.log('Move undone successfully');
+        } catch (error) {
+            console.error('Error undoing move:', error);
+            alert('Error undoing move: ' + error.message);
         }
     });
 
