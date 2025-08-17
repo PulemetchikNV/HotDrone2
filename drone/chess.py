@@ -317,9 +317,9 @@ class ChessDroneSingle:
             speed=self.speed,
             auto_arm=True,
         )
-        self.fc.wait(0.5 if is_kill else 4.0)
+        self.fc.wait(0.5 if is_kill else 5.0)
         if(is_kill):
-            time.sleep(3.5)
+            time.sleep(4.5)
         
         self.fc.navigate_wait(
             x=x, 
