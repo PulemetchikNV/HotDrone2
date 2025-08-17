@@ -66,13 +66,13 @@ def make_initial_positions():
     white_pieces = {
         'king': 'g1', 
         'queen': 'h1',
-        # 'rook_a1': 'a1', 'rook_h1': 'h1',
-        # 'knight_b1': 'b1', 'knight_g1': 'g1', 
-        # 'bishop_c1': 'c1', 'bishop_f1': 'f1',
-        # 'pawn_d1': 'd1', 
-        # 'pawn_e1': 'e1', 
-        # 'pawn_f1': 'f1', 
-        # 'pawn_g1': 'g1',
+        'rook_a1': 'a1', 'rook_h1': 'h1',
+        'knight_b1': 'b1', 'knight_g1': 'g1', 
+        'bishop_c1': 'c1', 'bishop_f1': 'f1',
+        'pawn_d1': 'd1', 
+        'pawn_e1': 'e1', 
+        'pawn_f1': 'f1', 
+        'pawn_g1': 'g1',
     }
     
     for piece_name, cell in white_pieces.items():
@@ -83,7 +83,15 @@ def make_initial_positions():
     black = {}
     black_pieces = {
         'king': 'g8',
-        'queen': 'd8'  # Основная фигура из логов
+        'queen': 'd8',
+        'rook_a8': 'a8', 'rook_h8': 'h8',
+        'knight_b8': 'b8', 'knight_g8': 'g8', 
+        'bishop_c8': 'c8', 'bishop_f8': 'f8',
+        'pawn_d8': 'd8', 
+        'pawn_e8': 'e8',
+        'pawn_f8': 'f8',
+        'pawn_g8': 'g8',
+        'pawn_h8': 'h8',
     }
     
     for piece_name, cell in black_pieces.items():

@@ -121,12 +121,18 @@ def get_turn(board: BoardState):
     
     agents_prompt_part = "\n".join(agent_descriptions)
 
+    # Определяем, чей ход из FEN
+    fen_parts = board.fen.split()
+    current_turn = "белых" if len(fen_parts) > 1 and fen_parts[1] == 'w' else "черных"
+    
     main_prompt = f"""
 Вы — симулятор обсуждения шахматной партии между несколькими ИИ-агентами (дронами).
 Ваша задача — сгенерировать полный лог их обсуждения и принять итоговое решение.
 
 Текущая позиция на доске (FEN): {board.fen}
-Ход белых.
+Ход {current_turn}.
+
+ВАЖНО: Предлагайте ходы только для {current_turn} фигур! Ходы должны быть в формате UCI (например: e2e4, g1f3).
 
 Участники обсуждения:
 {agents_prompt_part}

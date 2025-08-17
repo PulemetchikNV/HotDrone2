@@ -436,11 +436,23 @@ class ChessDroneSingle:
                 self.logger.info(f"Leader completed drone move: {from_cell}->{to_cell}")
                 move_success = True
             
-            # MOCK CAMERA
-            requests.post(
-                f"http://192.168.1.119:8001/make_move", 
-                json={"to_cell": to_cell, "from_cell": from_cell}
-            )
+            # MOCK CAMERA - обновляем состояние доски
+            try:
+                self.logger.info(f"Updating camera mock with move: {from_cell}->{to_cell}")
+                response = requests.post(
+                    f"http://192.168.1.119:8001/make_move", 
+                    json={"to_cell": to_cell, "from_cell": from_cell},
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    self.logger.info(f"Camera mock updated successfully: {response.json()}")
+                    # Сбрасываем кеш проверки хода, чтобы система заново определила чей ход
+                    self._last_turn_check = 0
+                    self._is_our_turn_cache = False
+                else:
+                    self.logger.error(f"Camera mock update failed: {response.status_code} - {response.text}")
+            except Exception as camera_e:
+                self.logger.error(f"Failed to update camera mock: {camera_e}")
         except Exception as e:
             self.logger.error(f"Failed to execute move {chess_move}: {e}")
             move_success = False
@@ -665,10 +677,22 @@ class ChessDroneSingle:
                                 self.logger.error(f"Failed to send recalculated move command to {new_target_drone}")
                     
                     # Обновляем камеру с новым ходом
-                    requests.post(
-                        f"http://192.168.1.119:8001/make_move", 
-                        json={"to_cell": new_to_cell, "from_cell": new_from_cell}
-                    )
+                    try:
+                        self.logger.info(f"Updating camera mock with recalculated move: {new_from_cell}->{new_to_cell}")
+                        response = requests.post(
+                            f"http://192.168.1.119:8001/make_move", 
+                            json={"to_cell": new_to_cell, "from_cell": new_from_cell},
+                            timeout=5
+                        )
+                        if response.status_code == 200:
+                            self.logger.info(f"Camera mock updated successfully: {response.json()}")
+                            # Сбрасываем кеш проверки хода
+                            self._last_turn_check = 0
+                            self._is_our_turn_cache = False
+                        else:
+                            self.logger.error(f"Camera mock update failed: {response.status_code} - {response.text}")
+                    except Exception as camera_e:
+                        self.logger.error(f"Failed to update camera mock: {camera_e}")
                 else:
                     self.logger.error(f"No valid target drone found for recalculated move or target is same dead drone")
             else:
