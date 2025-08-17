@@ -1,4 +1,5 @@
 from flask import Flask, send_from_directory, Response, jsonify
+from flask_cors import CORS
 import subprocess
 import os
 import json
@@ -6,6 +7,7 @@ import time
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # Разрешаем CORS для всех маршрутов
 
 LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'moves.txt')
 MOVES_LOG_PATH = os.path.join(os.path.dirname(__file__), 'moves_log.json')
@@ -99,12 +101,19 @@ def poll_moves():
     since = request.args.get('since', None)
     moves = get_recent_moves(since)
     
-    return jsonify({
+    response = jsonify({
         'status': 'success',
         'moves': moves,
         'timestamp': datetime.now().isoformat(),
         'count': len(moves)
     })
+    
+    # Добавляем CORS заголовки вручную для совместимости
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    
+    return response
 
 @app.route('/log_move', methods=['POST'])
 def log_move_endpoint():
@@ -114,13 +123,33 @@ def log_move_endpoint():
     try:
         move_data = request.get_json()
         if not move_data:
-            return jsonify({'status': 'error', 'message': 'No JSON data provided'}), 400
+            response = jsonify({'status': 'error', 'message': 'No JSON data provided'})
+            response.status_code = 400
+        else:
+            log_move(move_data)
+            response = jsonify({'status': 'success', 'message': 'Move logged successfully'})
             
-        log_move(move_data)
-        return jsonify({'status': 'success', 'message': 'Move logged successfully'})
-        
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        response = jsonify({'status': 'error', 'message': str(e)})
+        response.status_code = 500
+    
+    # Добавляем CORS заголовки
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    
+    return response
+
+@app.route('/poll', methods=['OPTIONS'])
+@app.route('/log_move', methods=['OPTIONS'])
+def handle_options():
+    """Обрабатываем preflight OPTIONS запросы для CORS."""
+    response = Response()
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Max-Age', '86400')
+    return response
 
 @app.route('/run', methods=['POST'])
 def run_script():
