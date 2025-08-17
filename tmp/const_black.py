@@ -1,7 +1,7 @@
-DRONE_LIST='drone18,drone15,drone10'
+DRONE_LIST='drone18,drone8,drone10'
 # DRONE_LIST = 'drone15,drone21,drone11,drone18'
 #,drone18,drone21,drone21'
-LEADER_DRONE = 'drone15'
+LEADER_DRONE = 'drone18'
 DRONES_TOTAL = 3
 OUR_TEAM = 'black'
 
@@ -10,19 +10,19 @@ ALG_MODE = 'api'
 
 # Централизованная конфигурация дронов
 DRONES_CONFIG = {
-    'drone15': {
+    'drone18': {
         'role': 'king',
         'color': 'black',
         'initial_letter': 'h',
         'team': 'black',
-        'raw_ip': '192.168.1.62'
+        'raw_ip': '192.168.1.134'
     },
-    'drone18': {
+    'drone8': {
         'role': 'queen',
         'color': 'black',
         'initial_letter': 'f',
         'team': 'black',
-        'raw_ip': '192.168.1.134'
+        'raw_ip': '192.168.1.149'
     },
     "drone10": {
         'role': 'bishop',
