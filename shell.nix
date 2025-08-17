@@ -8,5 +8,8 @@ pkgs.mkShell {
 
     # Add the Flask package for Python 3.12
     pkgs.python312Packages.flask
+    
+    # Add the httpx package for making HTTP requests
+    pkgs.python312Packages.httpx
   ];
 }

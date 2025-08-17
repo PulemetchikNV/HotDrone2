@@ -1,238 +1,188 @@
-import json
-import subprocess
 import os
 import time
-import sys
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
+import json
+import subprocess
+import re
 
-# Add the parent directory to the Python path to allow sibling imports
+# Add the parent directory to the Python path
+import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from drone.const import DRONES_CONFIG, LEADER_DRONE
+from drone.const import DRONES_CONFIG, LEADER_DRONE, DRONE_LIST
 
+# --- Data Classes ---
+@dataclass
+class BoardState:
+    fen: str
 
+# --- Constants ---
+FILES = "abcdefgh"
+RANKS = "12345678"
 API_KEY = os.environ.get("GOOGLE_API_KEY", "AIzaSyAy817y7DirgpWnMPS6t5ps-6Ui2pFAMys")
 LLM_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-PROXY = "socks5h://danterobot:zxckaliparrot@83.151.2.50:8543"
-SHARED_FILE = "moves.txt"
-MAX_ITERATIONS = 3 # The 'n' from the description
 
-# Map drone roles from const.py to descriptive characters for the LLM
+# --- Translations and Personas (Expanded) ---
 CHARACTER_MAP = {
-    "king": "A very cautious and strategic player. Prefers defensive moves and controlling the center of the board. Acts as a leader, synthesizing ideas.",
-    "queen": "An aggressive player. Always looks for opportunities to attack the opponent's king, even if it means taking risks.",
-    "default": "A positional player. Focuses on long-term advantages, pawn structure, and piece coordination. Very logical."
+    "king": "Очень осторожный и стратегический игрок. Предпочитает защитные ходы и контроль центра доски.",
+    "queen": "Агрессивный игрок. Всегда ищет возможности для атаки на короля противника.",
+    "bishop": "Расчетливый игрок, предпочитающий дальнобойные атаки и контроль диагоналей.",
+    "knight": "Хитрый и непредсказуемый игрок, использующий необычные маневры.",
+    "rook": "Прямолинейный и сильный игрок, нацеленный на контроль открытых линий.",
+    "pawn": "Надежный командный игрок, сосредоточенный на построении прочной структуры.",
+}
+RUSSIAN_ROLES = {
+    "king": "Король", "queen": "Королева", "bishop": "Слон", "knight": "Конь", "rook": "Ладья", "pawn": "Пешка",
+    "master": "Мастер", "slave": "Ведомый"
+}
+UNICODE_PIECES = {
+    "king": "♔", "queen": "♕", "bishop": "♗", "knight": "♘", "rook": "♖", "pawn": "♙",
 }
 
+# --- Helper Functions ---
 def call_llm(prompt):
-    """
-    Calls the Gemini LLM with a given prompt.
-    """
-    headers = {
-        'Content-Type': 'application/json',
-        'X-goog-api-key': API_KEY,
-    }
-    data = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ]
-    }
-    # Using a list of arguments for better security and handling of special characters
+    """Calls the LLM with a given prompt using curl and a SOCKS5 proxy."""
+    proxy = "socks5h://danterobot:zxckaliparrot@83.151.2.50:8543"
     command = [
-        'curl',
-        # '--proxy', PROXY, # Temporarily disabled due to connection errors
+        'curl', '--silent', '--max-time', '60',
+        '--proxy', proxy,
         LLM_URL,
-        '-H', f"Content-Type: {headers['Content-Type']}",
-        '-H', f"X-goog-api-key: {headers['X-goog-api-key']}",
+        '-H', 'Content-Type: application/json',
+        '-H', f'X-goog-api-key: {API_KEY}',
         '-X', 'POST',
-        '-d', json.dumps(data)
+        '-d', json.dumps({"contents": [{"parts": [{"text": prompt}]}]})
     ]
-
     try:
-        result = subprocess.run(command, capture_output=True, text=True, check=True, timeout=60)
+        result = subprocess.run(command, capture_output=True, text=True, check=True, encoding='utf-8')
         response_json = json.loads(result.stdout)
-        # Extracting the text from the response
-        return response_json['candidates'][0]['content']['parts'][0]['text']
+        # Basic validation of the response structure
+        if 'candidates' in response_json and len(response_json['candidates']) > 0:
+            content = response_json['candidates'][0].get('content', {})
+            if 'parts' in content and len(content['parts']) > 0:
+                return content['parts'][0].get('text', '')
+        print(f"LLM Error: Unexpected response format: {result.stdout}", flush=True)
+        return None
     except subprocess.CalledProcessError as e:
-        print(f"Error calling LLM: {e}")
-        print(f"Stderr: {e.stderr}")
-        return f"Error: Could not get a response from LLM. Details: {e.stderr}"
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        print(f"Error parsing LLM response: {e}")
-        print(f"Raw Response: {result.stdout}")
-        return f"Error: Could not parse LLM response. Raw text: {result.stdout}"
-    except subprocess.TimeoutExpired:
-        print("Error: LLM call timed out.")
-        return "Error: LLM call timed out."
+        print(f"LLM Error: curl command failed with exit code {e.returncode}. Stderr: {e.stderr}", flush=True)
+        return None
+    except json.JSONDecodeError:
+        print(f"LLM Error: Failed to decode JSON from response: {result.stdout}", flush=True)
+        return None
+    except Exception as e:
+        print(f"LLM Error: An unexpected error occurred: {e}", flush=True)
+        return None
 
-
+# --- Agent Class ---
 class Agent:
     def __init__(self, drone_info):
         self.id = drone_info['id']
-        self.role = drone_info['role'] # 'master' or 'slave'
+        self.role = drone_info['role']
         self.character = drone_info['character']
+        self.figure = drone_info['figure']
 
     def think(self, prompt):
-        """Generic thinking method for an agent."""
-        # Prepending character to every prompt to guide the LLM
         full_prompt = f"Вы — шахматный ассистент. Ваш характер: '{self.character}'.\n\n{prompt}"
-        response = call_llm(full_prompt)
-        return response
+        return call_llm(full_prompt)
 
-class MultiAgentSystem:
-    def __init__(self, drones_json, initial_game_state):
-        self.agents = [Agent(drone_info) for drone_info in drones_json]
-        self.master = next((agent for agent in self.agents if agent.role == 'master'), None)
-        self.slaves = [agent for agent in self.agents if agent.role == 'slave']
-        self.game_state = initial_game_state
-        self.chat_history = f"Initial board state (FEN): {initial_game_state}\n\n"
+# --- Main Logic (Rewritten with Simulated Discussion) ---
+def get_turn(board: BoardState):
+    """Simulates a multi-agent discussion in a single LLM call to determine the best move."""
+    print("SYSTEM: --- Запуск обсуждения дронами ---", flush=True)
+    time.sleep(1)
 
-    def run_discussion(self):
-        if not self.master:
-            print("Ошибка: не найден главный агент.", flush=True)
-            return None
-
-        for i in range(MAX_ITERATIONS):
-            print(f"--- Итерация {i+1} ---", flush=True)
-            
-            # 1. All drones suggest a move
-            current_suggestions = ""
-            print("Агенты обдумывают свои ходы...", flush=True)
-            for agent in self.agents:
-                prompt = f"""
-                Текущее состояние шахматной партии (FEN): {self.game_state}
-                История обсуждения на данный момент:
-                {self.chat_history}
-
-                Основываясь на вашем характере, состоянии игры и обсуждении, какой ход является лучшим в формате UCI (например, e2e4)?
-                Предоставьте свое обоснование, а затем сам ход на новой строке в формате: MOVE: <ваш_ход>
-                """
-                thought = agent.think(prompt)
-                print(f"Agent {agent.id} ({agent.role}):\n{thought}\n", flush=True)
-                suggestion_text = f"Agent {agent.id} ({agent.role}):\n{thought}\n\n"
-                current_suggestions += suggestion_text
-            
-            self.chat_history += f"--- Итерация {i+1} Предложения ---\n{current_suggestions}"
-            with open(SHARED_FILE, "w") as f:
-                f.write(self.chat_history)
-            print("Все агенты сделали свои предложения.", flush=True)
-
-            # 2. Master reads and decides
-            master_decision_prompt = f"""
-            Вы — главный шахматный агент. Вам нужно выбрать лучший ход на основе предложений от ваших ведомых агентов.
-            Текущее состояние игры (FEN): {self.game_state}
-            Вот полная история обсуждения:
-            {self.chat_history}
-
-            Проанализируйте эти предложения и выберите единственно лучший ход в формате UCI.
-            Кроме того, для каждого ведомого агента приведите персональный аргумент, почему выбранный вами ход лучше его предложения.
-            Отформатируйте ваш ответ в виде чистого JSON-объекта без дополнительного текста или markdown-разметки.
-            JSON должен выглядеть так:
-            {{
-                "best_move": "e2e4",
-                "reasoning": "Этот ход открывает линии для ферзя и слона...",
-                "feedback_to_slaves": {{
-                    "drone_slave_1": "Ваше предложение g1f3 было хорошим, но e2e4 сильнее, потому что...",
-                    "drone_slave_2": "Хотя d2d4 — это надежный выбор, он не..."
-                }}
-            }}
-            """
-            print("Мастер принимает решение...", flush=True)
-            master_response_str = self.master.think(master_decision_prompt)
-            
-            try:
-                # Clean up the response string to ensure it's valid JSON
-                json_str = master_response_str[master_response_str.find('{'):master_response_str.rfind('}')+1]
-                master_decision = json.loads(json_str)
-                best_move = master_decision['best_move']
-                master_reasoning = master_decision['reasoning']
-                
-                master_summary = f"--- Итерация {i+1} Решение Мастера ---\n"
-                master_summary += f"Главный агент ({self.master.id}) выбрал ход: {best_move}\n"
-                master_summary += f"Обоснование: {master_reasoning}\n\n"
-                self.chat_history += master_summary
-                print(f"Мастер выбрал ход: {best_move}", flush=True)
-
-            except (json.JSONDecodeError, KeyError) as e:
-                print(f"Ошибка разбора решения мастера: {e}", flush=True)
-                print(f"Необработанный ответ мастера: {master_response_str}", flush=True)
-                # If master fails to decide, break the loop and try to make a final decision based on history
-                break
-
-            # 3. Slaves react to master's decision
-            slave_feedback_text = f"--- Итерация {i+1} Обратная связь от ведомых ---\n"
-            print("Ведомые предоставляют обратную связь...", flush=True)
-            for slave in self.slaves:
-                feedback_for_slave = master_decision.get('feedback_to_slaves', {}).get(slave.id, "No specific feedback for you.")
-                slave_reaction_prompt = f"""
-                Главный агент решил сделать ход: {best_move}.
-                Обоснование мастера: {master_reasoning}
-                Отзыв мастера конкретно для вас: {feedback_for_slave}
-                Полная история чата:
-                {self.chat_history}
-
-                Согласны ли вы с решением мастера? Объясните свою точку зрения, основываясь на вашем характере.
-                """
-                reaction = slave.think(slave_reaction_prompt)
-                print(f"Agent {slave.id} ({slave.role}):\n{reaction}\n", flush=True)
-                slave_feedback_text += f"Agent {slave.id} ({slave.role}):\n{reaction}\n\n"
-            
-            self.chat_history += slave_feedback_text
-            with open(SHARED_FILE, "w") as f:
-                f.write(self.chat_history)
-            print("Ведомые предоставили свою обратную связь.", flush=True)
-
-        # Final decision after all iterations
-        print("Подготовка финального решения...", flush=True)
-        final_decision_prompt = f"""
-        После {MAX_ITERATIONS} итераций обсуждения, итоговая история чата такова:
-        {self.chat_history}
-        Основываясь на всем этом обсуждении, какой итоговый, согласованный ход в формате UCI?
-        Выведите только один лучший ход и ничего больше (например, e2e4).
-        """
-        final_move = self.master.think(final_decision_prompt).strip()
-        # Clean up the final move response
-        final_move = final_move.split('\n')[-1]
-
-        final_summary = f"\n--- ФИНАЛЬНОЕ РЕШЕНИЕ ---\nИтоговый согласованный ход: {final_move}\n"
-        self.chat_history += final_summary
-        with open(SHARED_FILE, "w") as f:
-            f.write(self.chat_history)
-
-        print(final_summary, flush=True)
-        return final_move
-
-
-def main():
-    # Game state in Forsyth-Edwards Notation (FEN)
-    # This is the starting position of a chess game.
-    game_state_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-
-    # Dynamically build the drones_json from the imported DRONES_CONFIG
-    drones_json = []
-    for drone_id, config in DRONES_CONFIG.items():
+    # --- Agent Setup ---
+    all_drone_ids = [d.strip() for d in DRONE_LIST.split(',') if d.strip()]
+    default_figures = ['rook', 'knight', 'bishop', 'pawn', 'pawn', 'pawn']
+    agents = []
+    for drone_id in all_drone_ids:
+        config = DRONES_CONFIG.get(drone_id, {})
         role_in_llm = 'master' if drone_id == LEADER_DRONE else 'slave'
-        character = CHARACTER_MAP.get(config.get('role'), CHARACTER_MAP['default'])
-        
-        drones_json.append({
-            "id": drone_id,
-            "role": role_in_llm,
-            "character": character
-        })
+        figure_role = config.get('role') or (default_figures.pop(0) if default_figures else 'pawn')
+        agents.append(Agent({
+            "id": drone_id, "role": role_in_llm, "figure": figure_role,
+            "character": CHARACTER_MAP.get(figure_role, CHARACTER_MAP["pawn"])
+        }))
 
-    multi_agent_system = MultiAgentSystem(drones_json, game_state_fen)
-    optimal_move = multi_agent_system.run_discussion()
+    # --- Create the single, comprehensive prompt ---
+    agent_descriptions = []
+    for agent in agents:
+        role_str = "Мастер" if agent.role == 'master' else "Ведомый"
+        # Pass the english figure name for the parser
+        agent_descriptions.append(f"- ({agent.figure}) {RUSSIAN_ROLES.get(agent.figure)} ({role_str}): Характер - {agent.character}")
+    
+    agents_prompt_part = "\n".join(agent_descriptions)
 
-    if optimal_move:
-        print(f"\nОптимальный ход для отправки главному дрону: {optimal_move}", flush=True)
+    main_prompt = f"""
+Вы — симулятор обсуждения шахматной партии между несколькими ИИ-агентами (дронами).
+Ваша задача — сгенерировать полный лог их обсуждения и принять итоговое решение.
+
+Текущая позиция на доске (FEN): {board.fen}
+Ход белых.
+
+Участники обсуждения:
+{agents_prompt_part}
+
+СИМУЛЯЦИЯ ОБСУЖДЕНИЯ:
+
+ШАГ 1: ПЕРВОНАЧАЛЬНЫЕ МНЕНИЯ
+Каждый агент должен предложить свой ход в формате UCI и дать краткое обоснование (1-2 предложения), исходя из своего характера.
+
+ШАГ 2: ПРЕДЛОЖЕНИЕ МАСТЕРА
+Мастер (Король) анализирует все предложения от ведомых. Он должен выбрать лучший, по его мнению, ход, и написать развернутое обоснование, почему этот ход лучше остальных, пытаясь убедить ведомых.
+
+ШАГ 3: ОБРАТНАЯ СВЯЗЬ ОТ ВЕДОМЫХ
+Каждый ведомый агент отвечает на предложение Мастера. Он должен указать, согласен он или нет, и почему.
+
+ШАГ 4: ИТОГОВОЕ РЕШЕНИЕ (ГОЛОСОВАНИЕ)
+Проанализируйте все ходы, предложенные в ходе обсуждения. Подсчитайте, какой ход упоминался чаще всего. Этот ход становится победителем. В случае ничьей, решение Мастера является окончательным.
+
+ФОРМАТ ВЫВОДА:
+Сгенерируйте ВЕСЬ диалог, используя СТРОГО следующие префиксы в начале каждой строки:
+- Для мнения фигуры: `FIGURE:<figure_en>:<role_ru>:<текст мнения>` (например, `FIGURE:queen:Ведомый:Предлагаю e2e4...`)
+- Для решения Мастера: `MASTER:<текст решения>`
+- Для итогового хода в самом конце: `FINAL_MOVE:<uci_ход>`
+
+Начинайте симуляцию. Весь диалог должен быть на русском языке.
+"""
+
+    # --- Execute LLM Call and Parse Response ---
+    print("SYSTEM: --- Генерация полного обсуждения... (это может занять до 60 секунд) ---", flush=True)
+    full_discussion = call_llm(main_prompt)
+
+    if not full_discussion:
+        print("ERROR: Не удалось получить ответ от LLM для симуляции обсуждения.", flush=True)
+        return
+
+    # --- Parse and stream the response ---
+    print("SYSTEM: --- Воспроизведение обсуждения ---", flush=True)
+    lines = full_discussion.strip().split('\n')
+    final_move_line = None
+    
+    for line in lines:
+        if line.strip(): # Process only non-empty lines
+            if line.startswith("FINAL_MOVE:"):
+                final_move_line = line # Save for the end
+            else:
+                print(line, flush=True)
+                time.sleep(2) # Simulate thinking time
+
+    # Print the final move last
+    if final_move_line:
+        print(final_move_line, flush=True)
     else:
-        print("\nНе удалось определить оптимальный ход.", flush=True)
+        # Fallback if FINAL_MOVE is not in the response
+        print("ERROR: LLM не предоставил итоговый ход в нужном формате.", flush=True)
+        def extract_move(text):
+            if not text: return None
+            match = re.search(r'\b[a-h][1-8][a-h][1-8][qrbn]?\b', text.lower())
+            return match.group(0) if match else None
+        
+        final_move = extract_move(full_discussion)
+        if final_move:
+            print(f"FINAL_MOVE:{final_move}", flush=True)
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    # This block is for direct testing of the script
+    start_board = BoardState(fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    get_turn(start_board)
