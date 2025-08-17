@@ -84,7 +84,7 @@ class Progon:
     def run(self, to_cell):
 
         waypoints = [
-            to_cell if to_cell else get_random_cell(),
+            to_cell,
         ]
 
         for waypoint in waypoints:

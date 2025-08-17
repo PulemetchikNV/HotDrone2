@@ -6,6 +6,7 @@ import uvicorn
 import os
 import copy
 import json
+import threading
 
 app = FastAPI()
 app.add_middleware(
@@ -66,8 +67,8 @@ def make_initial_positions():
     white_pieces = {
         'king': 'h3', 
         'queen': 'd5',
-        'knight_b4': 'b1',  
-        'rook_a2': 'a2',
+        'knight_b4': 'b4',  
+        'pawn_a2': 'a2',
         'pawn_g3': 'g3', 
         'pawn_h2': 'h2', 
     }
@@ -102,6 +103,9 @@ def make_initial_positions():
 POSITIONS = make_initial_positions()
 TURN = 'white'  # white начинает
 IS_PAUSED = False  # Состояние паузы
+
+# Рентерабельная блокировка для защиты состояния игры от гонок
+GAME_LOCK = threading.RLock()
 
 # История состояний для отката ходов
 GAME_HISTORY = []  # Хранит состояния (positions, turn) перед каждым ходом
@@ -190,89 +194,90 @@ def read_root():
 
 @app.get("/board_state")
 def get_board_state():
-    fen = positions_to_fen(POSITIONS, TURN)
-    return {"board_fen": fen, "turn": TURN}
+    with GAME_LOCK:
+        fen = positions_to_fen(POSITIONS, TURN)
+        return {"board_fen": fen, "turn": TURN}
 
 
 @app.get("/api/positions")
 def api_positions():
     # Совместимо с ожидаемым форматом в drone/camera.py
-    payload = copy.deepcopy(POSITIONS)
-    payload['turn'] = TURN
-    fen = positions_to_fen(POSITIONS, TURN)
-    payload['fen'] = fen
-    return payload
+    with GAME_LOCK:
+        payload = copy.deepcopy(POSITIONS)
+        payload['turn'] = TURN
+        fen = positions_to_fen(POSITIONS, TURN)
+        payload['fen'] = fen
+        return payload
 
 
 @app.post("/make_move")
 def make_move(move: Move):
     global TURN
+    with GAME_LOCK:
+        # Сохраняем текущее состояние перед выполнением хода
+        save_current_state()
 
-    # Сохраняем текущее состояние перед выполнением хода
-    save_current_state()
+        # Распарсим ходы
+        if move.move:
+            if len(move.move) != 4:
+                raise HTTPException(status_code=400, detail="Invalid move format; expected UCI like e2e4")
+            from_cell = move.move[:2]
+            to_cell = move.move[2:]
+        else:
+            from_cell = (move.from_cell or '').lower()
+            to_cell = (move.to_cell or '').lower()
+            if len(from_cell) != 2 or len(to_cell) != 2:
+                raise HTTPException(status_code=400, detail="Invalid from/to cell")
 
-    # Распарсим ходы
-    if move.move:
-        if len(move.move) != 4:
-            raise HTTPException(status_code=400, detail="Invalid move format; expected UCI like e2e4")
-        from_cell = move.move[:2]
-        to_cell = move.move[2:]
-    else:
-        from_cell = (move.from_cell or '').lower()
-        to_cell = (move.to_cell or '').lower()
-        if len(from_cell) != 2 or len(to_cell) != 2:
-            raise HTTPException(status_code=400, detail="Invalid from/to cell")
+        # Найти фигуру на исходной клетке
+        color, piece_key = find_piece_at_cell(from_cell)
+        print(f"{color} {piece_key} Making move {from_cell}->{to_cell}")
+        if not piece_key:
+            raise HTTPException(status_code=400, detail=f"No piece at {from_cell}")
 
-    # Найти фигуру на исходной клетке
-    color, piece_key = find_piece_at_cell(from_cell)
-    print(f"{color} {piece_key} Making move {from_cell}->{to_cell}")
-    if not piece_key:
-        raise HTTPException(status_code=400, detail=f"No piece at {from_cell}")
+        # Ходить можно только стороной, у которой сейчас ход
+        if color != TURN:
+            raise HTTPException(status_code=400, detail=f"It is {TURN}'s turn")
 
-    # Ходить можно только стороной, у которой сейчас ход
-    if color != TURN:
-        raise HTTPException(status_code=400, detail=f"It is {TURN}'s turn")
+        # Съесть, если на целевой клетке есть фигура любой стороны
+        cap_color, cap_piece = find_piece_at_cell(to_cell)
+        if cap_piece:
+            del POSITIONS[cap_color][cap_piece]
 
-    # Съесть, если на целевой клетке есть фигура любой стороны
-    cap_color, cap_piece = find_piece_at_cell(to_cell)
-    if cap_piece:
-        del POSITIONS[cap_color][cap_piece]
+        # Переместить фигуру (без правил, просто перенос)
+        x, y = cell_to_xy(to_cell)
+        POSITIONS[color][piece_key]['cell'] = to_cell
+        POSITIONS[color][piece_key]['x'] = x
+        POSITIONS[color][piece_key]['y'] = y
 
-    # Переместить фигуру (без правил, просто перенос)
-    x, y = cell_to_xy(to_cell)
-    POSITIONS[color][piece_key]['cell'] = to_cell
-    POSITIONS[color][piece_key]['x'] = x
-    POSITIONS[color][piece_key]['y'] = y
+        # Сменить ход
+        TURN = 'black' if TURN == 'white' else 'white'
 
-    # Сменить ход
-    TURN = 'black' if TURN == 'white' else 'white'
-
-    return get_board_state()
+        return get_board_state()
 
 
 @app.post("/undo_move")
 def undo_move():
     """Откатывает последний ход"""
     global POSITIONS, TURN, GAME_HISTORY
-    
-    if not GAME_HISTORY:
-        raise HTTPException(status_code=400, detail="No moves to undo")
-    
-    # Восстанавливаем последнее сохраненное состояние
-    last_state = GAME_HISTORY.pop()
-    POSITIONS = last_state['positions']
-    TURN = last_state['turn']
-    
-    return get_board_state()
+    with GAME_LOCK:
+        if not GAME_HISTORY:
+            raise HTTPException(status_code=400, detail="No moves to undo")
+        # Восстанавливаем последнее сохраненное состояние
+        last_state = GAME_HISTORY.pop()
+        POSITIONS = last_state['positions']
+        TURN = last_state['turn']
+        return get_board_state()
 
 
 @app.post("/reset_board")
 def reset_board():
     global POSITIONS, TURN, GAME_HISTORY
-    POSITIONS = make_initial_positions()
-    TURN = 'white'
-    GAME_HISTORY = []  # Очищаем историю при сбросе
-    return get_board_state()
+    with GAME_LOCK:
+        POSITIONS = make_initial_positions()
+        TURN = 'white'
+        GAME_HISTORY = []  # Очищаем историю при сбросе
+        return get_board_state()
 
 
 @app.get("/api/pause_status")

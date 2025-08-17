@@ -120,7 +120,7 @@ def next_cell_simple(current: str) -> str:
 
 class ChessDroneSingle:
     def __init__(self):
-        self.drone_name = os.environ.get("DRONE_NAME", "drone")
+        self.drone_name = os.environ.get("  ", "drone")
         self.is_leader = self.drone_name == LEADER_DRONE
         self.logger = setup_logging(self.drone_name)
 
