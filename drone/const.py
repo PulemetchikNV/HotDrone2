@@ -6,7 +6,7 @@ DRONES_TOTAL = 2
 OUR_TEAM = 'white'
 
 # Режим алгоритма выбора ходов
-ALG_MODE = 'cluster2'  # 'api', 'llm', 'cluster1', 'cluster2'
+ALG_MODE = 'llm_chess'
 
 # Централизованная конфигурация дронов
 DRONES_CONFIG = {
