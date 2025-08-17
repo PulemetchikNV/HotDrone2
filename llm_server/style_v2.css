@@ -38,6 +38,12 @@ body {
     flex-shrink: 0;
 }
 
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 .chat-title h2 {
     margin: 0;
     font-size: 18px;
@@ -47,6 +53,56 @@ body {
 .chat-title span {
     font-size: 13px;
     color: #546e7a;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #90a4ae;
+}
+
+.connection-status.connected .status-indicator {
+    background-color: #4caf50;
+    animation: pulse-green 2s infinite;
+}
+
+.connection-status.connecting .status-indicator {
+    background-color: #ff9800;
+    animation: pulse-orange 1s infinite;
+}
+
+.connection-status.error .status-indicator {
+    background-color: #f44336;
+    animation: pulse-red 0.5s infinite;
+}
+
+.status-text {
+    font-size: 11px;
+    color: #546e7a;
+    font-weight: 500;
+}
+
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes pulse-orange {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+@keyframes pulse-red {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
 .run-button {
@@ -69,6 +125,31 @@ body {
 .run-button:disabled {
     background-color: #90a4ae;
     cursor: not-allowed;
+}
+
+.polling-button {
+    padding: 8px 16px;
+    border: none;
+    background-color: #43a047;
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.polling-button:hover {
+    background-color: #388e3c;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.polling-button.active {
+    background-color: #ef5350;
+}
+
+.polling-button.active:hover {
+    background-color: #e53935;
 }
 
 .chat-messages {
@@ -129,6 +210,12 @@ body {
     background-color: #e3f2fd; /* Light blue highlight */
     border-color: #bbdefb;
     text-align: center; /* Center highlight text */
+}
+
+.message-bubble.move {
+    background-color: #e8f5e8; /* Light green background for moves */
+    border-color: #4caf50;
+    border-left: 4px solid #4caf50;
 }
 
 .message-content {

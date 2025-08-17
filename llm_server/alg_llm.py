@@ -49,7 +49,7 @@ UNICODE_PIECES = {
 }
 
 # --- Helper Functions ---
-def call_llm(prompt):
+def call_llm(prompt): # вот ллм, обращение к ней запушенный сервер? все запушено.
     """Calls the LLM with a given prompt using curl and a SOCKS5 proxy."""
     proxy = "socks5h://danterobot:zxckaliparrot@83.151.2.50:8543"
     command = [

@@ -96,7 +96,7 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
                         to_cell="",
                     )
 
-            return MoveDecision(
+            move_decision = MoveDecision(
                 uci=final_move,
                 from_cell=_normalize_cell(from_cell),
                 to_cell=_normalize_cell(to_cell),
@@ -108,6 +108,26 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
                     "fen": fen,
                 },
             )
+            
+            # Логируем ход для polling
+            try:
+                log_data = {
+                    'move': final_move,
+                    'fen': fen,
+                    'from_cell': _normalize_cell(from_cell),
+                    'to_cell': _normalize_cell(to_cell),
+                    'reason': 'llm-chess',
+                    'engine': 'llm-chess'
+                }
+                log_resp = client.post("http://192.168.1.119:8080/log_move", json=log_data)
+                if log_resp.status_code == 200:
+                    print(f"Move logged successfully: {final_move}")
+                else:
+                    print(f"Failed to log move: {log_resp.status_code}")
+            except Exception as log_e:
+                print(f"Error logging move: {log_e}")
+            
+            return move_decision
             
     except httpx.RequestError as e:
         print(f"LLM Server connection error: {e}")

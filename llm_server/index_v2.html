@@ -13,10 +13,23 @@
             <div class="chat-header">
                 <div class="chat-title">
                     <h2>Обсуждение ходов дронами</h2>
+                    <div class="connection-status" :class="connectionStatus">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">
+                            {{ connectionStatus === 'connected' ? 'Подключено' : 
+                               connectionStatus === 'connecting' ? 'Подключение...' :
+                               connectionStatus === 'error' ? 'Ошибка' : 'Отключено' }}
+                        </span>
+                    </div>
                 </div>
-                <button @click="runScript" :disabled="isLoading" class="run-button">
-                    {{ isLoading ? 'Выполняется...' : 'Запустить новый расчет' }}
-                </button>
+                <div class="header-buttons">
+                    <button @click="togglePolling" :class="['polling-button', { active: !!pollInterval }]">
+                        {{ pollInterval ? '⏸ Остановить мониторинг' : '▶️ Запустить мониторинг' }}
+                    </button>
+                    <button @click="runScript" :disabled="isLoading" class="run-button">
+                        {{ isLoading ? 'Выполняется...' : 'Запустить новый расчет' }}
+                    </button>
+                </div>
             </div>
             <div class="chat-messages" ref="messageBox">
                 <div v-for="(msg, index) in messages" :key="index" class="message-container">

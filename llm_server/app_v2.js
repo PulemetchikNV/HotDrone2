@@ -5,6 +5,11 @@ createApp({
         const messages = ref([]);
         const isLoading = ref(false);
         const messageBox = ref(null);
+        const recentMoves = ref([]);
+        const isPolling = ref(false);
+        const connectionStatus = ref('disconnected');
+        const lastPollTimestamp = ref(null);
+        const pollInterval = ref(null);
         let currentMessage = null;
 
         const avatarMap = {
@@ -28,6 +33,69 @@ createApp({
                     messageBox.value.scrollTop = messageBox.value.scrollHeight;
                 }
             });
+        };
+
+        const pollForMoves = async () => {
+            if (isPolling.value) return;
+            
+            try {
+                isPolling.value = true;
+                connectionStatus.value = 'connecting';
+                
+                const url = lastPollTimestamp.value 
+                    ? `http://192.168.1.119:8080/poll?since=${encodeURIComponent(lastPollTimestamp.value)}`
+                    : 'http://192.168.1.119:8080/poll';
+                    
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    connectionStatus.value = 'connected';
+                    lastPollTimestamp.value = data.timestamp;
+                    
+                    // Обновляем список ходов
+                    if (data.moves && data.moves.length > 0) {
+                        recentMoves.value = [...recentMoves.value, ...data.moves];
+                        // Оставляем только последние 20 ходов
+                        recentMoves.value = recentMoves.value.slice(-20);
+                        
+                        // Добавляем новые ходы в чат
+                        data.moves.forEach(move => {
+                            messages.value.push({
+                                type: 'move',
+                                timestamp: move.timestamp,
+                                content: `🚁 Новый ход: ${move.move} (${move.from_cell} → ${move.to_cell})`,
+                                engine: move.engine,
+                                fen: move.fen
+                            });
+                        });
+                        
+                        scrollToBottom();
+                    }
+                } else {
+                    connectionStatus.value = 'error';
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+                connectionStatus.value = 'error';
+            } finally {
+                isPolling.value = false;
+            }
+        };
+
+        const startPolling = () => {
+            if (pollInterval.value) return;
+            
+            pollInterval.value = setInterval(pollForMoves, 2000); // Каждые 2 секунды
+            pollForMoves(); // Первый запрос сразу
+        };
+
+        const stopPolling = () => {
+            if (pollInterval.value) {
+                clearInterval(pollInterval.value);
+                pollInterval.value = null;
+            }
+            connectionStatus.value = 'disconnected';
         };
 
         const processLine = (line) => {
@@ -76,13 +144,21 @@ createApp({
             scrollToBottom();
         };
 
+        const togglePolling = () => {
+            if (pollInterval.value) {
+                stopPolling();
+            } else {
+                startPolling();
+            }
+        };
+
         const runScript = async () => {
             isLoading.value = true;
             messages.value = [];
             currentMessage = null;
             
             try {
-                const response = await fetch('/run', { method: 'POST' });
+                const response = await fetch('http://192.168.1.119:8080/run', { method: 'POST' });
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
 
@@ -112,11 +188,23 @@ createApp({
             }
         };
 
+        // Автозапуск polling при загрузке страницы
+        onMounted(() => {
+            startPolling();
+        });
+
         return {
             messages,
             isLoading,
             messageBox,
-            runScript
+            recentMoves,
+            connectionStatus,
+            isPolling,
+            runScript,
+            togglePolling,
+            startPolling,
+            stopPolling,
+            pollInterval
         };
     }
 }).mount('#app');

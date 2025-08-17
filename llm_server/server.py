@@ -1,10 +1,72 @@
-from flask import Flask, send_from_directory, Response
+from flask import Flask, send_from_directory, Response, jsonify
 import subprocess
 import os
+import json
+import time
+from datetime import datetime
 
 app = Flask(__name__)
 
 LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'moves.txt')
+MOVES_LOG_PATH = os.path.join(os.path.dirname(__file__), 'moves_log.json')
+
+def log_move(move_data):
+    """Логирует ход в JSON файл для polling."""
+    try:
+        # Читаем существующие ходы
+        moves = []
+        if os.path.exists(MOVES_LOG_PATH):
+            with open(MOVES_LOG_PATH, 'r', encoding='utf-8') as f:
+                try:
+                    moves = json.load(f)
+                except json.JSONDecodeError:
+                    moves = []
+        
+        # Добавляем новый ход
+        move_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'move': move_data.get('move', ''),
+            'fen': move_data.get('fen', ''),
+            'from_cell': move_data.get('from_cell', ''),
+            'to_cell': move_data.get('to_cell', ''),
+            'reason': move_data.get('reason', ''),
+            'engine': move_data.get('engine', 'unknown')
+        }
+        
+        moves.append(move_entry)
+        
+        # Оставляем только последние 50 ходов
+        moves = moves[-50:]
+        
+        # Сохраняем в файл
+        with open(MOVES_LOG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(moves, f, ensure_ascii=False, indent=2)
+            
+    except Exception as e:
+        print(f"Error logging move: {e}")
+
+def get_recent_moves(since_timestamp=None):
+    """Возвращает последние ходы, опционально с указанного времени."""
+    try:
+        if not os.path.exists(MOVES_LOG_PATH):
+            return []
+            
+        with open(MOVES_LOG_PATH, 'r', encoding='utf-8') as f:
+            moves = json.load(f)
+            
+        if since_timestamp:
+            # Фильтруем ходы после указанного времени
+            filtered_moves = []
+            for move in moves:
+                if move.get('timestamp', '') > since_timestamp:
+                    filtered_moves.append(move)
+            return filtered_moves
+        
+        return moves[-10:]  # Возвращаем последние 10 ходов
+        
+    except Exception as e:
+        print(f"Error reading moves: {e}")
+        return []
 
 @app.route('/')
 def index():
@@ -28,6 +90,37 @@ def get_log():
         return Response("Лог-файл 'moves.txt' еще не создан.", mimetype='text/plain', status=404)
     except Exception as e:
         return Response(f"Ошибка чтения файла: {e}", mimetype='text/plain', status=500)
+
+@app.route('/poll', methods=['GET'])
+def poll_moves():
+    """Endpoint для polling новых ходов с телефона."""
+    from flask import request
+    
+    since = request.args.get('since', None)
+    moves = get_recent_moves(since)
+    
+    return jsonify({
+        'status': 'success',
+        'moves': moves,
+        'timestamp': datetime.now().isoformat(),
+        'count': len(moves)
+    })
+
+@app.route('/log_move', methods=['POST'])
+def log_move_endpoint():
+    """Endpoint для логирования ходов от дронов."""
+    from flask import request
+    
+    try:
+        move_data = request.get_json()
+        if not move_data:
+            return jsonify({'status': 'error', 'message': 'No JSON data provided'}), 400
+            
+        log_move(move_data)
+        return jsonify({'status': 'success', 'message': 'Move logged successfully'})
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/run', methods=['POST'])
 def run_script():
