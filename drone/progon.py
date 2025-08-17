@@ -25,6 +25,11 @@ class Progon:
     def __init__(self):
         self.fc = FlightController()
 
+        # Параметры полета
+        self.takeoff_z = 1.0
+        self.flight_z = 1.2
+        self.speed = 0.5
+
         self.map_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "aruco_maps",
@@ -92,7 +97,7 @@ class Progon:
         for waypoint in waypoints:
             print(f"Moving to {waypoint}")
             x, y = self.get_cell_coordinates(waypoint)
-            self.move_to_xy(x, y, 1.2)
+            self.move_to_xy(x, y, 1.2, is_kill=True)
 
         #x, y = self.get_cell_coordinates(to_cell)
         # Выполняем движение локально
