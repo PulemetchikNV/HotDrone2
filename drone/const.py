@@ -29,6 +29,13 @@ DRONES_CONFIG = {
         'initial_letter': 'f',
         'team': 'black',
         'raw_ip': '192.168.1.116'
+    },
+    'drone18': {
+        'role': 'bishop',
+        'color': 'black',
+        'initial_letter': 'c',
+        'team': 'black',
+        'raw_ip': '192.168.1.134'
     }
     # Добавляйте новые дроны здесь по мере необходимости
 }
