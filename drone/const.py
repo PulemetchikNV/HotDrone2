@@ -1,7 +1,7 @@
-DRONE_LIST='drone11'
+DRONE_LIST='drone18,drone15'
 # DRONE_LIST = 'drone15,drone21,drone11,drone18'
 #,drone18,drone21,drone21'
-LEADER_DRONE = 'drone11'
+LEADER_DRONE = 'drone15'
 DRONES_TOTAL = 2
 OUR_TEAM = 'white'
 
