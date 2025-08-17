@@ -128,7 +128,7 @@ class RoverControllerMain:
         self.logger.info(f"Остановка ровера {rover_id}...")
         return self.send_command(rover_id, "stop")
 
-    def wait_for_completion(self, rover_id, timeout: int = 15) -> bool:
+    def wait_for_completion(self, rover_id, timeout: int = 6) -> bool:
         """
         Ожидание завершения текущего движения
         
@@ -147,7 +147,7 @@ class RoverControllerMain:
             if status.get('status') == 'Ready':
                 self.logger.info(f"Движение ровера {rover_id} завершено!")
                 return True
-            time.sleep(0.2)
+            time.sleep(0.1)
         
         self.logger.warning(f"Тайм-аут ожидания завершения движения ровера {rover_id}")
         return False
@@ -317,6 +317,11 @@ class RoverControllerMain:
         self.logger.info(f"   Текущий yaw: {current_yaw:.1f}°")
         self.logger.info(f"   Поворот: {turn_angle:.1f}°")
         
+        # Правило: если движение строго по оси Y (|dx| < 2см), поворот не требуется
+        if abs(dx) < 0.02:
+            self.logger.info("🔧 Движение строго по оси Y — поворот отключён принудительно")
+            turn_angle = 0
+
         # Выполняем команды движения
         commands = []
         if abs(turn_angle) > 1:  # Поворачиваем только если угол значительный

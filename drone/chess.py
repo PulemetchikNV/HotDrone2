@@ -286,8 +286,8 @@ class ChessDroneSingle:
                         # Конвертируем в метры для rover API
                         rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
                         
-                        # Пока что используем yaw = 0 (можно расширить позже)
-                        rover_yaw = 0.0
+                        # Базовая ориентация ровера: 0° вдоль +X, вперёд по -Y => yaw = -90°
+                        rover_yaw = -90.0
                         
                         self.logger.info(f"Rover {rover_id} at {from_cell}: ArUco({aruco_x:.3f}, {aruco_y:.3f}) -> Rover({rover_x:.3f}, {rover_y:.3f}, {rover_yaw:.1f}°)")
                         return rover_x, rover_y, rover_yaw
@@ -296,14 +296,14 @@ class ChessDroneSingle:
             self.logger.warning(f"Pawn not found on camera at {from_cell}, using calculated coordinates")
             aruco_x, aruco_y = self.get_cell_coordinates(from_cell)
             rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
-            return rover_x, rover_y, 0.0
+            return rover_x, rover_y, -90.0
             
         except Exception as e:
             self.logger.error(f"Failed to get rover position from camera: {e}")
             # Fallback: используем рассчитанные координаты клетки
             aruco_x, aruco_y = self.get_cell_coordinates(from_cell)
             rover_x, rover_y = aruco_to_rover_meters(aruco_x, aruco_y)
-            return rover_x, rover_y, 0.0
+            return rover_x, rover_y, -90.0
 
     def move_to_xy(self, x: float, y: float, z: float, is_kill = False):
         # 1. Взлёт на рабочую высоту
