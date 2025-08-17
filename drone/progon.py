@@ -43,24 +43,26 @@ class Progon:
             print(f"Failed to load ArUco map from {self.map_path}: {e}")
 
 
-    def move_to_xy(self, x: float, y: float, z: float):
+    def move_to_xy(self, x: float, y: float, z: float, is_kill = False):
         # 1. Взлёт на рабочую высоту
-        self.fc.takeoff(z=1.2, delay=2, speed=0.5)
+        self.fc.takeoff(z=self.takeoff_z, delay=2, speed=0.5)
         time.sleep(3)
 
         self.fc.navigate_wait(
             x=x,
             y=y,
-            z=1.2,
-            speed=0.4,
+            z=self.flight_z,
+            speed=self.speed,
             auto_arm=True,
         )
-        self.fc.wait(0.5)
+        self.fc.wait(0.5 if is_kill else 5.0)
+        if(is_kill):
+            time.sleep(4.5)
         
         self.fc.navigate_wait(
             x=x, 
             y=y, 
-            z=0.15,
+            z=0.25,
             speed=0.2,
             auto_arm=False,
         )
@@ -90,7 +92,7 @@ class Progon:
         for waypoint in waypoints:
             print(f"Moving to {waypoint}")
             x, y = self.get_cell_coordinates(waypoint)
-            self.move_to_xy(x, y, 1.2)
+            self.move_to_xy(x, y, 1.2, is_kill=True)
 
         #x, y = self.get_cell_coordinates(to_cell)
         # Выполняем движение локально
