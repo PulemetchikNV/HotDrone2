@@ -16,7 +16,7 @@ createApp({
         };
 
         const processLine = (line) => {
-            const agentMatch = line.match(/^Agent (\S+ \(\w+\)):/);
+            const agentMatch = line.match(/^Агент (.+?) \((.+?)\):/);
             const iterationMatch = line.match(/^--- Итерация .* ---/);
             const finalDecisionMatch = line.match(/^--- ФИНАЛЬНОЕ РЕШЕНИЕ ---/);
             const masterChoiceMatch = line.match(/^Мастер выбрал ход: (.*)/);

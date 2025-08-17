@@ -83,10 +83,11 @@ body {
     background-color: #ffffff;
     border-radius: 12px;
     padding: 20px 30px;
-    margin: 0 auto 20px auto; /* Center the bubbles */
+    margin: 0 0 20px auto; /* Align bubbles to the right */
     max-width: 80%; /* Limit bubble width */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
     border: 1px solid #e9ecef;
+    text-align: right; /* Align text to the right */
 }
 
 .message-bubble.system {
@@ -108,6 +109,12 @@ body {
     font-size: 24px; /* Slightly smaller for the name */
     margin-bottom: 10px;
     color: #1e88e5;
+}
+
+.message-bubble.highlight {
+    background-color: #e3f2fd; /* Light blue highlight */
+    border-color: #bbdefb;
+    text-align: center; /* Center highlight text */
 }
 
 .message-content {

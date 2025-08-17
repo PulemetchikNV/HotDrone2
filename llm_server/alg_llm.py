@@ -18,9 +18,19 @@ MAX_ITERATIONS = 3 # The 'n' from the description
 
 # Map drone roles from const.py to descriptive characters for the LLM
 CHARACTER_MAP = {
-    "king": "A very cautious and strategic player. Prefers defensive moves and controlling the center of the board. Acts as a leader, synthesizing ideas.",
-    "queen": "An aggressive player. Always looks for opportunities to attack the opponent's king, even if it means taking risks.",
-    "default": "A positional player. Focuses on long-term advantages, pawn structure, and piece coordination. Very logical."
+    "king": "Очень осторожный и стратегический игрок. Предпочитает защитные ходы и контроль центра доски. Действует как лидер, обобщая идеи.",
+    "queen": "Агрессивный игрок. Всегда ищет возможности для атаки на короля противника, даже если это сопряжено с риском.",
+    "default": "Позиционный игрок. Сосредоточен на долгосрочных преимуществах, пешечной структуре и координации фигур. Очень логичен."
+}
+
+# Dictionary for translating roles to Russian
+RUSSIAN_ROLES = {
+    "king": "Король",
+    "queen": "Королева",
+    "bishop": "Слон",
+    "pawn": "Пешка",
+    "master": "Мастер",
+    "slave": "Ведомый"
 }
 
 def call_llm(prompt):
@@ -76,6 +86,7 @@ class Agent:
         self.id = drone_info['id']
         self.role = drone_info['role'] # 'master' or 'slave'
         self.character = drone_info['character']
+        self.figure = drone_info['figure'] # e.g., 'king', 'queen'
 
     def think(self, prompt):
         """Generic thinking method for an agent."""
@@ -109,11 +120,13 @@ class MultiAgentSystem:
                 История обсуждения на данный момент:
                 {self.chat_history}
 
-                Основываясь на вашем характере, состоянии игры и обсуждении, какой ход является лучшим в формате UCI (например, e2e4)?
-                Предоставьте свое обоснование, а затем сам ход на новой строке в формате: MOVE: <ваш_ход>
+                Основываясь на вашем характере и состоянии игры, какой ход является лучшим в формате UCI (например, e2e4)?
+                Ответьте кратко, в паре предложений. Затем укажите ход на новой строке в формате: MOVE: <ваш_ход>
                 """
                 thought = agent.think(prompt)
-                print(f"Agent {agent.id} ({agent.role}):\n{thought}\n", flush=True)
+                figure_ru = RUSSIAN_ROLES.get(agent.figure, agent.figure.capitalize())
+                role_ru = RUSSIAN_ROLES.get(agent.role, agent.role)
+                print(f"Агент {figure_ru} ({role_ru}):\n{thought}\n", flush=True)
                 suggestion_text = f"Agent {agent.id} ({agent.role}):\n{thought}\n\n"
                 current_suggestions += suggestion_text
             
@@ -173,13 +186,13 @@ class MultiAgentSystem:
                 Главный агент решил сделать ход: {best_move}.
                 Обоснование мастера: {master_reasoning}
                 Отзыв мастера конкретно для вас: {feedback_for_slave}
-                Полная история чата:
-                {self.chat_history}
 
-                Согласны ли вы с решением мастера? Объясните свою точку зрения, основываясь на вашем характере.
+                Согласны ли вы с решением мастера? Объясните свою точку зрения кратко, в паре предложений.
                 """
                 reaction = slave.think(slave_reaction_prompt)
-                print(f"Agent {slave.id} ({slave.role}):\n{reaction}\n", flush=True)
+                figure_ru = RUSSIAN_ROLES.get(slave.figure, slave.figure.capitalize())
+                role_ru = RUSSIAN_ROLES.get(slave.role, slave.role)
+                print(f"Агент {figure_ru} ({role_ru}):\n{reaction}\n", flush=True)
                 slave_feedback_text += f"Agent {slave.id} ({slave.role}):\n{reaction}\n\n"
             
             self.chat_history += slave_feedback_text
@@ -217,12 +230,14 @@ def main():
     drones_json = []
     for drone_id, config in DRONES_CONFIG.items():
         role_in_llm = 'master' if drone_id == LEADER_DRONE else 'slave'
-        character = CHARACTER_MAP.get(config.get('role'), CHARACTER_MAP['default'])
+        figure_role = config.get('role', 'pawn') # Default to 'pawn' if not specified
+        character = CHARACTER_MAP.get(figure_role, CHARACTER_MAP['default'])
         
         drones_json.append({
             "id": drone_id,
             "role": role_in_llm,
-            "character": character
+            "character": character,
+            "figure": figure_role
         })
 
     multi_agent_system = MultiAgentSystem(drones_json, game_state_fen)
