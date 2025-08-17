@@ -54,13 +54,13 @@ def make_initial_positions():
     }
     black = {
         #'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
-        'queen': {'x': 0.0,  'y': 3.5, "cell": 'd8'},
+        #'queen': {'x': 0.0,  'y': 3.5, "cell": 'd8'},
         'king': {'x': 0.0,  'y': 3.5, "cell": 'e8'},
-        'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
-        'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
-        'knight_b8': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
-        'knight_g8': {'x': 2.5, 'y': 3.5, 'cell': 'g8'},
-        # 'pawn_d7': {'x': -2.5, 'y': 3.5, 'cell': 'd7'},
+       #'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
+        #'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
+        #'knight_b8': {'x': -2.5, 'y': 3.5, 'cell': 'b8'},
+        #'knight_g8': {'x': 2.5, 'y': 3.5, 'cell': 'g8'},
+        'pawn_a7': {'x': -2.5, 'y': 3.5, 'cell': 'a7'},
     }
     return {'white': white, 'black': black}
 

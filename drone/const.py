@@ -1,4 +1,5 @@
-DRONE_LIST = 'drone15,drone21,drone11,drone18'
+DRONE_LIST='drone21'
+# DRONE_LIST = 'drone15,drone21,drone11,drone18'
 #,drone18,drone21,drone21'
 LEADER_DRONE = 'drone21'
 DRONES_TOTAL = 2
@@ -85,27 +86,9 @@ def get_current_drone_config() -> dict:
 
 rovers = {
     'rover_a': {
-        'ip': '192.168.1.97',
+        'ip': '192.168.1.101',
         'port': 80,
         'initial_letter': 'a',
-        'number': 2,
+        'number': 16,
     },
-    'rover_b': {
-        'ip': '192.168.1.98',
-        'port': 80,
-        'initial_letter': 'b', 
-        'number': 3,
-    },
-    'rover_c': {
-        'ip': '192.168.1.99',
-        'port': 80,
-        'initial_letter': 'c',
-        'number': 4,
-    },
-    'rover_d': {
-        'ip': '192.168.1.100',
-        'port': 80,
-        'initial_letter': 'd',
-        'number': 5,
-    }
 }
