@@ -56,6 +56,8 @@ def make_initial_positions():
         #'king':      {'x': 0.0,  'y': 3.5, 'cell': 'e8'},
         'queen': {'x': 0.0,  'y': 3.5, "cell": 'd8'},
         'king': {'x': 0.0,  'y': 3.5, "cell": 'e8'},
+        'bishop_c8': {'x': -1.5, 'y': 3.5, 'cell': 'c8'},
+        'bishop_f8': {'x': 1.5, 'y': 3.5, 'cell': 'f8'},
         # 'pawn_d7': {'x': -2.5, 'y': 3.5, 'cell': 'd7'},
     }
     return {'white': white, 'black': black}

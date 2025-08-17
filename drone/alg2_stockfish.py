@@ -481,8 +481,10 @@ def _check_cluster_changes_needed(alive_drones: List[str]) -> bool:
 
 def _generate_stockfish_move(board: BoardState, time_budget_ms: int = 5000) -> MoveDecision:
     """Generate a move using Stockfish engine."""
+    from const import ALG_MODE
+    
     # Кластерный режим (опционально). Если не сработал — фолбэк на локальный движок
-    if os.getenv("ALG_MODE", "api").lower() == "cluster1":
+    if ALG_MODE.lower() == "cluster1":
         # Проверяем актуальность кластера перед вычислением хода
         alive_drones_str = os.getenv("CLUSTER_ALIVE_DRONES", "")
         if alive_drones_str:
