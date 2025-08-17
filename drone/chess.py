@@ -201,7 +201,7 @@ class ChessDroneSingle:
         default_map_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "aruco_maps",
-            "aruco_map2.json",
+            "aruco_map1.json",
         )
         self.map_path = os.getenv("ARUCO_MAP_JSON", default_map_path)
         self.cell_markers = {}

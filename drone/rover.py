@@ -276,18 +276,32 @@ class RoverControllerMain:
         distance_m = math.sqrt(dx*dx + dy*dy)
         distance_mm = int(distance_m * 1000)  # Конвертируем в мм
         
+        # Вычисляем угол поворота  
+        target_angle = math.degrees(math.atan2(dy, dx))
+        turn_angle = target_angle - current_yaw
+        
         # Проверка на разумность расстояния (одна клетка = 400мм)
         if distance_mm > 1000:  # Больше 2.5 клеток
             self.logger.warning(f"⚠️  ПОДОЗРИТЕЛЬНО БОЛЬШОЕ РАССТОЯНИЕ: {distance_mm}мм ({distance_m:.3f}м) для одного хода!")
             self.logger.warning(f"⚠️  Возможно проблема в данных камеры: dx={dx:.3f}м, dy={dy:.3f}м")
+            self.logger.warning(f"⚠️  Расчетный угол поворота: {target_angle:.1f}° (от yaw={current_yaw:.1f}° получается {turn_angle:.1f}°)")
+            
+            # ЭКСТРЕННОЕ ИСПРАВЛЕНИЕ: если расстояние слишком большое, используем нормализованное движение
+            if distance_mm > 2000:  # Больше 5 клеток - точно ошибка
+                self.logger.error(f"🚨 КРИТИЧЕСКАЯ ОШИБКА КООРДИНАТ! Ограничиваем движение до 2 клеток максимум")
+                # Нормализуем направление и ограничиваем расстояние
+                max_distance_m = 0.8  # Максимум 2 клетки
+                if distance_m > 0:
+                    dx = dx * (max_distance_m / distance_m)
+                    dy = dy * (max_distance_m / distance_m)
+                    distance_mm = int(max_distance_m * 1000)
+                    target_angle = math.degrees(math.atan2(dy, dx))
+                    turn_angle = target_angle - current_yaw
+                    self.logger.warning(f"🔧 ИСПРАВЛЕНО: новое расстояние {distance_mm}мм, угол {target_angle:.1f}°")
         
         if distance_mm == 0:
             self.logger.info(f"Ровер {rover_id} уже находится в целевой позиции")
             return True
-        
-        # Вычисляем угол поворота
-        target_angle = math.degrees(math.atan2(dy, dx))
-        turn_angle = target_angle - current_yaw
         
         # Нормализуем угол поворота в диапазон [-180, 180]
         while turn_angle > 180:
@@ -295,12 +309,24 @@ class RoverControllerMain:
         while turn_angle < -180:
             turn_angle += 360
         
+        # Логируем детали движения
+        self.logger.info(f"📐 Детали движения ровера {rover_id}:")
+        self.logger.info(f"   dx={dx:.3f}м, dy={dy:.3f}м")
+        self.logger.info(f"   Расстояние: {distance_mm}мм ({distance_m:.3f}м)")
+        self.logger.info(f"   Целевой угол: {target_angle:.1f}°")
+        self.logger.info(f"   Текущий yaw: {current_yaw:.1f}°")
+        self.logger.info(f"   Поворот: {turn_angle:.1f}°")
+        
         # Выполняем команды движения
         commands = []
         if abs(turn_angle) > 1:  # Поворачиваем только если угол значительный
             commands.append({'type': 'turn', 'value': int(turn_angle), 'wait': True})
+            self.logger.info(f"🔄 Добавлена команда поворота: {int(turn_angle)}°")
+        else:
+            self.logger.info(f"🔄 Поворот не требуется (угол {turn_angle:.1f}° < 1°)")
         
         commands.append({'type': 'forward', 'value': distance_mm, 'wait': True})
+        self.logger.info(f"➡️  Добавлена команда движения: {distance_mm}мм")
         
         return self.execute_sequence(rover_id, commands)
 
