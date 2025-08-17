@@ -88,7 +88,7 @@ rovers = {
     'rover_b': {
         'ip': '192.168.1.53',
         'port': 80,
-        'initial_letter': 'b',
+        'initial_letter': 'c',
         'number': 16,
     },
 }
