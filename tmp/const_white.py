@@ -65,13 +65,13 @@ def get_current_drone_config() -> dict:
 
 rovers = {
     'rover_a': {
-        'ip': '192.168.1.53',
+        'ip': '192.168.1.73',
         'port': 80,
         'initial_letter': 'a',
         'number': 5,
     },
     'rover_g': {
-        'ip': '192.168.1.153',
+        'ip': '192.168.1.53',
         'initial_letter': 'g',
         'number': 16,
         'port': 80,
