@@ -42,7 +42,7 @@ def get_turn(board: BoardState, time_budget_ms: int = 5000, seed: Optional[int] 
         
         # Запускаем LLM алгоритм через сервер
         with httpx.Client(timeout=timeout_s + 60) as client:  # +60 секунд для LLM
-            resp = client.post("http://localhost:8080/run", json={"fen": fen})
+            resp = client.post("http://192.168.1.119:8080/run", json={"fen": fen})
             resp.raise_for_status()
             
             # Читаем потоковый ответ
