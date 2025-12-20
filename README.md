@@ -96,6 +96,7 @@
 *   **Сахибуллин Минтимер Мансурович** - [GitHub](https://github.com/Msakhibullin24)
 *   **Ивлев Андрей Витальевич** - [GitHub](https://github.com/PulemetchikNV)
 *   **Россихин Тимур Артурович** - [GitHub](https://github.com/TimurRoss)
+*   **Зеленцова Фаина Владимировна**
 
 ---
 
