@@ -89,10 +89,13 @@
 ![Команда проекта](images/team.jpg)
 
 Команда разработчиков, специализирующаяся на автономных системах и роевом интеллекте.
-*   **Backend & Architecture**: Разработка ядра системы и сетевого взаимодействия.
-*   **Drone Logic & Flight Control**: Алгоритмы полета, навигация и безопасность.
-*   **LLM & AI Integration**: Интеграция языковых моделей и шахматных движков.
-*   **Hardware & Testing**: Сборка, настройка и полевые испытания дронов.
+
+**Участники:**
+*   **Саргин Ярослав Сергеевич** - [GitHub](https://github.com/ropraname)
+*   **Епифанцев Тарас Сергеевич** - [GitHub](https://github.com/2taras)
+*   **Сахибуллин Минтимер Мансурович** - [GitHub](https://github.com/Msakhibullin24)
+*   **Ивлев Андрей Витальевич** - [GitHub](https://github.com/PulemetchikNV)
+*   **Россихин Тимур Артурович** - [GitHub](https://github.com/TimurRoss)
 
 ---
 
